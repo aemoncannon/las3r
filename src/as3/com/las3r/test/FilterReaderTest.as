@@ -1,5 +1,5 @@
 /**
-* Copyright (c) Rich Hickey. All rights reserved.
+* Copyright (c) Aemon Cannon. All rights reserved.
 * The use and distribution terms for this software are covered by the
 * Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
 * which can be found in the file CPL.TXT at the root of this distribution.
@@ -13,8 +13,8 @@ package com.las3r.test{
 	import flexunit.framework.TestCase;
  	import flexunit.framework.TestSuite;
 	import flash.utils.*;
-	import com.las3r.io.StringReader;
-	import com.las3r.io.FilterReader;
+	import com.las3r.jdk.io.StringReader;
+	import com.las3r.jdk.io.FilterReader;
 
 	public class FilterReaderTest extends RichTestCase {
 		

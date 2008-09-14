@@ -1,5 +1,6 @@
 /**
 * Copyright (c) Rich Hickey. All rights reserved.
+* Copyright (c) Aemon Cannon. All rights reserved.
 * The use and distribution terms for this software are covered by the
 * Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
 * which can be found in the file CPL.TXT at the root of this distribution.
@@ -52,7 +53,7 @@ package com.las3r.runtime{
 			return map(
 				Symbol.intern1(this, "Boolean"), Boolean,
 				Symbol.intern1(this, "Class"), Class,
-				//			Symbol.intern1(this, "Compiler"), Compiler,
+				Symbol.intern1(this, "Compiler"), Compiler,
 				Symbol.intern1(this, "Math"), Math,
 				Symbol.intern1(this, "Number"), Number,
 				Symbol.intern1(this, "Object"), Object,

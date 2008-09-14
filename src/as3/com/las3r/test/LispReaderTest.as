@@ -15,8 +15,8 @@ package com.las3r.test{
 	import flash.utils.*;
 	import com.las3r.runtime.*;
 	import com.las3r.util.Util;
-	import com.las3r.io.StringReader;
-	import com.las3r.io.PushbackReader;
+	import com.las3r.jdk.io.StringReader;
+	import com.las3r.jdk.io.PushbackReader;
 
 	public class LispReaderTest extends LAS3RTest {
 		

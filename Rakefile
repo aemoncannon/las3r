@@ -1,5 +1,4 @@
-
-# Copyright (c) Rich Hickey. All rights reserved.
+# Copyright (c) Aemon Cannon. All rights reserved.
 # The use and distribution terms for this software are covered by the
 # Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
 # which can be found in the file CPL.TXT at the root of this distribution.
@@ -11,8 +10,8 @@
 require 'rexml/document'
 include REXML
 
-MXMLC = PLATFORM =~ /linux/ ? "~/lib/flex3/bin/mxmlc" : "mxmlc.exe"
-DEBUG_PROJECTOR = PLATFORM =~ /linux/ ? "~/bin/flashplayer_debug_projector" : "sa_flashplayer_9_debug.exe"
+MXMLC = PLATFORM =~ /windows/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
+DEBUG_PROJECTOR = PLATFORM =~ /windows/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
 
 SHARED_CLASS_PATH = [
                      "src/as3",
