@@ -13,5 +13,20 @@
 
 package com.las3r.runtime{
 	public class Obj implements IObj{
+		protected var _meta:IMap;
+
+		public function Obj(meta:IMap = null){
+			this._meta = meta;
+		}
+
+		public function get meta():IMap{
+			return _meta;
+		}
+
+		public function withMeta(meta:IMap):IObj{
+			_meta = meta;
+			return this;
+		}
+
 	}
 }

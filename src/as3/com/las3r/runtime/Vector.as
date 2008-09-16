@@ -14,7 +14,18 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	dynamic public class Vector extends Array implements IVector{
+	dynamic public class Vector extends Array implements IVector, IObj{
+
+		protected var _meta:IMap;
+
+		public function get meta():IMap{
+			return _meta;
+		}
+
+		public function withMeta(meta:IMap):IObj{
+			_meta = meta;
+			return this;
+		}
 
 		static function doEquals(v:IVector, obj:Object):Boolean{
 			if(obj is IVector){

@@ -11,5 +11,7 @@
 
 package com.las3r.runtime{
     public interface IObj{
+		function get meta():IMap;
+		function withMeta(meta:IMap):IObj;
     }
 }

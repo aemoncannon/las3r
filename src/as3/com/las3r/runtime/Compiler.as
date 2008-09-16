@@ -418,6 +418,25 @@ package com.las3r.runtime{
 			return null;
 		}
 
+
+		public function isMacro(op:Object):Var{
+			//no local macros for now
+			if(op is Symbol && referenceLocal(Symbol(op)) != null)
+			return null;
+			if(op is Symbol || op is Var)
+			{
+				var v:Var  = (op is Var) ? Var(op) : lookupVar(Symbol(op), false);
+				if(v != null && v.isMacro())
+				{
+					if(v.ns != currentNS() && !v.isPublic())
+					throw new Error("IllegalStateException: var: " + v + " is not public");
+					return v;
+				}
+			}
+			return null;
+		}
+
+
 		public function referenceLocal(sym:Symbol):LocalBinding{
 			var len:int = _bindingSetStack.count();
 			for(var i:int = len - 1; i >= 0; i--){
@@ -676,6 +695,15 @@ class CodeGen{
 	*/
 	public function bindVarRoot():void{
 		asm.I_callpropvoid(emitter.nameFromIdent("bindRoot"), 1);
+	}
+
+
+	/*
+	* Stack:   
+	*   aVar,meta => ...
+	*/
+	public function setMeta():void{
+		asm.I_callpropvoid(emitter.nameFromIdent("setMeta"), 1);
 	}
 
 
@@ -1102,12 +1130,14 @@ class DefExpr implements Expr{
 	public var aVar:Var;
 	public var init:Expr;
 	public var initProvided:Boolean;
+	public var meta:Expr;
 	private var _compiler:Compiler;
 
-	public function DefExpr(compiler:Compiler, inVar:Var, init:Expr, initProvided:Boolean){
+	public function DefExpr(compiler:Compiler, inVar:Var, init:Expr, meta:Expr, initProvided:Boolean){
 		aVar = inVar;
 		this.init = init;
 		this.initProvided = initProvided;
+		this.meta = meta;
 		_compiler = compiler;
 	}
 
@@ -1124,6 +1154,12 @@ class DefExpr implements Expr{
 			gen.asm.I_dup();
 			init.emit(C.EXPRESSION, gen);
 			gen.bindVarRoot();
+		}
+		if(meta != null)
+		{
+			gen.asm.I_dup();
+			meta.emit(C.EXPRESSION, gen);
+			gen.setMeta();
 		}
 		if(context == C.STATEMENT){gen.asm.I_pop();}
 	}
@@ -1152,7 +1188,12 @@ class DefExpr implements Expr{
 				throw new Error("Can't create defs outside of current ns");
 			}
 		}
-		return new DefExpr(compiler, v, compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.third(form), v.sym.name), RT.count(form) == 3);
+
+		var mm:IMap = sym.meta || RT.map();
+		// TODO: Aemon add line info here..
+		// mm = IMap(RT.assoc(mm, RT.LINE_KEY, LINE.get()).assoc(RT.FILE_KEY, SOURCE.get()));
+		var meta:Expr = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, mm);
+		return new DefExpr(compiler, v, compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.third(form), v.sym.name), meta, RT.count(form) == 3);
 	}
 
 }

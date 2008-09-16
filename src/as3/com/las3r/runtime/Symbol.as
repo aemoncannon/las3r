@@ -15,7 +15,7 @@ package com.las3r.runtime{
 	import com.las3r.util.StringUtil;
 	import com.las3r.runtime.RT;
 
-    public class Symbol {
+    public class Symbol extends Obj{
 
 		//these must be interned strings!
 		public var ns:String;
@@ -36,7 +36,7 @@ package com.las3r.runtime{
 		}
 
 		public static function intern2(rt:RT, ns:String, name:String):Symbol{
-			var s:Symbol = new Symbol(ns == null ? null : StringUtil.intern(rt, ns), StringUtil.intern(rt, name), new Lock())
+			var s:Symbol = new Symbol(ns == null ? null : StringUtil.intern(rt, ns), StringUtil.intern(rt, name), new Lock());
 			var key:String = s.toString();
 			var existing:Symbol = rt.internedSymbols[key];
 			if(existing){
@@ -59,6 +59,7 @@ package com.las3r.runtime{
 		}
 
 		public function Symbol(nsInterned:String, nameInterned:String, l:Lock){
+			super(null);
 			this.name = nameInterned;
 			this.ns = nsInterned;
 		}

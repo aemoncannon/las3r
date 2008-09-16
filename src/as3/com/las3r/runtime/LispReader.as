@@ -83,8 +83,10 @@ package com.las3r.runtime{
 				// CharUtil.BACKTICK, new SyntaxQuoteReader(this, _rt),
 			);
 
-			dispatchMacros = RT.map(CharUtil.DOUBLE_QUOTE, new RegexReader(this));
-
+			dispatchMacros = RT.map(
+				CharUtil.DOUBLE_QUOTE, new RegexReader(this),
+				CharUtil.CARROT, new MetaReader(this)
+			);
 		}
 
 		public function isWhitespace(ch:int):Boolean{
@@ -458,6 +460,40 @@ class CommentReader implements IReaderMacro{
 			ch = r.readOne();
 		} while(ch != -1 && ch != CharUtil.LF && ch != CharUtil.CR);
 		return r;
+	}
+
+}
+
+class MetaReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+
+	public function MetaReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, semicolon:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+		var line:int = -1;
+// TODO: Aemon do this..		
+// 		if(r is LineNumberingPushbackReader)
+// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
+
+		var meta:Object = _reader.read(r, true, null)
+		if(meta is Symbol || meta is Keyword || meta is String)
+		meta = RT.map(RT.TAG_KEY, meta);
+		else if(!(meta is IMap))
+		throw new Error("IllegalArgumentException: Metadata must be Symbol,Keyword,String or Map");
+
+		var o:Object = _reader.read(r, true, null);
+		if(o is IObj)
+		{
+// 			if(line != -1 && o instanceof ISeq)
+// 			meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
+			return (IObj(o).withMeta(IMap(meta)));
+		}
+		else
+		throw new Error("IllegalArgumentException: Metadata can only be applied to IObjs");
 	}
 
 }

@@ -14,7 +14,7 @@ package com.las3r.runtime{
 	import flash.utils.Dictionary;
 	import com.las3r.util.Util;
 
-	public class Map implements IMap{
+	public class Map extends Obj implements IMap{
 
 		private var _dict:Dictionary;
 

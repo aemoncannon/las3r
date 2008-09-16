@@ -14,9 +14,12 @@ package com.las3r.runtime{
 
 	import com.las3r.runtime.RT;
 
-	public class Var implements IObj{
+	public class Var extends Obj{
 
 		public static var UNBOUND_VAL:Object = {};
+		static var nameKey:String = "name";
+		static var nsKey:String = "ns";
+		static var macroKey:String = "macro";
 
 		public var root:Object;
 		public var count:int;
@@ -30,6 +33,7 @@ package com.las3r.runtime{
 			this.sym = sym;
 			this.count = 0;
 			this.root = root || UNBOUND_VAL;  //use dvals as magic not-bound value
+			setMeta(RT.map());
 		}
 
 		public function isPublic():Boolean{
@@ -171,6 +175,15 @@ package com.las3r.runtime{
 
 		public function apply(args:Vector):Object{
 			return fn().apply(null, args);
+		}
+
+		public function setMeta(m:IMap):void{
+			//ensure these basis keys
+			_meta = m.assoc(nameKey, sym).assoc(nsKey, ns);
+		}
+
+		public function isMacro():Boolean{
+			return (_meta.valAt(macroKey) != null);
 		}
 
 	}

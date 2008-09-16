@@ -42,6 +42,9 @@ package com.las3r.runtime{
 		public static var T:Boolean = true;
 		public static var F:Boolean = false;
 
+		public static var TAG_KEY:String = "tag";
+
+
 		public var LAS3R_NAMESPACE:LispNamespace;
 		public var LOAD_FILE:Symbol;
 		public var IDENTICAL:Symbol;
@@ -92,6 +95,7 @@ package com.las3r.runtime{
 				function(arg1:Object, arg2:Object):Object{
 					return arg1 == arg2 ? RT.T : RT.F;
 				});
+
 		}
 
 		public function init():void{
