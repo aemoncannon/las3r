@@ -424,7 +424,7 @@ package com.las3r.test{
 		}
 
 		public function testCatchWithException():void{
-			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch Error e 2)))",
+			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch String e 2)))",
 				function(rt:RT):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("*bird* should be bound to 2", v.get() == 2);
@@ -448,12 +448,46 @@ package com.las3r.test{
 		}
 
 		public function testTryCatchThenFinallyClause():void{
-			readAndLoad("(def *bird* (try (throw 5) (catch String e e) (finally 10)))",
+			readAndLoad("(def *bird* (try (throw 5) (catch Number e e) (finally 10)))",
 				function(rt:RT):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("*bird* should be bound to 10", v.get() == 10);
 				});
 		}
+
+		public function testTwoCatchClauses():void{
+			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch Number e 2) (catch String e 5)))",
+				function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be bound to 5", v.get() == 5);
+				});
+		}
+
+
+		public function testThreeCatchClauses():void{
+			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch Number e 2) (catch Error e 1) (catch String e 5)))",
+				function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be bound to 5", v.get() == 5);
+				});
+		}
+
+		public function testThreeCatchClausesMiddle():void{
+			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch Number e 2) (catch String e 1) (catch Error e 5)))",
+				function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be bound to 1", v.get() == 1);
+				});
+		}
+
+		public function testThreeCatchClausesFirst():void{
+			readAndLoad("(def *bird* (try (throw \"Caw!\") (catch String e 10) (catch String e 1) (catch Error e 5)))",
+				function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be bound to 10", v.get() == 10);
+				});
+		}
+
 
 	}
 
