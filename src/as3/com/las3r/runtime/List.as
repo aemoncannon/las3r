@@ -13,6 +13,11 @@ package com.las3r.runtime{
 
 	public class List extends ASeq implements IList{
 
+		public static function creator(...args:Array):List{
+			return createFromArray(args);
+		};
+
+
 		private var _first:Object;
 		private var _rest:List;
 		private var _count:int;

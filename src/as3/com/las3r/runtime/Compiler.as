@@ -11,6 +11,7 @@
 
 package com.las3r.runtime{
 	import com.las3r.util.*;
+	import com.las3r.jdk.io.PushbackReader;
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.ByteArray;
 	import flash.events.*;
@@ -83,9 +84,9 @@ package com.las3r.runtime{
 			MONITOR_ENTER = Symbol.intern1(rt, "monitor-enter");
 			MONITOR_EXIT = Symbol.intern1(rt, "monitor-exit");
 			NEW = Symbol.intern1(rt, "new");
-			LIST = Symbol.intern2(rt, "clojure", "list");
-			HASHMAP = Symbol.intern2(rt, "clojure", "hash-map");
-			VECTOR = Symbol.intern2(rt, "clojure", "vector");
+			LIST = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "list");
+			HASHMAP = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
+			VECTOR = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
 			_AMP_ = Symbol.intern1(rt, "&");
 			ISEQ = Symbol.intern1(rt, "com.las3r.runtime.ISeq");
 
@@ -123,31 +124,48 @@ package com.las3r.runtime{
 		}
 
 
-		public function compileAndLoad(form:Object, onComplete:Function = null):void{
-			/* XXX Compiled LAS3R code looks here fore active RT instance. */
-			RT.instance = rt;
+		public function load(rdr:PushbackReader, onComplete:Function = null, sourcePath:String = null, sourceName:String = null):void{
 
 			_bindingSetStack = RT.vector();
 			_loopLabelStack = RT.vector();
 			_loopLocalsStack = RT.vector();
 
 			var callback:Function = onComplete || function(e:Event):void{};
+
+			var EOF:Object = new Object();
+			var forms:Vector = Vector(RT.vector());
+			for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
+				forms.cons(form);
+			}
+
+			// XXX Compiled LAS3R code looks here for active RT instance.
+			RT.instance = rt;
+			Var.pushBindings(rt, 
+				RT.map(
+					rt.CURRENT_NS, rt.CURRENT_NS.get()
+				)
+			);
+			var loadAllForms:Function = function(e:Event):void{
+				if(forms.count() > 0){
+					loadForm(forms.shift(), loadAllForms);
+				}
+				else{
+					Var.popBindings(rt);
+					onComplete(e);
+				}
+			}
+			loadAllForms(null);
+		}
+
+		protected function loadForm(form:Object, callback:Function):void{
 			var emitter = new ABCEmitter();
 			var scr = emitter.newScript();
 			var gen:CodeGen = new CodeGen(emitter, scr);
 
-
-			Var.pushBindings(rt, RT.map(
-					rt.CURRENT_NS, rt.CURRENT_NS.get()
-				));
-			var expr:Expr = analyze(C.STATEMENT, form);
-
-			// create a scope object for this function invocation..
+			// Emit the bytecode..
 			gen.pushThisScope();
-
 			gen.pushNewActivationScope();
-
-			expr.emit(C.EXPRESSION, gen);
+			analyze(C.STATEMENT, form).emit(C.EXPRESSION, gen);
 			gen.print();
 
 			var file:ABCFile = emitter.finalize();
@@ -155,15 +173,14 @@ package com.las3r.runtime{
 			bytes.position = 0;
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
-			/* Debug: */
-			_rt.debugFunc(ABCDump.dump(swfBytes));
+			// Debug
+			rt.debugFunc(ABCDump.dump(swfBytes));
 
 			bytes.position = 0;
 			ByteLoader.loadBytes(bytes, function(e:Event):void{
 					callback(e);
-					Var.popBindings(rt);
 				}
-			);
+			);	
 		}
 
 		public function currentNS():LispNamespace{
@@ -1401,20 +1418,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-		// 			PersistentVector restArgs = PersistentVector.EMPTY;
-		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-		// 			{
-		// 				restArgs = restArgs.cons(args.nth(i));
-		// 			}
-		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-		// 		}
+			// 			PersistentVector restArgs = PersistentVector.EMPTY;
+			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+			// 			{
+				// 				restArgs = restArgs.cons(args.nth(i));
+				// 			}
+			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+			// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-		// 			FnMethod method = (FnMethod) METHOD.get();
-		// 			method.emitClearLocals(gen);
-		// 		}
+			// 			FnMethod method = (FnMethod) METHOD.get();
+			// 			method.emitClearLocals(gen);
+			// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}

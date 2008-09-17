@@ -25,21 +25,22 @@ import com.las3r.runtime.Compiler;
 private var _inputHistory:Array = [];
 private var _inputHistoryPos:int = 0;
 private var _rt:RT;
-private var _compiler:Compiler;
 
 
 private function onCreationComplete():void {
 	_rt = new RT();
-	_rt.init();
+	_rt.loadStdLib();
+
 	_rt.traceFunc = function(str:String):void{
 		outputArea.text += str + "\n";
 		outputArea.verticalScrollPosition = outputArea.maxVerticalScrollPosition
 	}
+
 	_rt.debugFunc = function(str:String):void{
 		debugArea.text += str + "\n";
 		debugArea.verticalScrollPosition = debugArea.maxVerticalScrollPosition
 	}
-	_compiler = new Compiler(_rt);
+
 	replInput.addEventListener(TextEvent.TEXT_INPUT, onReplInputTextInput, true);
 	replInput.addEventListener(KeyboardEvent.KEY_DOWN, onReplInputKeyDown, true);
 }
@@ -70,10 +71,6 @@ private function onReplInputKeyDown(e:KeyboardEvent):void{
 }
 
 
-private function compileAndLoad(form:Object):void{
-	_compiler.compileAndLoad(form, function(e:Event):void{ });
-}
-
 private function onEvalButtonClick(e:Event):void{
 	var src:String = replInput.text;
 	replInput.text = "";
@@ -81,8 +78,6 @@ private function onEvalButtonClick(e:Event):void{
 	_inputHistory.push(src);
 	_inputHistoryPos = _inputHistory.length;
 
-	var lr:LispReader = new LispReader(_rt);
-	var o:Object = lr.read(new PushbackReader(new StringReader(src)));
-	compileAndLoad(o);
+	_rt.evalStr(src);
 
 }

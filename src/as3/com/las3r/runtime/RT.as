@@ -13,14 +13,23 @@
 package com.las3r.runtime{
 	
 	import com.las3r.io.NaiveStringWriter;
+	import com.las3r.jdk.io.*;
 	import com.las3r.runtime.LispNamespace;
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
+	import flash.events.Event;
 	import flash.utils.Dictionary;
+	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 
 
 	public class RT{
+
+		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
+		protected const BootLsr:Class;
+		var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
+
+
 		public static var instance:RT;
 
 		public var internedStrings:Object = {};
@@ -38,6 +47,11 @@ package com.las3r.runtime{
 
 		private var id:int = 1;
 		private var _this:RT;
+		private var _compiler:Compiler;
+		public function get compiler():Compiler { return _compiler }
+
+		private var _lispReader:LispReader;
+		public function get lispReader():LispReader { return _lispReader }
 
 		public static var T:Boolean = true;
 		public static var F:Boolean = false;
@@ -96,42 +110,23 @@ package com.las3r.runtime{
 					return arg1 == arg2 ? RT.T : RT.F;
 				});
 
-		}
-
-		public function init():void{
-			loadResourceScript(RT, "boot.clj");
-			loadResourceScript(RT, "proxy.clj");
-			loadResourceScript(RT, "zip.clj");
-			loadResourceScript(RT, "xml.clj");
-			loadResourceScript(RT, "set.clj");
-
-			Var.pushBindings(this, RT.map(
-					CURRENT_NS, CURRENT_NS.get()
-				));
-			try{
-				var USER:Symbol = Symbol.intern1(this, "user");
-				var LAS3R:Symbol = Symbol.intern1(this, "las3r");
-				var inNs:Var = getVar(LispNamespace.LAS3R_NAMESPACE_NAME, "in-ns");
-				// var refer:Var = getVar("las3r", "refer");
-				(inNs.fn())(USER);
-				// refer.invoke1(LAS3R);
-				loadResourceScript(RT, "user.clj");
-			}
-			finally
-			{
-				Var.popBindings(this);
-			}
+			_compiler = new Compiler(this);
+			_lispReader = new LispReader(this);
 		}
 
 
-		public function loadResourceScript(c:Class, name:String):void{
-			// 			InputStream ins = c.getResourceAsStream("/" + name);
-			// 			if(ins != null)
-			// 			{
-				// 				Compiler.load(new InputStreamReader(ins), name, name);
-				// 				ins.close();
-				// 			}
+		public function loadStdLib(onComplete:Function = null):void{
+			_compiler.load(new PushbackReader(new StringReader(BOOT_LSR)), onComplete || function(e:Event):void{});
 		}
+
+
+		public function evalStr(src:String, _onComplete:Function = null):void{
+			var onComplete:Function = _onComplete || function(e:Event):void{};
+			_compiler.load(new PushbackReader(new StringReader(src)), function(e:Event):void{
+					onComplete(e);
+				});
+		}
+
 
 		public function currentNS():LispNamespace{
 			return LispNamespace(CURRENT_NS.get());

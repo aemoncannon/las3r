@@ -1,0 +1,39 @@
+;;   Copyright (c) Rich Hickey. All rights reserved.
+;;   Copyright (c) Aemon Cannon. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+;;   which can be found in the file CPL.TXT at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
+
+(in-ns 'las3r)
+
+(def
+ #^{:arglists '([& items])
+    :doc "Creates a new list containing the items."}
+ list (. com.las3r.runtime.List creator))
+
+(def
+ #^{:arglists '([x seq])
+    :doc "Returns a new seq where x is the first element and seq is
+    the rest."}
+ cons (fn* cons [x seq] (. com.las3r.runtime.RT (cons x seq))))
+
+(def
+ #^{:macro true}
+  let (fn* let [& decl] (cons 'let* decl)))
+
+(def
+ #^{:macro true}
+ loop (fn* loop [& decl] (cons 'loop* decl)))
+
+(def
+ #^{:macro true}
+ fn (fn* fn [& decl] (cons 'fn* decl)))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Returns the first item in the collection. Calls seq on its
+    argument. If coll is nil, returns nil."}
+ first (fn first [coll] (. com.las3r.runtime.RT (first coll))))

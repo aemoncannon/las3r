@@ -32,18 +32,19 @@ COMPILE_OPTIONS = [
                   ]
 
 SHARED_SOURCES = FileList["./src/as3/**/*"]
+LAS3R_STDLIB = FileList["./src/lsr/**/*"]
 THIS_RAKEFILE = FileList["./Rakefile"]
 DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
 DEMO_SWF_TARGETS = DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
-file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES do
+file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 1000 600"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
 REPL_TARGET = "./bin/repl.swf"
-file REPL_TARGET => SHARED_SOURCES do
+file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/Main.mxml -output=#{REPL_TARGET}"
 end

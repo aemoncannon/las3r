@@ -55,15 +55,15 @@ package com.las3r.runtime{
 			THE_VAR = Symbol.intern2(_rt, null, "var");
 			FN = Symbol.intern1(_rt, "fn*");
 			_AMP_ = Symbol.intern1(_rt, "&");
-			CONCAT = Symbol.intern2(_rt, "clojure", "concat");
-			LIST = Symbol.intern2(_rt, "clojure", "list");
-			APPLY = Symbol.intern2(_rt, "clojure", "apply");
-			HASHMAP = Symbol.intern2(_rt, "clojure", "hash-map");
-			HASHSET = Symbol.intern2(_rt, "clojure", "hash-set");
-			VECTOR = Symbol.intern2(_rt, "clojure", "vector");
-			WITH_META = Symbol.intern2(_rt, "clojure", "with-meta");
-			META = Symbol.intern2(_rt, "clojure", "meta");
-			DEREF = Symbol.intern2(_rt, "clojure", "deref");
+			CONCAT = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "concat");
+			LIST = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "list");
+			APPLY = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "apply");
+			HASHMAP = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
+			HASHSET = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-set");
+			VECTOR = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
+			WITH_META = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
+			META = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
+			DEREF = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
 
 			macros = RT.map(
 				CharUtil.DOUBLE_QUOTE, new StringReader(this),

@@ -24,7 +24,7 @@ package com.las3r.test{
 		protected var illegalStateP:Function = function(e:Error):Boolean{ return e.message.match("IllegalStateException"); };
 
 		protected function readStr(rt:RT, str:String):Object{
-			return (new LispReader(rt)).read(new PushbackReader(new StringReader(str)));
+			return rt.lispReader.read(new PushbackReader(new StringReader(str)));
 		}
 
 		protected function key1(rt:RT, name:String):Keyword{
@@ -46,10 +46,8 @@ package com.las3r.test{
 			}
 			else{
 				rt = new RT();
-				rt.init();
 			}
-			var c:Compiler = new Compiler(rt);
-			c.compileAndLoad(readStr(rt, str), willCall(function(e:Event):void{ callback(rt); }, 1000));
+			rt.evalStr(str, willCall(function(e:Event):void{ callback(rt); }, 1000));
 		}
 
 	}
