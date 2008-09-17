@@ -125,11 +125,6 @@ package com.las3r.runtime{
 
 
 		public function load(rdr:PushbackReader, onComplete:Function = null, sourcePath:String = null, sourceName:String = null):void{
-
-			_bindingSetStack = RT.vector();
-			_loopLabelStack = RT.vector();
-			_loopLocalsStack = RT.vector();
-
 			var callback:Function = onComplete || function(e:Event):void{};
 
 			var EOF:Object = new Object();
@@ -158,14 +153,20 @@ package com.las3r.runtime{
 		}
 
 		protected function loadForm(form:Object, callback:Function):void{
+			_bindingSetStack = RT.vector();
+			_loopLabelStack = RT.vector();
+			_loopLocalsStack = RT.vector();
+
 			var emitter = new ABCEmitter();
 			var scr = emitter.newScript();
 			var gen:CodeGen = new CodeGen(emitter, scr);
 
+			var expr:Expr = analyze(C.STATEMENT, form);
+
 			// Emit the bytecode..
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
-			analyze(C.STATEMENT, form).emit(C.EXPRESSION, gen);
+			expr.emit(C.EXPRESSION, gen);
 			gen.print();
 
 			var file:ABCFile = emitter.finalize();
