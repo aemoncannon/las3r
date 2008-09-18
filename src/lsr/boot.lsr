@@ -18,8 +18,10 @@
  #^{:arglists '([x seq])
     :doc "Returns a new seq where x is the first element and seq is
     the rest."}
+
  cons (fn* cons [x seq] (. com.las3r.runtime.RT (cons x seq))))
 
+;during bootstrap we don't have destructuring let, loop or fn, will redefine later
 (def
  #^{:macro true}
   let (fn* let [& decl] (cons 'let* decl)))
@@ -37,3 +39,68 @@
     :doc "Returns the first item in the collection. Calls seq on its
     argument. If coll is nil, returns nil."}
  first (fn first [coll] (. com.las3r.runtime.RT (first coll))))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Returns a seq of the items after the first. Calls seq on its
+  argument.  If there are no more items, returns nil."}  
+ rest (fn rest [x] (. com.las3r.runtime.RT (rest x))))
+
+(def
+ #^{:doc "Same as (first (rest x))"
+    :arglists '([x])}
+ second (fn second [x] (first (rest x))))
+
+(def
+ #^{:doc "Same as (first (first x))"
+    :arglists '([x])}
+ ffirst (fn ffirst [x] (first (first x))))
+
+(def
+ #^{:doc "Same as (rest (first x))"
+    :arglists '([x])}
+ rfirst (fn rfirst [x] (rest (first x))))
+
+(def
+ #^{:doc "Same as (first (rest x))"
+    :arglists '([x])}
+ frest (fn frest [x] (first (rest x))))
+
+(def
+ #^{:doc "Same as (rest (rest x))"
+    :arglists '([x])}
+ rrest (fn rrest [x] (rest (rest x))))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Sequence. Returns a new ISeq on the collection. If the
+    collection is empty, returns nil.  (seq nil) returns nil. seq also
+    works on Strings and native arrays."
+    :tag com.las3r.runtime.ISeq}
+ seq (fn seq [coll] (. com.las3r.runtime.RT (seq coll))))
+
+(def
+ #^{:arglists '([c x])
+    :doc "Evaluates x and tests if it is an instance of the class
+    c. Returns true or false"}
+ instance? (fn instance? [c x] (. com.las3r.runtime.RT (isInstance c x))))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements ISeq"}
+ seq? (fn seq? [x] (instance? com.las3r.runtime.ISeq x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x is a String"}
+ string? (fn string? [x] (instance? String x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements IMap"}
+ map? (fn map? [x] (instance? com.las3r.runtime.IMap x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements IVector "}
+ vector? (fn vector? [x] (instance? com.las3r.runtime.IVector x)))

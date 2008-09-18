@@ -175,7 +175,7 @@ package com.las3r.runtime{
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
 			// Debug
-			rt.debugFunc(ABCDump.dump(swfBytes));
+			//rt.debugFunc(ABCDump.dump(swfBytes));
 
 			bytes.position = 0;
 			ByteLoader.loadBytes(bytes, function(e:Event):void{

@@ -56,8 +56,6 @@ package com.las3r.runtime{
 		public static var T:Boolean = true;
 		public static var F:Boolean = false;
 
-		public static var TAG_KEY:String = "tag";
-
 
 		public var LAS3R_NAMESPACE:LispNamespace;
 		public var LOAD_FILE:Symbol;
@@ -65,6 +63,10 @@ package com.las3r.runtime{
 		public var IN_NAMESPACE:Symbol;
 		public var CURRENT_NS:Var;
 		public var PRINT_READABLY:Var;
+		public var TAG_KEY:Keyword;
+		public var MACRO_KEY:Keyword;
+		public var NAME_KEY:Keyword;
+		public var NS_KEY:Keyword;
 
 		public function get DEFAULT_IMPORTS():IMap {
 			return map(
@@ -84,6 +86,11 @@ package com.las3r.runtime{
 			constants = [];
 			keywords = RT.map();
 			vars = RT.map();
+
+			TAG_KEY = Keyword.intern1(this, Symbol.intern1(this, "tag"));
+			MACRO_KEY = Keyword.intern1(this, Symbol.intern1(this, "macro"));
+			NS_KEY = Keyword.intern1(this, Symbol.intern1(this, "ns"));
+			NAME_KEY = Keyword.intern1(this, Symbol.intern1(this, "name"));
 
 			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, Symbol.intern1(this, LispNamespace.LAS3R_NAMESPACE_NAME));
 			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, Symbol.intern1(this, "*ns*"), LAS3R_NAMESPACE);
@@ -216,6 +223,10 @@ package com.las3r.runtime{
 
 		public static function listStar5(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, rest:ISeq):ISeq{
 			return ISeq(cons(arg1, cons(arg2, cons(arg3, cons(arg4, cons(arg5, rest))))));
+		}
+
+		public static function isInstance(c:Class, x:Object):Boolean{
+			return x is c;
 		}
 
 		public static function conj(coll:Object, x:Object):ISeq{
@@ -364,8 +375,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+				printInnerSeq(seq(x), w);
+				w.write(')');
 			}
 			else if(x is String)
 			{

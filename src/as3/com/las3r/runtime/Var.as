@@ -17,9 +17,6 @@ package com.las3r.runtime{
 	public class Var extends Obj{
 
 		public static var UNBOUND_VAL:Object = {};
-		static var nameKey:String = "name";
-		static var nsKey:String = "ns";
-		static var macroKey:String = "macro";
 
 		public var root:Object;
 		public var count:int;
@@ -179,11 +176,11 @@ package com.las3r.runtime{
 
 		public function setMeta(m:IMap):void{
 			//ensure these basis keys
-			_meta = m.assoc(nameKey, sym).assoc(nsKey, ns);
+			_meta = m.assoc(_rt.NAME_KEY, sym).assoc(_rt.NS_KEY, ns);
 		}
 
 		public function isMacro():Boolean{
-			return (_meta.valAt(macroKey) != null);
+			return (_meta.valAt(_rt.MACRO_KEY) != null);
 		}
 
 	}

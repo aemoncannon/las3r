@@ -33,6 +33,7 @@ package com.las3r.runtime{
 		public var SLASH:Symbol;
 
 		private var _rt:RT;
+		public function get rt():RT { return _rt }
 
 		public var symbolPat:RegExp = new RegExp("^[:]?([^0-9:/][^/]*/)?([^0-9:/][^/]*)$");
 		public var intPat:RegExp = new RegExp("^([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)\\.?$");
@@ -481,7 +482,7 @@ class MetaReader implements IReaderMacro{
 
 		var meta:Object = _reader.read(r, true, null)
 		if(meta is Symbol || meta is Keyword || meta is String)
-		meta = RT.map(RT.TAG_KEY, meta);
+		meta = RT.map(_reader.rt.TAG_KEY, meta);
 		else if(!(meta is IMap))
 		throw new Error("IllegalArgumentException: Metadata must be Symbol,Keyword,String or Map");
 
