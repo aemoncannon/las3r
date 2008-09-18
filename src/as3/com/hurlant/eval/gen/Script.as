@@ -8,7 +8,7 @@ package com.hurlant.eval.gen
 
         function Script(e:ABCEmitter) {
             this.e = e;
-            this.init = new Method(e,[], 0, "", false);
+            this.init = new Method(e,[], false, 0, "", false);
         }
 
         public function newClass(name, basename) {
@@ -17,8 +17,8 @@ package com.hurlant.eval.gen
 
         /* All functions are in some sense global because the
            methodinfo and methodbody are both global. */
-        public function newFunction(formals,initScopeDepth) {
-            return new Method(e, formals, initScopeDepth, null, false);
+        public function newFunction(formals, needRest, initScopeDepth) {
+            return new Method(e, formals, needRest, initScopeDepth, null, false);
         }
 
         public function addException(e) {

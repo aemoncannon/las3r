@@ -241,6 +241,27 @@ package com.las3r.test{
 				});
 		}
 
+		public function testFnWithEmptyRestParam():void{
+			readAndLoad("(def *fun* (fn* [a & dudes] dudes))", function(rt:RT):void{
+					readAndLoad("(def *bird* (*fun* 1))", function(rt:RT):void{
+							var v:Var = rt.getVar("las3r", "*bird*");
+							assertTrue("*bird* should be bound to a Vector.", v.get() is Vector);
+							assertTrue("*bird* should be empty.", Vector(v.get()).count() == 0);
+						}, rt);
+				});
+		}
+
+		public function testFnWithRestParam():void{
+			readAndLoad("(def *fun* (fn* [a & dudes] dudes))", function(rt:RT):void{
+					readAndLoad("(def *bird* (*fun* 1 2 3 4))", function(rt:RT):void{
+							var v:Var = rt.getVar("las3r", "*bird*");
+							assertTrue("*bird* should be bound to a Vector.", v.get() is Vector);
+							assertTrue("*bird* should be empty.", Vector(v.get()).count() == 3);
+							assertTrue("*bird* should be empty.", Util.equal(Vector(v.get()), new Vector([2, 3, 4])))
+						}, rt);
+				});
+		}
+
 
 		public function testSimpleClosure():void{
 			readAndLoad("(def *funA* (fn* [a] (fn* [] a)))", function(rt:RT):void{

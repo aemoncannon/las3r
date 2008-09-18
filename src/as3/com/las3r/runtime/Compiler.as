@@ -412,17 +412,11 @@ package com.las3r.runtime{
 		private function analyzeSeq(context:C, form:ISeq , name:String ):Expr {
 			// TODO Re-add line-number tracking here (requires metadata).
 
-			// TODO Implement macro-expansion here.
-			// 	Object me = macroexpand1(form);
-			// 			if(me != form)
-			// 			return analyze(context, me, name);
+			var me:Object = macroexpand1(form);
+			if(me != form)
+			return analyze(context, me, name);
 
 			var op:Object = RT.first(form);
-
-			// 			var inline:Object = isInline(op, RT.count(RT.rest(form)));
-			// 			if(inline != null)
-			// 			return analyze(context, inline.applyTo(RT.rest(form)));
-
 			if(op.equals(FN)){
 				return FnExpr.parse(this, context, form);
 			}
@@ -434,6 +428,23 @@ package com.las3r.runtime{
 				return InvokeExpr.parse(this, context, form);
 			}
 			return null;
+		}
+
+		public function macroexpand1(x:Object):Object{
+			if(x is ISeq)
+			{
+				var form:ISeq = ISeq(x);
+				var op:Object = RT.first(form);
+				if(isSpecial(op))
+				return x;
+				//macro expansion
+				var v:Var = isMacro(op);
+				if(v != null)
+				{
+					return v.apply(Vector.createFromSeq(form.rest()));
+				}
+			}
+			return x;
 		}
 
 
@@ -561,8 +572,8 @@ class CodeGen{
 
 
 
-	public function newMethodCodeGen(formals:Array, scopeDepth:int):CodeGen{
-		return new CodeGen(this.emitter, this.scr, this.scr.newFunction(formals, scopeDepth));
+	public function newMethodCodeGen(formals:Array, needRest:Boolean, scopeDepth:int):CodeGen{
+		return new CodeGen(this.emitter, this.scr, this.scr.newFunction(formals, needRest, scopeDepth));
 	}
 
 
@@ -731,6 +742,17 @@ class CodeGen{
 	*/
 	public function getVar():void{
 		asm.I_callproperty(emitter.nameFromIdent("get"), 0);
+	}
+
+
+	/*
+	* Stack:   
+	*   anArray => aVector
+	*/
+	public function arrayToVector():void{
+		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"Vector"}, false))
+		asm.I_swap();
+		asm.I_construct(1);
 	}
 
 
@@ -1216,11 +1238,16 @@ class DefExpr implements Expr{
 
 }
 
-
-
+class PSTATE{
+	public static var REQ:PSTATE = new PSTATE();
+	public static var REST:PSTATE = new PSTATE();
+	public static var DONE:PSTATE = new PSTATE();
+}
 class FnExpr implements Expr{
 	var name:String;
 	var params:IVector;
+	var reqParams:IVector;
+	var restParam:LocalBinding;
 	var body:BodyExpr;
 	var paramBindings:LocalBindingSet;
 	private var _compiler:Compiler;
@@ -1239,14 +1266,45 @@ class FnExpr implements Expr{
 			form = RT.cons(c.FN, RT.rest(RT.rest(form)));
 		}
 		f.name = name;
-
 		f.params = IVector(RT.second(form));
-
+		f.reqParams = Vector.empty();
 		f.paramBindings = new LocalBindingSet();
-		f.params.each(function(ea:Object):void{
-				if(!(ea is Symbol)){ throw new Error("IllegalStateException: Non-symbol formal parameters are not supported."); }
-				f.paramBindings.registerLocal(c.rt.nextID(), Symbol(ea));
-			});
+		var state:PSTATE = PSTATE.REQ;
+		for(var i:int = 0; i < f.params.count(); i++)
+		{
+			if(!(f.params.nth(i) is Symbol))
+			throw new Error("IllegalArgumentException: fn params must be Symbols");
+			var p:Symbol  = Symbol(f.params.nth(i));
+			if(p.getNamespace() != null)
+			throw new Error("Can't use qualified name as parameter: " + p);
+			if(p.equals(c._AMP_))
+			{
+				if(state == PSTATE.REQ)
+				state = PSTATE.REST;
+				else
+				throw new Error("Exception: Invalid parameter list");
+			}
+
+			else
+			{
+				var lb:LocalBinding = f.paramBindings.registerLocal(c.rt.nextID(), p);
+				switch(state)
+				{
+					case PSTATE.REQ:
+					f.reqParams.cons(lb);
+					break;
+					case PSTATE.REST:
+					f.restParam = lb;
+					state = PSTATE.DONE;
+					break;
+
+					default:
+					throw new Error("Unexpected parameter");
+				}
+			}
+		}
+		if(f.reqParams.count() > Compiler.MAX_POSITIONAL_ARITY)
+		throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 
 		var bodyForms:ISeq = ISeq(RT.rest(RT.rest(form)));
 
@@ -1266,12 +1324,12 @@ class FnExpr implements Expr{
 
 	public function emit(context:C, gen:CodeGen):void{
 		var formalsTypes:Array = [];
-		params.each(function(ea:Object):void{
+		reqParams.each(function(ea:Object):void{
 				formalsTypes.push(0); // '*'
 			});
 		var initScopeDepth:int = gen.asm.currentScopeDepth;
-		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, initScopeDepth);
-
+		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, restParam != null, initScopeDepth);
+		
 		// push 'this' onto the scope stack..
 		methGen.pushThisScope();
 
@@ -1279,12 +1337,13 @@ class FnExpr implements Expr{
 		methGen.pushNewActivationScope();
 
 		this.paramBindings.eachWithIndex(function(sym:Symbol, b:LocalBinding, i:int):void{
-				if(b){
-					var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
-					methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-					methGen.asm.I_getlocal(i + 1);
-					methGen.asm.I_setslot(activationSlot);
+				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
+				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+				methGen.asm.I_getlocal(i + 1);
+				if(b == restParam){
+					methGen.arrayToVector();
 				}
+				methGen.asm.I_setslot(activationSlot);
 			});
 		var loopLabel:Object = methGen.asm.I_label(undefined);
 
@@ -1419,20 +1478,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-			// 			PersistentVector restArgs = PersistentVector.EMPTY;
-			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-			// 			{
-				// 				restArgs = restArgs.cons(args.nth(i));
-				// 			}
-			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-			// 		}
+		// 			PersistentVector restArgs = PersistentVector.EMPTY;
+		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+		// 			{
+		// 				restArgs = restArgs.cons(args.nth(i));
+		// 			}
+		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+		// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-			// 			FnMethod method = (FnMethod) METHOD.get();
-			// 			method.emitClearLocals(gen);
-			// 		}
+		// 			FnMethod method = (FnMethod) METHOD.get();
+		// 			method.emitClearLocals(gen);
+		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
