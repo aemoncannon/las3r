@@ -69,6 +69,10 @@ package com.las3r.runtime{
 			return new Vector(items);
 		}
 
+		public static function createFromArraySlice(items:Array, i:int):Vector{
+			return new Vector(items.slice(i));
+		}
+
 		public static function createFromMany(...items:Array):Vector{
 			return createFromArray(items);
 		}

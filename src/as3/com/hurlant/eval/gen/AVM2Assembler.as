@@ -259,12 +259,16 @@ package com.hurlant.eval.gen
         const listify = false;
         const indent = "        ";
 
-        function AVM2Assembler(constants:ABCConstantPool, numberOfFormals, needRest, initScopeDepth) {
+        function AVM2Assembler(constants:ABCConstantPool, numberOfFormals:int, needRest:Boolean, needArguments:Boolean, initScopeDepth:int) {
             this.constants = constants;
             this.nextTemp = numberOfFormals + 1; // local 0 is always "this"
 			if(needRest) {
 				this.nextTemp += 1;
 				need_rest = true;
+			}
+			else if(needArguments) {
+				this.nextTemp += 1;
+				need_arguments = true;
 			}
 			this.init_scope_depth = initScopeDepth;
             this.current_scope_depth = initScopeDepth;
@@ -277,7 +281,12 @@ package com.hurlant.eval.gen
         public function get initScopeDepth() { return init_scope_depth }
         public function get currentLocalScopeDepth() { return current_scope_depth - init_scope_depth }
 
-        public function get flags() { return (set_dxns ? METHOD_Setsdxns : 0) | (need_activation ? METHOD_Activation : 0) | (need_rest ? METHOD_Needrest : 0) }
+        public function get flags() { return (
+				(set_dxns ? METHOD_Setsdxns : 0) | 
+				(need_activation ? METHOD_Activation : 0) | 
+				(need_rest ? METHOD_Needrest : 0) | 
+				(need_arguments ? METHOD_Arguments : 0)
+			)}
 
         /*private*/ function listL(n) {
             if (listify)
@@ -790,6 +799,7 @@ package com.hurlant.eval.gen
         /*private*/ var set_dxns = false;
         /*private*/ var need_activation = false;
         /*private*/ var need_rest = false;
+        /*private*/ var need_arguments = false;
     }
 }
 

@@ -7,8 +7,8 @@ package com.hurlant.eval.gen
     {
         public var e, formals, name, asm, traits = [], finalized=false, defaults = null, exceptions=[];
 		var initScopeDepth;
-        function Method(e:ABCEmitter, formals:Array, needRest:Boolean, initScopeDepth:int, name:String, standardPrologue:Boolean) {
-            asm = new AVM2Assembler(e.constants, formals.length, needRest, initScopeDepth);
+        function Method(e:ABCEmitter, formals:Array, needRest:Boolean, needArguments:Boolean, initScopeDepth:int, name:String, standardPrologue:Boolean) {
+            asm = new AVM2Assembler(e.constants, formals.length, needRest, needArguments, initScopeDepth);
             //super(e.constants, formals.length);
             this.formals = formals;
             this.initScopeDepth = initScopeDepth

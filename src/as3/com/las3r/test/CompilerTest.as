@@ -310,6 +310,23 @@ package com.las3r.test{
 				});
 		}
 
+		public function testOptionalsWithEmptyRestArg():void{
+			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([])))
+
+				});
+		}
+
+
+		public function testOptionalsWithRestArg():void{
+			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2 3 4))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([3, 4])))
+
+				});
+		}
+
 
 		public function testSimpleClosure():void{
 			readAndLoad("(def *funA* (fn* [a] (fn* [] a)))", function(rt:RT):void{

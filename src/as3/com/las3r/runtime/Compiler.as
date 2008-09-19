@@ -572,8 +572,8 @@ class CodeGen{
 
 
 
-	public function newMethodCodeGen(formals:Array, needRest:Boolean, scopeDepth:int):CodeGen{
-		return new CodeGen(this.emitter, this.scr, this.scr.newFunction(formals, needRest, scopeDepth));
+	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int):CodeGen{
+		return new CodeGen(this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth));
 	}
 
 
@@ -753,6 +753,17 @@ class CodeGen{
 		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"Vector"}, false))
 		asm.I_swap();
 		asm.I_construct(1);
+	}
+
+	/*
+	* Stack:   
+	*   anArray => aVector
+	*/
+	public function arraySliceToVector(i:int):void{
+		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"Vector"}, false))
+		asm.I_swap();
+		asm.I_pushint(emitter.constants.int32(i));
+		asm.I_callproperty(emitter.nameFromIdent("createFromArraySlice"), 2);
 	}
 
 
@@ -1353,7 +1364,7 @@ class FnExpr implements Expr{
 				formalsTypes.push(0); // '*'
 			});
 		var initScopeDepth:int = gen.asm.currentScopeDepth;
-		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, restParam != null, initScopeDepth);
+		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, false, restParam != null, initScopeDepth);
 		if(optionalParams.count() > 0){
 			var defaults:Array = optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 			methGen.meth.setDefaults(defaults);
@@ -1370,7 +1381,8 @@ class FnExpr implements Expr{
 				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 				methGen.asm.I_getlocal(i + 1);
 				if(b == restParam){
-					methGen.arrayToVector();
+					// arguments object should be on TOS
+					methGen.arraySliceToVector(i);
 				}
 				methGen.asm.I_setslot(activationSlot);
 			});

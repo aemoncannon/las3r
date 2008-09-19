@@ -28,13 +28,13 @@ package com.hurlant.eval.gen
 
         public function getCInit() {
             if(cinit == null )
-                cinit = new Method(s.e, [], false, 0, "$cinit", true);
+                cinit = new Method(s.e, [], false, false, 0, "$cinit", true);
             return cinit;
         }
 
 /*
         public function newIInit(formals, name) {
-            var iinit = new Method(s.e, formals, false, 2, name, true);
+            var iinit = new Method(s.e, formals, false, false, 2, name, true);
             iinit.I_getlocal(0);
             iinit.I_constructsuper(0);
             return iinit;
