@@ -248,6 +248,29 @@ package com.las3r.test{
 				});
 		}
 
+		public function testPassingValueToOptionalArg():void{
+			readAndLoad("(def *bird* ((fn* [a b (c nil)] c) 1 2 3))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be nil", v.get() == 3);
+				});
+		}
+
+		public function testPassingValueToFirstOfTwoOptionalArgs():void{
+			readAndLoad("(def *bird* ((fn* [a b (c nil) (d nil)] c) 1 2 3))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be nil", v.get() == 3);
+
+				});
+		}
+
+		public function testOnlyArgIsOptional():void{
+			readAndLoad("(def *bird* ((fn* [(c nil)] c)))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be nil", v.get() == null);
+
+				});
+		}
+
 		public function testFnWithOnlyRestParam():void{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT):void{
 					readAndLoad("(def *bird* (*fun* 1 2))", function(rt:RT):void{

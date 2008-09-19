@@ -1296,7 +1296,7 @@ class FnExpr implements Expr{
 			else
 			{
 				if(param is List){
-					if(state == PSTATE.REQ)
+					if(state == PSTATE.REQ || state == PSTATE.OPT)
 					state = PSTATE.OPT;
 					else
 					throw new Error("Exception: Invalid parameter list.");
