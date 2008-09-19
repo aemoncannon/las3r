@@ -305,7 +305,7 @@ package com.las3r.test{
 							var v:Var = rt.getVar("las3r", "*bird*");
 							assertTrue("*bird* should be bound to a Vector.", v.get() is Vector);
 							assertTrue("*bird* should be empty.", Vector(v.get()).count() == 3);
-							assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([2, 3, 4])))
+							assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([2, 3, 4])));
 						}, rt);
 				});
 		}
@@ -313,7 +313,7 @@ package com.las3r.test{
 		public function testOptionalsWithEmptyRestArg():void{
 			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2))", function(rt:RT):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([])))
+					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([])));
 
 				});
 		}
@@ -322,8 +322,14 @@ package com.las3r.test{
 		public function testOptionalsWithRestArg():void{
 			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2 3 4))", function(rt:RT):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([3, 4])))
+					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([3, 4])));
+				});
+		}
 
+		public function testFunctionWithSelfName():void{
+			readAndLoad("(def *bird* ((fn* me [] me)))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be a function", v.get() is Function);
 				});
 		}
 

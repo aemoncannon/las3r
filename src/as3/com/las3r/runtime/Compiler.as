@@ -1256,7 +1256,8 @@ class PSTATE{
 	public static var DONE:PSTATE = new PSTATE();
 }
 class FnExpr implements Expr{
-	var name:String;
+	var nameSym:Symbol;
+	var nameLb:LocalBinding;
 	var params:Vector;
 	var reqParams:Vector;
 	var optionalParams:Vector;
@@ -1274,10 +1275,12 @@ class FnExpr implements Expr{
 		//arglist might be preceded by symbol naming this fn
 		if(RT.second(form) is Symbol)
 		{
-			f.name = Symbol(RT.second(form)).name;
+			f.nameSym = Symbol(RT.second(form));
 			form = RT.cons(c.FN, RT.rest(RT.rest(form)));
 		}
 		f.params = Vector(RT.second(form));
+		if(f.params.count() > Compiler.MAX_POSITIONAL_ARITY)
+		throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		f.reqParams = Vector.empty();
 		f.optionalParams = Vector.empty();
 		f.paramBindings = new LocalBindingSet();
@@ -1314,20 +1317,18 @@ class FnExpr implements Expr{
 					if(RT.count(param) != 2)
 					throw new Error("Exception: Invalid optional parameter pair.");
 				}
-				var lb:LocalBinding = f.paramBindings.registerLocal(c.rt.nextID(), paramSym);
 				switch(state)
 				{
 					case PSTATE.REQ:
-					f.reqParams.cons(lb);
+					f.reqParams.cons(f.paramBindings.registerLocal(c.rt.nextID(), paramSym));
 					break;
 
 					case PSTATE.OPT:
-					f.optionalParams.cons(lb);
-					lb.init = c.analyze(context, RT.second(param));
+					f.optionalParams.cons(f.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
 					break;
 
 					case PSTATE.REST:
-					f.restParam = lb;
+					f.restParam = f.paramBindings.registerLocal(c.rt.nextID(), paramSym);
 					state = PSTATE.DONE;
 					break;
 
@@ -1336,14 +1337,18 @@ class FnExpr implements Expr{
 				}
 			}
 		}
-		if(f.params.count() > Compiler.MAX_POSITIONAL_ARITY)
-		throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 
+		var extraBindings:LocalBindingSet = new LocalBindingSet();
+		if(f.nameSym){
+			// Make this function available to itself..
+			f.nameLb = extraBindings.registerLocal(c.rt.nextID(), f.nameSym);
+		}
 		var bodyForms:ISeq = ISeq(RT.rest(RT.rest(form)));
-
 		c.pushLocalBindingSet(f.paramBindings);
+		c.pushLocalBindingSet(extraBindings);
 		c.pushLoopLocals(f.paramBindings);
 		f.body = BodyExpr(BodyExpr.parse(c, C.RETURN, bodyForms));
+		c.popLoopLocals();
 		c.popLoopLocals();
 		c.popLocalBindingSet();
 
@@ -1364,7 +1369,7 @@ class FnExpr implements Expr{
 				formalsTypes.push(0); // '*'
 			});
 		var initScopeDepth:int = gen.asm.currentScopeDepth;
-		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, false, restParam != null, initScopeDepth);
+		var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, false, restParam != null || nameLb != null, initScopeDepth);
 		if(optionalParams.count() > 0){
 			var defaults:Array = optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 			methGen.meth.setDefaults(defaults);
@@ -1376,16 +1381,42 @@ class FnExpr implements Expr{
 		// create a scope object for this function invocation..
 		methGen.pushNewActivationScope();
 
-		this.paramBindings.eachWithIndex(function(sym:Symbol, b:LocalBinding, i:int):void{
+
+		var i:int = 1;
+		reqParams.each(function(b:LocalBinding):void{
 				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
 				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-				methGen.asm.I_getlocal(i + 1);
-				if(b == restParam){
-					// arguments object should be on TOS
-					methGen.arraySliceToVector(i);
-				}
+				methGen.asm.I_getlocal(i);
 				methGen.asm.I_setslot(activationSlot);
+				i++;
 			});
+		optionalParams.each(function(b:LocalBinding):void{
+				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
+				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+				methGen.asm.I_getlocal(i);
+				methGen.asm.I_setslot(activationSlot);
+				i++;
+			});
+		
+		if(restParam){
+			var restSlot:int = methGen.createActivationSlotForLocalBinding(restParam);
+			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+			methGen.asm.I_getlocal(i);
+			// arguments object should be on TOS
+			methGen.arraySliceToVector(i - 1);
+			methGen.asm.I_setslot(restSlot);
+		}
+
+		if(nameLb){
+			var nameSlot:int = methGen.createActivationSlotForLocalBinding(nameLb);
+			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+			methGen.asm.I_getlocal(i);
+			// arguments object should be on TOS
+ 			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("callee"));
+			methGen.asm.I_setslot(nameSlot);
+		}
+
+
 		var loopLabel:Object = methGen.asm.I_label(undefined);
 
 		_compiler.pushLoopLabel(loopLabel);

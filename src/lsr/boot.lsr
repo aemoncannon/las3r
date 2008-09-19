@@ -21,10 +21,10 @@
 
  cons (fn* cons [x seq] (. com.las3r.runtime.RT (cons x seq))))
 
-;during bootstrap we don't have destructuring let, loop or fn, will redefine later
+					;during bootstrap we don't have destructuring let, loop or fn, will redefine later
 (def
  #^{:macro true}
-  let (fn* let [& decl] (cons 'let* decl)))
+ let (fn* let [& decl] (cons 'let* decl)))
 
 (def
  #^{:macro true}
@@ -72,6 +72,13 @@
  rrest (fn rrest [x] (rest (rest x))))
 
 (def
+ #^{:arglists '([coll x])
+    :doc "conj[oin]. Returns a new collection with the xs
+    'added'. (conj nil item) returns (item).  The 'addition' may
+    happen at different 'places' depending on the concrete type."}
+ conj (fn conj [coll x] (. com.las3r.runtime.RT (conj coll x))))
+
+(def
  #^{:arglists '([coll])
     :doc "Sequence. Returns a new ISeq on the collection. If the
     collection is empty, returns nil.  (seq nil) returns nil. seq also
@@ -104,3 +111,50 @@
  #^{:arglists '([x])
     :doc "Return true if x implements IVector "}
  vector? (fn vector? [x] (instance? com.las3r.runtime.IVector x)))
+
+
+(def
+ #^{:arglists '([map key val])
+    :doc "assoc[iate]. When applied to a map, returns a new map of the
+    same (hashed/sorted) type, that contains the mapping of key(s) to
+    val(s). When applied to a vector, returns a new vector that
+    contains val at index. Note - index must be <= (count vector)."}
+ assoc
+ (fn assoc [map key val] (. com.las3r.runtime.RT (assoc map key val))))
+
+
+;;;;;;;;;;;;;;;;; metadata ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def
+ #^{:arglists '([obj])
+    :doc "Returns the metadata of obj, returns nil if there is no metadata."}
+ meta (fn meta [x]
+        (if (instance? com.las3r.runtime.IObj x)
+          (. #^com.las3r.runtime.IObj x meta))))
+
+(def
+ #^{:arglists '([#^com.las3r.runtime.IObj obj m])
+    :doc "Returns an object of the same type and value as obj, with
+    map m as its metadata."}
+ with-meta (fn with-meta [#^com.las3r.runtime.IObj x m]
+             (. x (withMeta m))))
+
+
+(def 
+ #^{:arglists '([coll])
+    :doc "Return the last item in coll, in linear time"}
+ last (fn last [s]
+        (if (rest s)
+          (recur (rest s))
+          (first s))))
+
+(def 
+ #^{:arglists '([coll])
+    :doc "Return a sequence of all but the last item in coll, in linear time"}
+ butlast (fn butlast [s]
+           (loop [ret [] s s]
+             (if (rest s)
+               (recur (conj ret (first s)) (rest s))
+               (seq ret)))))
+
+

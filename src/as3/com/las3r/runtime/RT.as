@@ -229,7 +229,7 @@ package com.las3r.runtime{
 			return x is c;
 		}
 
-		public static function conj(coll:Object, x:Object):ISeq{
+		public static function conj(coll:Object, x:Object):Object{
 			if(coll == null){
 				return new List(x);
 			}
