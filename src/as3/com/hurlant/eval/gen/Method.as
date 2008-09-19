@@ -41,7 +41,7 @@ package com.hurlant.eval.gen
                 return;
             finalized = true;
 
-            var meth = e.file.addMethod(new ABCMethodInfo(0, formals, 0, asm.flags, defaults,null));
+            var meth = e.file.addMethod(new ABCMethodInfo(0, formals, 0, asm.flags, defaults, null));
             var body = new ABCMethodBodyInfo(meth);
             body.setMaxStack(asm.maxStack);
             body.setLocalCount(asm.maxLocal);

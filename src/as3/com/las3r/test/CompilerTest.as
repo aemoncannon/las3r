@@ -241,6 +241,13 @@ package com.las3r.test{
 				});
 		}
 
+		public function testFnWithAnOptionalArgument():void{
+			readAndLoad("(def *bird* ((fn* [a b (c nil)] c) 1 2))", function(rt:RT):void{
+					var v:Var = rt.getVar("las3r", "*bird*");
+					assertTrue("*bird* should be nil", v.get() == null);
+				});
+		}
+
 		public function testFnWithOnlyRestParam():void{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT):void{
 					readAndLoad("(def *bird* (*fun* 1 2))", function(rt:RT):void{
