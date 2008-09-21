@@ -47,6 +47,7 @@ package com.las3r.runtime{
 
 		private var id:int = 1;
 		private var _this:RT;
+		private var _resultsDict:Dictionary = new Dictionary();
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
 
@@ -128,10 +129,24 @@ package com.las3r.runtime{
 
 
 		public function evalStr(src:String, _onComplete:Function = null):void{
-			var onComplete:Function = _onComplete || function(e:Event):void{};
-			_compiler.load(new PushbackReader(new StringReader(src)), function(e:Event):void{
-					onComplete(e);
-				});
+			var onComplete:Function = _onComplete || function(val:*):void{};
+			_compiler.load(new PushbackReader(new StringReader(src)), onComplete);
+		}
+
+		
+		/**
+		* As code is loaded asynchronously, we provide a facility for the loaded code to store it's own result at 
+		* a known location.
+		* 
+		* @param val 
+		* @param key 
+		* @return 
+		*/		
+		public function storeResult(val:*, key:String):void{
+			_resultsDict[key] = val;
+		}
+		public function getResult(key:String):*{
+			return _resultsDict[key];
 		}
 
 

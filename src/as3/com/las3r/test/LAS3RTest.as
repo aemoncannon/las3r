@@ -47,7 +47,7 @@ package com.las3r.test{
 			else{
 				rt = new RT();
 			}
-			rt.evalStr(str, willCall(function(e:Event):void{ callback(rt); }, 1000));
+			rt.evalStr(str, willCall(function(val:*):void{ callback(rt, val); }, 1000));
 		}
 
 	}

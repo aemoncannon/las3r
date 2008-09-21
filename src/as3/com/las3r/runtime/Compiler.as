@@ -125,7 +125,7 @@ package com.las3r.runtime{
 
 
 		public function load(rdr:PushbackReader, onComplete:Function = null, sourcePath:String = null, sourceName:String = null):void{
-			var callback:Function = onComplete || function(e:Event):void{};
+			var callback:Function = onComplete || function(val:*):void{};
 
 			var EOF:Object = new Object();
 			var forms:Vector = Vector(RT.vector());
@@ -133,26 +133,29 @@ package com.las3r.runtime{
 				forms.cons(form);
 			}
 
-			// XXX Compiled LAS3R code looks here for active RT instance.
-			RT.instance = rt;
 			Var.pushBindings(rt, 
 				RT.map(
 					rt.CURRENT_NS, rt.CURRENT_NS.get()
 				)
 			);
-			var loadAllForms:Function = function(e:Event):void{
+			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					loadForm(forms.shift(), loadAllForms);
 				}
 				else{
 					Var.popBindings(rt);
-					onComplete(e);
+					onComplete(result);
 				}
 			}
 			loadAllForms(null);
 		}
 
 		protected function loadForm(form:Object, callback:Function):void{
+
+			// XXX Compiled LAS3R code looks here for active RT instance.
+			RT.instance = rt;
+			var resultKey:String = "load_result_" + _rt.nextID();
+
 			_bindingSetStack = RT.vector();
 			_loopLabelStack = RT.vector();
 			_loopLocalsStack = RT.vector();
@@ -167,7 +170,7 @@ package com.las3r.runtime{
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
 			expr.emit(C.EXPRESSION, gen);
-			gen.print();
+			gen.storeResult(resultKey);
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
@@ -179,7 +182,7 @@ package com.las3r.runtime{
 
 			bytes.position = 0;
 			ByteLoader.loadBytes(bytes, function(e:Event):void{
-					callback(e);
+					callback(_rt.getResult(resultKey));
 				}
 			);	
 		}
@@ -715,6 +718,19 @@ class CodeGen{
 		getRT();
 		asm.I_swap();
 		asm.I_callproperty(emitter.nameFromIdent("traceOut"), 1);
+	}
+
+
+	/*
+	* Store the value at TOS at key in RT.
+	* Stack:   
+	*   val => ...
+	*/
+	public function storeResult(key:String):void{
+		getRT();
+		asm.I_swap();
+		asm.I_pushstring( emitter.constants.stringUtf8(key));
+		asm.I_callproperty(emitter.nameFromIdent("storeResult"), 2);
 	}
 
 
