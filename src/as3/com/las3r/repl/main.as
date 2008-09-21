@@ -78,6 +78,6 @@ private function onEvalButtonClick(e:Event):void{
 	_inputHistory.push(src);
 	_inputHistoryPos = _inputHistory.length;
 
-	_rt.evalStr(src);
+	_rt.evalStr(src, function(val:*):void{ _rt.traceOut(RT.printToString(val)); });
 
 }
