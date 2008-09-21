@@ -28,12 +28,9 @@ package com.las3r.runtime{
 		public var dispatchMacros:IMap;
 		public var _gensymEnvStack:IVector;
 
-
-
 		//symbol->gensymbol
 		//sorted-map num->gensymbol
 		//	static Var ARG_ENV = Var.create(null);
-
 
 		public function LispReader(rt:RT){
 			_rt = rt;
@@ -669,7 +666,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 	public static function syntaxQuote(rt:RT, reader:LispReader, form:Object):Object{
 		var ret:Object;
 		if(rt.isSpecial(form)){
-			ret = RT.list2(rt.QUOTE, form);
+			ret = RT.list(rt.QUOTE, form);
 		}
 		else if(form is Symbol)
 		{
@@ -689,7 +686,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 			else{
 				sym = rt.resolveSymbol(sym);
 			}
-			ret = RT.list2(rt.QUOTE, sym);
+			ret = RT.list(rt.QUOTE, sym);
 		}
 		else if(form is Unquote){
 			return Unquote(form).o;
@@ -700,11 +697,11 @@ class SyntaxQuoteReader implements IReaderMacro{
 		else if(form is IMap)
 		{
 			var keyvals:IVector = flattenMap(form);
-			ret = RT.list3(rt.APPLY, rt.HASHMAP, RT.cons(rt.CONCAT, sqExpandList(rt, reader, keyvals.seq())));
+			ret = RT.list(rt.APPLY, rt.HASHMAP, RT.cons(rt.CONCAT, sqExpandList(rt, reader, keyvals.seq())));
 		}
 		else if(form is IVector)
 		{
-			ret = RT.list3(rt.APPLY, rt.VECTOR, RT.cons(rt.CONCAT, sqExpandList(rt, reader, IVector(form).seq())));
+			ret = RT.list(rt.APPLY, rt.VECTOR, RT.cons(rt.CONCAT, sqExpandList(rt, reader, IVector(form).seq())));
 		}
 		else if(form is ISeq)
 		{
@@ -716,14 +713,15 @@ class SyntaxQuoteReader implements IReaderMacro{
 			|| form is String){
 			ret = form;
 		}
-		else
-		ret = RT.list2(rt.QUOTE, form);
+		else{
+			ret = RT.list(rt.QUOTE, form);
+		}
 
 		if(form is IObj && (IObj(form)).meta != null)
 		{
 			var newMeta:IMap = IObj(form).meta;
 			if(newMeta.count() > 0)
-			return RT.list3(rt.WITH_META, ret, syntaxQuote(rt, reader, IObj(form).meta));
+			return RT.list(rt.WITH_META, ret, syntaxQuote(rt, reader, IObj(form).meta));
 		}
 		return ret;
 	}
@@ -735,13 +733,13 @@ class SyntaxQuoteReader implements IReaderMacro{
 			var item:Object = seq.first();
 
 			if(item is Unquote)
-			ret = ret.cons(RT.list2(rt.LIST, Unquote(item).o));
+			ret = ret.cons(RT.list(rt.LIST, Unquote(item).o));
 
 			else if(item is UnquoteSplicing)
 			ret = ret.cons(UnquoteSplicing(item).o);
 
 			else
-			ret = ret.cons(RT.list2(rt.LIST, syntaxQuote(rt, reader, item)));
+			ret = ret.cons(RT.list(rt.LIST, syntaxQuote(rt, reader, item)));
 
 		}
 		return ret.seq();
@@ -751,7 +749,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 		var keyvals:IVector = RT.vector();
 		form.each(function(key:Object, val:Object):void{
 				keyvals = keyvals.cons(key);
-				keyvals = keyvals.cons(key);				
+				keyvals = keyvals.cons(val);				
 			});
 		return keyvals;
 	}
@@ -788,7 +786,7 @@ class WrappingReader implements IReaderMacro{
 	public function invoke(reader:Object, quote:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		var o:Object = _reader.read(r, true, null);
-		return RT.list2(sym, o);
+		return RT.list(sym, o);
 	}
 
 }

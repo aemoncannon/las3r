@@ -151,18 +151,24 @@ package com.las3r.test{
 
 			assertThrows("should throw exception", function(){
 					readStr(rt, "(hello out ther (dude)");	
-					});
+				});
 
-				assertThrows("should throw exception", function(){
-						readStr(rt, "(hello out ther {dude");
-							});
+			assertThrows("should throw exception", function(){
+					readStr(rt, "(hello out ther {dude");
+				});
 
-						assertThrows("should throw exception", function(){
-								readStr(rt, "[hello out ther");
-								});
+			assertThrows("should throw exception", function(){
+					readStr(rt, "[hello out ther");
+				});
 
-						}
+		}
 
-					}
+		public function testSyntaxQuoteString():void{
+			var rt:RT = new RT();
+			assertTrue("objects are equal", Util.equal(readStr(rt, "`\"hello\""), readStr(rt, "\"hello\"")));
+		}
 
-				}
+
+	}
+
+}

@@ -17,7 +17,6 @@ package com.las3r.runtime{
 			return createFromArray(args);
 		};
 
-
 		private var _first:Object;
 		private var _rest:List;
 		private var _count:int;
@@ -35,10 +34,10 @@ package com.las3r.runtime{
 		}
 
 		public static function createFromArray(init:Array):List{
-			var ret:ISeq = ISeq(EMPTY);
+			var ret:List = List(EMPTY);
 			var len:int = init.length;
 			for(var i:int = len - 1; i > -1; i--){
-				ret = ISeq(ret.cons(init[i]));
+				ret = List(ret.cons(init[i]));
 			}
 			return List(ret);
 		}
@@ -84,33 +83,37 @@ package com.las3r.runtime{
 
 import com.las3r.runtime.*;
 
-class EmptyList extends Obj implements ISeq, IList{
+class EmptyList extends List{
 
-	public function cons(o:Object):ISeq{
+	public function EmptyList(){
+		super(null);
+	}
+
+	override public function cons(o:Object):ISeq{
 		return new List(o, null, 1);
 	}
 
-	public function empty():ISeq{
+	override public function empty():ISeq{
 		return this;
 	}
 
-	public function peek():Object{
+	override public function peek():Object{
 		return null;
 	}
 
-	public function first():Object{
+	override public function first():Object{
 		throw new Error("IllegalStateException: Can't get first from empty list");
 	}
 
-	public function rest():ISeq{
+	override public function rest():ISeq{
 		throw new Error("IllegalStateException: Can't get rest from empty list");
 	}
 
-	public function count():int{
+	override public function count():int{
 		return 0;
 	}
 
-	public function seq():ISeq{
+	override public function seq():ISeq{
 		return null;
 	}
 }

@@ -155,8 +155,39 @@ package com.las3r.runtime{
 					return arg1 == arg2 ? RT.T : RT.F;
 				});
 
+			CONCAT = sym1("concat");
+			Var.internWithRoot(LAS3R_NAMESPACE, CONCAT,
+				function(...args:Array):Object{
+					return RT.concat.apply(null, args);
+				});
 
-			CONCAT = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "concat");
+			APPLY = sym1("apply");
+			Var.internWithRoot(LAS3R_NAMESPACE, APPLY,
+				function(func:Function, args:ISeq):Object{
+					var ar:Array = [];
+					for(var c:ISeq = args; c != null; c = c.rest()){ ar.push(c.first()); }
+					return func.apply(null, ar);
+				});
+
+			VECTOR = sym1("vector");
+			Var.internWithRoot(LAS3R_NAMESPACE, VECTOR,
+				function(...args:Array):Object{
+					return RT.vector.apply(null, args);
+				});
+
+			HASHMAP = sym1("hash-map");
+			Var.internWithRoot(LAS3R_NAMESPACE, HASHMAP,
+				function(...args:Array):Object{
+					return RT.map.apply(null, args);
+				});
+
+			LIST = sym1("list");
+			Var.internWithRoot(LAS3R_NAMESPACE, LIST,
+				function(...args:Array):Object{
+					return RT.list.apply(null, args);
+				});
+
+
 			APPLY = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "apply");
 			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
 			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
@@ -182,7 +213,6 @@ package com.las3r.runtime{
 			MONITOR_ENTER = sym1("monitor-enter");
 			MONITOR_EXIT = sym1("monitor-exit");
 			NEW = sym1("new");
-			LIST = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "list");
 			HASHMAP = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
 			VECTOR = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
 			_AMP_ = sym1("&");
@@ -371,48 +401,8 @@ package com.las3r.runtime{
 			return this.id;
 		}
 
-		public static function list():ISeq{
-			return null;
-		}
-
-		public static function list1(arg1:Object):ISeq{
-			return new List(arg1);
-		}
-
-		public static function list2(arg1:Object, arg2:Object):ISeq{
-			return listStar2(arg1, arg2, null);
-		}
-
-		public static function list3(arg1:Object, arg2:Object, arg3:Object):ISeq{
-			return listStar3(arg1, arg2, arg3, null);
-		}
-
-		public static function list4(arg1:Object, arg2:Object, arg3:Object, arg4:Object):ISeq{
-			return listStar4(arg1, arg2, arg3, arg4, null);
-		}
-
-		public static function list5(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object):ISeq{
-			return listStar5(arg1, arg2, arg3, arg4, arg5, null);
-		}
-
-		public static function listStar1(arg1:Object, rest:ISeq):ISeq{
-			return ISeq(cons(arg1, rest));
-		}
-
-		public static function listStar2(arg1:Object, arg2:Object, rest:ISeq):ISeq{
-			return ISeq(cons(arg1, cons(arg2, rest)));
-		}
-
-		public static function listStar3(arg1:Object, arg2:Object, arg3:Object, rest:ISeq):ISeq{
-			return ISeq(cons(arg1, cons(arg2, cons(arg3, rest))));
-		}
-
-		public static function listStar4(arg1:Object, arg2:Object, arg3:Object, arg4:Object, rest:ISeq):ISeq{
-			return ISeq(cons(arg1, cons(arg2, cons(arg3, cons(arg4, rest)))));
-		}
-
-		public static function listStar5(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, rest:ISeq):ISeq{
-			return ISeq(cons(arg1, cons(arg2, cons(arg3, cons(arg4, cons(arg5, rest))))));
+		public static function list(...rest:Array):ISeq{
+			return List.createFromArray(rest);
 		}
 
 		public static function isInstance(c:Class, x:Object):Boolean{
@@ -481,6 +471,38 @@ package com.las3r.runtime{
 			if(y == null)
 			return new List(x);
 			return y.cons(x);
+		}
+
+		public static function concat(...all:Array):ISeq{
+			var len:int = all.length;
+			var x:Object = all[0];
+			var y:Object = all[1];
+			if(len == 0){
+				return null;
+			}
+			else if(len == 1){
+				return seq(x);
+			}
+			else if(len == 2){
+				if(x){
+					return cons(first(x), concat(rest(x), y));
+				}
+				else{
+					return seq(y);
+				}
+			}
+			else{
+				var cat:Function = function(x:Object, y:Object, rest:Array):ISeq{
+					var xy:ISeq = concat(x, y);
+					if(rest.length == 0){
+						return xy;
+					}
+					else{
+						return cat(xy, rest[0], rest.slice(1));
+					}
+				};
+				return cat(x, y, all.slice(2));
+			}
 		}
 
 		public static function first(x:Object):Object{

@@ -128,7 +128,7 @@ package com.las3r.runtime{
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
 			// Debug
-			//rt.debugFunc(ABCDump.dump(swfBytes));
+			rt.debugFunc(ABCDump.dump(swfBytes));
 
 			bytes.position = 0;
 			ByteLoader.loadBytes(bytes, function(e:Event):void{
@@ -1263,7 +1263,7 @@ class FnExpr implements Expr{
 		c.pushLoopLocals(f.paramBindings);
 		f.body = BodyExpr(BodyExpr.parse(c, C.RETURN, bodyForms));
 		c.popLoopLocals();
-		c.popLoopLocals();
+		c.popLocalBindingSet();
 		c.popLocalBindingSet();
 
 		return f;
@@ -1376,7 +1376,7 @@ class LetExpr implements Expr{
 		var body:ISeq = RT.rest(RT.rest(form));
 
 		if(context == C.INTERPRET)
-		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
 
 		var lbs:LocalBindingSet = new LocalBindingSet();
 		c.pushLocalBindingSet(lbs);
@@ -2010,7 +2010,7 @@ class ThrowExpr extends UntypedExpr{
 
 	public static function parse(c:Compiler, context:C, form:Object):Expr{
 		if(context == C.INTERPRET)
-		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
 		return new ThrowExpr(c.analyze(C.EXPRESSION, RT.second(form)));
 	}
 
@@ -2146,7 +2146,7 @@ class TryExpr implements Expr{
 	public static function parse(c:Compiler, context:C, frm:Object):Expr{
 		var form:ISeq = ISeq(frm);
 		if(context != C.RETURN)
-		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
 
 		//(try try-expr* catch-expr* finally-expr?)
 		//catch-expr: (catch class sym expr*)

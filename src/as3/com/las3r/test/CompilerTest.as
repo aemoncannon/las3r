@@ -384,7 +384,7 @@ package com.las3r.test{
 			readAndLoad("(def *bird* '(hello everyone))",
 				function(rt:RT, val:*):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be equal to '(hello everyone).", Util.equal(v.get(), RT.list2(sym1(rt, "hello"), sym1(rt, "everyone"))));
+					assertTrue("*bird* should be equal to '(hello everyone).", Util.equal(v.get(), RT.list(sym1(rt, "hello"), sym1(rt, "everyone"))));
 				});
 		}
 
@@ -564,6 +564,32 @@ package com.las3r.test{
 			readAndLoad("(try (throw \"Caw!\") (catch String e 10) (catch String e 1) (catch Error e 5))",
 				function(rt:RT, val:*):void{
 					assertTrue("val should be 10", val == 10);
+				});
+		}
+
+
+		public function testBasicSyntaxQuotedList():void{
+			readAndLoad("`(a b c)",
+				function(rt:RT, val:*):void{
+					var ns:String = LispNamespace.LAS3R_NAMESPACE_NAME;
+					assertTrue("val should be equivalent to quoted..", Util.equal(val, RT.list(sym2(rt,ns,"a"), sym2(rt,ns,"b"), sym2(rt,ns,"c"))));
+				});
+		}
+
+		public function testSyntaxQuotedListWithSimpleUnquote():void{
+			readAndLoad("(let* [a 1] `(~a b c))",
+				function(rt:RT, val:*):void{
+					var ns:String = LispNamespace.LAS3R_NAMESPACE_NAME;
+					assertTrue("val should be equivalent to quoted..", Util.equal(val, RT.list(1, sym2(rt,ns,"b"), sym2(rt,ns,"c"))));
+				});
+		}
+
+
+		public function testSyntaxQuotedListWithFunCallUnquote():void{
+			readAndLoad("`(~(list 1 2 3) b c)",
+				function(rt:RT, val:*):void{
+					var ns:String = LispNamespace.LAS3R_NAMESPACE_NAME;
+					assertTrue("val should be equivalent to quoted..", Util.equal(val, RT.list(RT.list(1, 2, 3), sym2(rt,ns,"b"), sym2(rt,ns,"c"))));
 				});
 		}
 

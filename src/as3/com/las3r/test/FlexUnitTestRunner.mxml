@@ -20,6 +20,7 @@
 	     suite.addTestSuite(LispReaderTest);
 	     suite.addTestSuite(NamespaceTest);
 	     suite.addTestSuite(VarTest);
+	     suite.addTestSuite(RTTest);
 	     suite.addTestSuite(CompilerTest);
 	     testRunner.test = suite;
 	     testRunner.startTest();
