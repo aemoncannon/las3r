@@ -152,8 +152,10 @@ package com.las3r.runtime{
 
 		protected function loadForm(form:Object, callback:Function):void{
 
-			// XXX Compiled LAS3R code looks here for active RT instance.
+			// XXX Compiled LAS3R code looks here for active RT instance...
 			RT.instance = rt;
+
+			// XXX Compiled LAS3R code stores result of expression here..
 			var resultKey:String = "load_result_" + _rt.nextID();
 
 			_bindingSetStack = RT.vector();
