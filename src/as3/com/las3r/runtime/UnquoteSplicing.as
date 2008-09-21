@@ -16,7 +16,7 @@ package com.las3r.runtime{
 	import com.las3r.util.*;
 
 	public class UnquoteSplicing{
-		var o:Object;
+		public var o:Object;
 
 		public function UnquoteSplicing(o:Object){
 			this.o = o;

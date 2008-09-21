@@ -17,21 +17,6 @@ package com.las3r.runtime{
 
     public class LispReader{
 
-		public var QUOTE:Symbol;
-		public var THE_VAR:Symbol;
-		public var FN:Symbol;
-		public var _AMP_:Symbol;
-		public var CONCAT:Symbol;
-		public var LIST:Symbol;
-		public var APPLY:Symbol;
-		public var HASHMAP:Symbol;
-		public var HASHSET:Symbol;
-		public var VECTOR:Symbol;
-		public var WITH_META:Symbol;
-		public var META:Symbol;
-		public var DEREF:Symbol;
-		public var SLASH:Symbol;
-
 		private var _rt:RT;
 		public function get rt():RT { return _rt }
 
@@ -41,10 +26,11 @@ package com.las3r.runtime{
 		public var floatPat:RegExp = new RegExp("^[-+]?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?[M]?$");
 		public var macros:IMap;
 		public var dispatchMacros:IMap;
+		public var _gensymEnvStack:IVector;
+
 
 
 		//symbol->gensymbol
-		//	static Var GENSYM_ENV = Var.create(null);
 		//sorted-map num->gensymbol
 		//	static Var ARG_ENV = Var.create(null);
 
@@ -52,26 +38,12 @@ package com.las3r.runtime{
 		public function LispReader(rt:RT){
 			_rt = rt;
 
-			QUOTE = Symbol.intern2(_rt, null, "quote");
-			THE_VAR = Symbol.intern2(_rt, null, "var");
-			FN = Symbol.intern1(_rt, "fn*");
-			_AMP_ = Symbol.intern1(_rt, "&");
-			CONCAT = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "concat");
-			LIST = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "list");
-			APPLY = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "apply");
-			HASHMAP = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
-			HASHSET = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-set");
-			VECTOR = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
-			WITH_META = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
-			META = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
-			DEREF = Symbol.intern2(_rt, LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
-
 			macros = RT.map(
 				CharUtil.DOUBLE_QUOTE, new StringReader(this),
 				CharUtil.SEMICOLON, new CommentReader(this),
-				CharUtil.SINGLE_QUOTE, new WrappingReader(this, QUOTE),
-				CharUtil.AT, new WrappingReader(this, DEREF),
-				CharUtil.CARROT, new WrappingReader(this, META),
+				CharUtil.SINGLE_QUOTE, new WrappingReader(this, _rt.QUOTE),
+				CharUtil.AT, new WrappingReader(this, _rt.DEREF),
+				CharUtil.CARROT, new WrappingReader(this, _rt.META),
 				CharUtil.TILDE, new UnquoteReader(this),
 				CharUtil.LPAREN, new ListReader(this),
 				CharUtil.LBRACK, new VectorReader(this),
@@ -80,14 +52,26 @@ package com.las3r.runtime{
 				CharUtil.POUND, new DispatchReader(this),
 				CharUtil.RPAREN, new UnmatchedDelimiterReader(this),
 				CharUtil.RBRACK, new UnmatchedDelimiterReader(this),
-				CharUtil.RBRACE, new UnmatchedDelimiterReader(this)
-				// CharUtil.BACKTICK, new SyntaxQuoteReader(this, _rt),
+				CharUtil.RBRACE, new UnmatchedDelimiterReader(this),
+				CharUtil.BACKTICK, new SyntaxQuoteReader(this, _rt)
 			);
 
 			dispatchMacros = RT.map(
 				CharUtil.DOUBLE_QUOTE, new RegexReader(this),
 				CharUtil.CARROT, new MetaReader(this)
 			);
+
+			_gensymEnvStack = RT.vector();
+		}
+
+		public function pushGensymEnv(env:IMap):void{
+			_gensymEnvStack.cons(env);
+		}
+		public function popGensymEnv():void{
+			_gensymEnvStack.popEnd();
+		}
+		public function get currentGensymEnv():IMap{
+			return IMap(_gensymEnvStack.peek());
 		}
 
 		public function isWhitespace(ch:int):Boolean{
@@ -247,7 +231,7 @@ package com.las3r.runtime{
 			}
 			else if(s == "/")
 			{
-				return SLASH;
+				return _rt.SLASH;
 			}
 			var ret:Object = null;
 			ret = matchSymbol(s);
@@ -476,9 +460,9 @@ class MetaReader implements IReaderMacro{
 	public function invoke(reader:Object, semicolon:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		var line:int = -1;
-// TODO: Aemon do this..		
-// 		if(r is LineNumberingPushbackReader)
-// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
+		// TODO: Aemon do this..		
+		// 		if(r is LineNumberingPushbackReader)
+		// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
 
 		var meta:Object = _reader.read(r, true, null)
 		if(meta is Symbol || meta is Keyword || meta is String)
@@ -489,8 +473,8 @@ class MetaReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is IObj)
 		{
-// 			if(line != -1 && o instanceof ISeq)
-// 			meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
+			// 			if(line != -1 && o instanceof ISeq)
+			// 			meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
 			return (IObj(o).withMeta(IMap(meta)));
 		}
 		else
@@ -659,6 +643,119 @@ class UnquoteReader implements IReaderMacro{
 			return new Unquote(o);
 		}
 	}
+}
+
+
+class SyntaxQuoteReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+	protected var _rt:RT;
+
+	public function SyntaxQuoteReader(reader:LispReader, rt:RT){
+		_reader = reader;
+		_rt = rt;
+	}
+	
+	public function invoke(reader:Object, backquote:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+
+		_reader.pushGensymEnv(RT.map());
+		var form:Object = _reader.read(r, true, null);
+		_reader.popGensymEnv();
+
+		return syntaxQuote(_rt, _reader, form);
+	}
+
+	public static function syntaxQuote(rt:RT, reader:LispReader, form:Object):Object{
+		var ret:Object;
+		if(rt.isSpecial(form)){
+			ret = RT.list2(rt.QUOTE, form);
+		}
+		else if(form is Symbol)
+		{
+			var sym:Symbol = Symbol(form);
+			if(sym.ns == null && sym.name.match(/\#$/))
+			{
+				var gmap:IMap = reader.currentGensymEnv;
+				if(gmap == null)
+				throw new Error("IllegalStateException: Gensym literal not in syntax-quote");
+				var gs:Symbol = Symbol(gmap.valAt(sym));
+				if(gs == null){
+					gs = rt.sym2(null, sym.name.substring(0, sym.name.length - 1) + "__" + rt.nextID());
+					gmap.assoc(sym, gs);
+				}
+				sym = gs;
+			}
+			else{
+				sym = rt.resolveSymbol(sym);
+			}
+			ret = RT.list2(rt.QUOTE, sym);
+		}
+		else if(form is Unquote){
+			return Unquote(form).o;
+		}
+		else if(form is UnquoteSplicing){
+			throw new Error("IllegalStateException: Splice not in list!");
+		}
+		else if(form is IMap)
+		{
+			var keyvals:IVector = flattenMap(form);
+			ret = RT.list3(rt.APPLY, rt.HASHMAP, RT.cons(rt.CONCAT, sqExpandList(rt, reader, keyvals.seq())));
+		}
+		else if(form is IVector)
+		{
+			ret = RT.list3(rt.APPLY, rt.VECTOR, RT.cons(rt.CONCAT, sqExpandList(rt, reader, IVector(form).seq())));
+		}
+		else if(form is ISeq)
+		{
+			var seq:ISeq = RT.seq(form);
+			ret = RT.cons(rt.CONCAT, sqExpandList(rt, reader, seq));
+		}
+		else if(form is Keyword
+			|| form is Number
+			|| form is String){
+			ret = form;
+		}
+		else
+		ret = RT.list2(rt.QUOTE, form);
+
+		if(form is IObj && (IObj(form)).meta != null)
+		{
+			var newMeta:IMap = IObj(form).meta;
+			if(newMeta.count() > 0)
+			return RT.list3(rt.WITH_META, ret, syntaxQuote(rt, reader, IObj(form).meta));
+		}
+		return ret;
+	}
+
+	private static function sqExpandList(rt:RT, reader:LispReader, seq:ISeq):ISeq{
+		var ret:IVector = RT.vector();
+		for(; seq != null; seq = seq.rest())
+		{
+			var item:Object = seq.first();
+
+			if(item is Unquote)
+			ret = ret.cons(RT.list2(rt.LIST, Unquote(item).o));
+
+			else if(item is UnquoteSplicing)
+			ret = ret.cons(UnquoteSplicing(item).o);
+
+			else
+			ret = ret.cons(RT.list2(rt.LIST, syntaxQuote(rt, reader, item)));
+
+		}
+		return ret.seq();
+	}
+
+	private static function flattenMap(form:Object):IVector{
+		var keyvals:IVector = RT.vector();
+		form.each(function(key:Object, val:Object):void{
+				keyvals = keyvals.cons(key);
+				keyvals = keyvals.cons(key);				
+			});
+		return keyvals;
+	}
+
 }
 
 

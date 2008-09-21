@@ -32,15 +32,6 @@ package com.las3r.test{
 		}
 
 
-		public function testResolveSymbol():void{
-			var rt:RT = new RT();
-			var c:Compiler = new Compiler(rt)
-			var ns:LispNamespace = LispNamespace.findOrCreate(rt, sym1(rt, "blargo"));
-			var ding:Var = Var.internWithRoot(ns, sym1(rt, "*ding*"), 25);
-			assertTrue("resolved symbol should be same ns/name", sym1(rt, "blargo/*ding*"), c.resolveSymbol(ns, sym1(rt, "*ding*")));
-			assertTrue("resolved symbol should be same ns/name", sym2(rt, "blargo", "*ding*"), c.resolveSymbol(ns, sym1(rt, "*ding*")));
-		}
-
 		public function testBindBirdToTrue():void{
 			readAndLoad("(def *bird* true)",
 				function(rt:RT, val:*):void{

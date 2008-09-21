@@ -16,7 +16,7 @@ package com.las3r.runtime{
 	import com.las3r.util.*;
 
 	public class Unquote{
-		var o:Object;
+		public var o:Object;
 
 		public function Unquote(o:Object){
 			this.o = o;

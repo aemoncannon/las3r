@@ -27,37 +27,12 @@ package com.las3r.runtime{
 		public static var CONST_PREFIX:String = "const__";
 		public static var MAX_POSITIONAL_ARITY:int = 8;
 
-		public var DEF:Symbol;
-		public var LOOP:Symbol;
-		public var RECUR:Symbol;
-		public var IF:Symbol;
-		public var LET:Symbol;
-		public var DO:Symbol;
-		public var FN:Symbol;
-		public var QUOTE:Symbol;
-		public var THE_VAR:Symbol;
-		public var DOT:Symbol;
-		public var ASSIGN:Symbol;
-		public var TRY:Symbol;
-		public var CATCH:Symbol;
-		public var FINALLY:Symbol;
-		public var THROW:Symbol;
-		public var MONITOR_ENTER:Symbol;
-		public var MONITOR_EXIT:Symbol;
-		public var NEW:Symbol;
-		public var LIST:Symbol;
-		public var HASHMAP:Symbol;
-		public var VECTOR:Symbol;
-		public var _AMP_:Symbol;
-		public var ISEQ:Symbol;
-
-		public var specials:IMap;
-
 		private var _bindingSetStack:IVector;
 		private var _loopLocalsStack:IVector;
 		private var _loopLabelStack:IVector;
 		private var _inCatchFinally:Boolean = false;
 		private var _rt:RT;
+		public var specialParsers:IMap;
 
 		public function get rt():RT{ return _rt; }
 		public function get constants():Array{ return _rt.constants; }
@@ -66,48 +41,21 @@ package com.las3r.runtime{
 
 		public function Compiler(rt:RT){
 			_rt = rt;
-			DEF = Symbol.intern1(rt, "def");
-			LOOP = Symbol.intern1(rt, "loop*");
-			RECUR = Symbol.intern1(rt, "recur");
-			IF = Symbol.intern1(rt, "if");
-			LET = Symbol.intern1(rt, "let*");
-			DO = Symbol.intern1(rt, "do");
-			FN = Symbol.intern1(rt, "fn*");
-			QUOTE = Symbol.intern1(rt, "quote");
-			THE_VAR = Symbol.intern1(rt, "var");
-			DOT = Symbol.intern1(rt, ".");
-			ASSIGN = Symbol.intern1(rt, "set!");
-			TRY = Symbol.intern1(rt, "try");
-			CATCH = Symbol.intern1(rt, "catch");
-			FINALLY = Symbol.intern1(rt, "finally");
-			THROW = Symbol.intern1(rt, "throw");
-			MONITOR_ENTER = Symbol.intern1(rt, "monitor-enter");
-			MONITOR_EXIT = Symbol.intern1(rt, "monitor-exit");
-			NEW = Symbol.intern1(rt, "new");
-			LIST = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "list");
-			HASHMAP = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
-			VECTOR = Symbol.intern2(rt, LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
-			_AMP_ = Symbol.intern1(rt, "&");
-			ISEQ = Symbol.intern1(rt, "com.las3r.runtime.ISeq");
 
-			specials = RT.map(
-				DEF, DefExpr.parse,
-				LOOP, LetExpr.parse,
-				RECUR, RecurExpr.parse,
-				IF, IfExpr.parse,
-				LET, LetExpr.parse,
-				DO, BodyExpr.parse,
-				FN, true,
-				QUOTE, ConstantExpr.parse,
-				THE_VAR, TheVarExpr.parse,
-				DOT, HostExpr.parse,
-				ASSIGN, AssignExpr.parse,
-				TRY, TryExpr.parse,
-				THROW, ThrowExpr.parse,
-				CATCH, null,
-				FINALLY, null,
-				NEW, NewExpr.parse,
-				_AMP_, true
+			specialParsers = RT.map(
+				_rt.DEF, DefExpr.parse,
+				_rt.LOOP, LetExpr.parse,
+				_rt.RECUR, RecurExpr.parse,
+				_rt.IF, IfExpr.parse,
+				_rt.LET, LetExpr.parse,
+				_rt.DO, BodyExpr.parse,
+				_rt.QUOTE, ConstantExpr.parse,
+				_rt.THE_VAR, TheVarExpr.parse,
+				_rt.DOT, HostExpr.parse,
+				_rt.ASSIGN, AssignExpr.parse,
+				_rt.TRY, TryExpr.parse,
+				_rt.THROW, ThrowExpr.parse,
+				_rt.NEW, NewExpr.parse
 			);
 
 		}
@@ -194,30 +142,8 @@ package com.las3r.runtime{
 		}
 
 		public function isSpecial(sym:Object):Boolean{
-			return specials.valAt(sym) != null;
+			return rt.isSpecial(sym);
 		}
-
-
-		public function resolveSymbol(inNS:LispNamespace, sym:Symbol):Symbol{
-			//already qualified or classname?
-			if(sym.ns != null || sym.name.indexOf('.') > 0){
-				return sym;
-			}
-			var o:Object = inNS.getMapping(sym);
-			if(o == null){
-				return Symbol.intern2(rt, inNS.name.name, sym.name);
-			}
-			else if(o is Class){
-				return Symbol.intern2(rt, null, getQualifiedClassName(Class(o)));
-			}
-			else if(o is Var){
-				var v:Var = Var(o);
-				return Symbol.intern2(rt, v.ns.name.name, v.sym.name);
-			}
-			return null;
-		}
-
-
 
 		public function lookupVar(sym:Symbol, internNew:Boolean):Var {
 			var v:Var = null;
@@ -377,42 +303,12 @@ package com.las3r.runtime{
 
 
 		public function resolve(sym:Symbol):Object{
-			return resolveIn(currentNS(), sym);
+			return _rt.resolve(sym);
 		}
-
 
 		public function resolveIn(n:LispNamespace, sym:Symbol):Object{
-			//note - ns-qualified vars must already exist
-			if(sym.ns != null)
-			{
-				var ns:LispNamespace = LispNamespace.find(rt, Symbol.intern1(rt, sym.ns));
-				if(ns == null){
-					throw new Error("No such namespace: " + sym.ns);
-				}
-				var v:Var = ns.findInternedVar(Symbol.intern1(rt, sym.name));
-				if(v == null){
-					throw new Error("No such var: " + sym);
-				}
-				else if(v.ns != currentNS() && !v.isPublic()){
-					throw new Error("IllegalStateException: var: " + sym + " is not public");
-				}
-				return v;
-			}
-			else if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '[')
-			{
-				return rt.classForName(sym.name);
-			}
-			else
-			{
-				var o:Object = n.getMapping(sym);
-				if(o == null){
-					throw new Error("Unable to resolve symbol: " + sym + " in this context");
-				}
-				return o;
-			}
+			return _rt.resolveIn(n, sym);
 		}
-
-
 
 		private function analyzeSeq(context:C, form:ISeq , name:String ):Expr {
 			// TODO Re-add line-number tracking here (requires metadata).
@@ -422,11 +318,11 @@ package com.las3r.runtime{
 			return analyze(context, me, name);
 
 			var op:Object = RT.first(form);
-			if(op.equals(FN)){
+			if(op.equals(_rt.FN)){
 				return FnExpr.parse(this, context, form);
 			}
-			else if(specials.valAt(op) != null){
-				var parse:Function = specials.valAt(op) as Function;
+			else if(specialParsers.valAt(op) != null){
+				var parse:Function = specialParsers.valAt(op) as Function;
 				return parse(this, context, form);
 			}
 			else{
@@ -1153,7 +1049,7 @@ class BodyExpr implements Expr{
 
 	public static function parse(c:Compiler, context:C, frms:Object):Expr{
 		var forms:ISeq = ISeq(frms);
-		if(Util.equal(RT.first(forms), c.DO)){
+		if(Util.equal(RT.first(forms), c.rt.DO)){
 			forms = RT.rest(forms);
 		}
 		var exprs:IVector = Vector.empty();
@@ -1294,7 +1190,7 @@ class FnExpr implements Expr{
 		if(RT.second(form) is Symbol)
 		{
 			f.nameSym = Symbol(RT.second(form));
-			form = RT.cons(c.FN, RT.rest(RT.rest(form)));
+			form = RT.cons(c.rt.FN, RT.rest(RT.rest(form)));
 		}
 		f.params = Vector(RT.second(form));
 		if(f.params.count() > Compiler.MAX_POSITIONAL_ARITY)
@@ -1318,7 +1214,7 @@ class FnExpr implements Expr{
 			}
 			if(paramSym.getNamespace() != null)
 			throw new Error("Can't use qualified name as parameter: " + paramSym);
-			if(param.equals(c._AMP_))
+			if(param.equals(c.rt._AMP_))
 			{
 				if(state == PSTATE.REQ || state == PSTATE.OPT)
 				state = PSTATE.REST;
@@ -1468,7 +1364,7 @@ class LetExpr implements Expr{
 		var form:ISeq = ISeq(frm);
 		//(let [var val var2 val2 ...] body...)
 
-		var isLoop:Boolean = RT.first(form).equals(c.LOOP);
+		var isLoop:Boolean = RT.first(form).equals(c.rt.LOOP);
 
 		if(!(RT.second(form) is IVector))
 		throw new Error("IllegalArgumentException: Bad binding form, expected vector");
@@ -1480,7 +1376,7 @@ class LetExpr implements Expr{
 		var body:ISeq = RT.rest(RT.rest(form));
 
 		if(context == C.INTERPRET)
-		return c.analyze(context, RT.list1(RT.list3(c.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
 
 		var lbs:LocalBindingSet = new LocalBindingSet();
 		c.pushLocalBindingSet(lbs);
@@ -2114,7 +2010,7 @@ class ThrowExpr extends UntypedExpr{
 
 	public static function parse(c:Compiler, context:C, form:Object):Expr{
 		if(context == C.INTERPRET)
-		return c.analyze(context, RT.list1(RT.list3(c.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
 		return new ThrowExpr(c.analyze(C.EXPRESSION, RT.second(form)));
 	}
 
@@ -2250,7 +2146,7 @@ class TryExpr implements Expr{
 	public static function parse(c:Compiler, context:C, frm:Object):Expr{
 		var form:ISeq = ISeq(frm);
 		if(context != C.RETURN)
-		return c.analyze(context, RT.list1(RT.list3(c.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list1(RT.list3(c.rt.FN, Vector.empty(), form)));
 
 		//(try try-expr* catch-expr* finally-expr?)
 		//catch-expr: (catch class sym expr*)
@@ -2265,7 +2161,7 @@ class TryExpr implements Expr{
 		{
 			var f:Object = fs.first();
 			var op:Object = (f is ISeq) ? ISeq(f).first() : null;
-			if(!Util.equal(op, c.CATCH) && !Util.equal(op, c.FINALLY))
+			if(!Util.equal(op, c.rt.CATCH) && !Util.equal(op, c.rt.FINALLY))
 			{
 				if(caught)
 				throw new Error("Only catch or finally clause can follow catch in try expression");
@@ -2273,7 +2169,7 @@ class TryExpr implements Expr{
 			}
 			else
 			{
-				if(Util.equal(op, c.CATCH))
+				if(Util.equal(op, c.rt.CATCH))
 				{
 					var className:Symbol = Symbol(RT.second(f));
 					var klass:Class = HostExpr.maybeClass(c, className, false);

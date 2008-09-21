@@ -179,6 +179,10 @@ package com.las3r.runtime{
 			_meta = m.assoc(_rt.NAME_KEY, sym).assoc(_rt.NS_KEY, ns);
 		}
 
+		public function setMacro():void{
+			_meta = _meta.assoc(_rt.MACRO_KEY, RT.T);
+		}
+
 		public function isMacro():Boolean{
 			return (_meta.valAt(_rt.MACRO_KEY) != null);
 		}

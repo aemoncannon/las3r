@@ -131,6 +131,10 @@ package com.las3r.runtime{
 			return null;
 		}
 
+		public function includes(obj:Object):Boolean{
+			return indexOf(obj) > -1;
+		}
+
 	}
 
 }

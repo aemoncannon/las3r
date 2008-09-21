@@ -21,6 +21,7 @@ package com.las3r.runtime{
 	import flash.utils.Dictionary;
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
+	import flash.utils.getQualifiedClassName;
 
 
 	public class RT{
@@ -36,6 +37,7 @@ package com.las3r.runtime{
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
 		public var namespaces:IMap = new Map();
+		public var specials:Vector;
 		public var dvals:Frame = new Frame();
 
 		public var vars:IMap;
@@ -69,16 +71,51 @@ package com.las3r.runtime{
 		public var NAME_KEY:Keyword;
 		public var NS_KEY:Keyword;
 
+
+		public var CONCAT:Symbol;
+		public var APPLY:Symbol;
+		public var WITH_META:Symbol;
+		public var META:Symbol;
+		public var SLASH:Symbol;
+		public var DEREF:Symbol;
+
+
+		// Special forms..
+		public var DEF:Symbol;
+		public var LOOP:Symbol;
+		public var RECUR:Symbol;
+		public var IF:Symbol;
+		public var LET:Symbol;
+		public var DO:Symbol;
+		public var FN:Symbol;
+		public var QUOTE:Symbol;
+		public var THE_VAR:Symbol;
+		public var DOT:Symbol;
+		public var ASSIGN:Symbol;
+		public var TRY:Symbol;
+		public var CATCH:Symbol;
+		public var FINALLY:Symbol;
+		public var THROW:Symbol;
+		public var MONITOR_ENTER:Symbol;
+		public var MONITOR_EXIT:Symbol;
+		public var NEW:Symbol;
+		public var LIST:Symbol;
+		public var HASHMAP:Symbol;
+		public var VECTOR:Symbol;
+		public var _AMP_:Symbol;
+		public var ISEQ:Symbol;
+
+
 		public function get DEFAULT_IMPORTS():IMap {
 			return map(
-				Symbol.intern1(this, "Boolean"), Boolean,
-				Symbol.intern1(this, "Class"), Class,
-				Symbol.intern1(this, "Compiler"), Compiler,
-				Symbol.intern1(this, "Math"), Math,
-				Symbol.intern1(this, "Number"), Number,
-				Symbol.intern1(this, "Object"), Object,
-				Symbol.intern1(this, "String"), String,
-				Symbol.intern1(this, "Error"), Error
+				sym1("Boolean"), Boolean,
+				sym1("Class"), Class,
+				sym1("Compiler"), Compiler,
+				sym1("Math"), Math,
+				sym1("Number"), Number,
+				sym1("Object"), Object,
+				sym1("String"), String,
+				sym1("Error"), Error
 			);
 		}
 
@@ -88,16 +125,16 @@ package com.las3r.runtime{
 			keywords = RT.map();
 			vars = RT.map();
 
-			TAG_KEY = Keyword.intern1(this, Symbol.intern1(this, "tag"));
-			MACRO_KEY = Keyword.intern1(this, Symbol.intern1(this, "macro"));
-			NS_KEY = Keyword.intern1(this, Symbol.intern1(this, "ns"));
-			NAME_KEY = Keyword.intern1(this, Symbol.intern1(this, "name"));
+			TAG_KEY = key1(sym1("tag"));
+			MACRO_KEY = key1(sym1("macro"));
+			NS_KEY = key1(sym1("ns"));
+			NAME_KEY = key1(sym1("name"));
 
-			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, Symbol.intern1(this, LispNamespace.LAS3R_NAMESPACE_NAME));
-			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, Symbol.intern1(this, "*ns*"), LAS3R_NAMESPACE);
-			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, Symbol.intern1(this, "*print-readably*"), T);
+			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, sym1(LispNamespace.LAS3R_NAMESPACE_NAME));
+			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*ns*"), LAS3R_NAMESPACE);
+			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 
-			IN_NAMESPACE = Symbol.intern1(this, "in-ns");
+			IN_NAMESPACE = sym1("in-ns");
 			Var.internWithRoot(LAS3R_NAMESPACE, IN_NAMESPACE, 
 				function(nsname:Symbol):LispNamespace{
 					var ns:LispNamespace = LispNamespace.findOrCreate(_this, nsname);
@@ -105,22 +142,160 @@ package com.las3r.runtime{
 					return ns;
 				});
 
-			LOAD_FILE = Symbol.intern1(this, "load-file");
+			LOAD_FILE = sym1("load-file");
 			Var.internWithRoot(LAS3R_NAMESPACE, LOAD_FILE,
 				function(arg1:Object):Object{
 					//return Compiler.loadFile(String(arg1));
 					return null;
 				});
 
-			IDENTICAL = Symbol.intern1(this, "identical?");
+			IDENTICAL = sym1("identical?");
 			Var.internWithRoot(LAS3R_NAMESPACE, IDENTICAL,
 				function(arg1:Object, arg2:Object):Object{
 					return arg1 == arg2 ? RT.T : RT.F;
 				});
 
+
+			CONCAT = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "concat");
+			APPLY = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "apply");
+			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
+			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
+			DEREF = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
+			SLASH = sym1("/");
+
+
+			DEF = sym1("def");
+			LOOP = sym1("loop*");
+			RECUR = sym1("recur");
+			IF = sym1("if");
+			LET = sym1("let*");
+			DO = sym1("do");
+			FN = sym1("fn*");
+			QUOTE = sym1("quote");
+			THE_VAR = sym1("var");
+			DOT = sym1(".");
+			ASSIGN = sym1("set!");
+			TRY = sym1("try");
+			CATCH = sym1("catch");
+			FINALLY = sym1("finally");
+			THROW = sym1("throw");
+			MONITOR_ENTER = sym1("monitor-enter");
+			MONITOR_EXIT = sym1("monitor-exit");
+			NEW = sym1("new");
+			LIST = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "list");
+			HASHMAP = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
+			VECTOR = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
+			_AMP_ = sym1("&");
+			ISEQ = sym1("com.las3r.runtime.ISeq");
+
+			specials = Vector(RT.vector(
+					DEF,
+					LOOP,
+					RECUR,
+					IF,
+					LET,
+					DO,
+					FN,
+					QUOTE,
+					THE_VAR,
+					DOT,
+					ASSIGN,
+					TRY,
+					THROW,
+					NEW,
+					_AMP_
+				));
+
 			_compiler = new Compiler(this);
 			_lispReader = new LispReader(this);
 		}
+
+		public function isSpecial(sym:Object):Boolean{
+			return specials.includes(sym);
+		}
+
+		public function sym1(name:String):Symbol{
+			return Symbol.intern1(this, name);
+		}
+
+		public function sym2(ns:String, name:String):Symbol{
+			return Symbol.intern2(this, ns, name);
+		}
+
+		public function key1(name:Symbol):Keyword{
+			return Keyword.intern1(this, name);
+		}
+
+		public function resolveSymbol(sym:Symbol):Symbol{
+			//already qualified or classname?
+			if(sym.name.indexOf('.') > 0)
+			return sym;
+			if(sym.ns != null)
+			{
+				var ns:LispNamespace = namespaceFor(sym);
+				if(ns == null || ns.name.name == sym.ns)
+				return sym;
+				return sym2(ns.name.name, sym.name);
+			}
+			var o:Object = currentNS().getMapping(sym);
+			if(o == null)
+			return sym2(currentNS().name.name, sym.name);
+			else if(o is Class)
+			return sym2(null, getQualifiedClassName(Class(o)));
+			else if(o is Var)
+			{
+				var v:Var = Var(o);
+				return sym2(v.ns.name.name, v.sym.name);
+			}
+			return null;
+
+		}
+
+		private function namespaceFor(sym:Symbol):LispNamespace{
+			//note, presumes non-nil sym.ns
+			// first check against currentNS' aliases...
+			var nsSym:Symbol = sym1(sym.ns);
+			var ns:LispNamespace = LispNamespace.find(this, nsSym);
+			return ns;
+		}
+
+		public function resolve(sym:Symbol):Object{
+			return resolveIn(currentNS(), sym);
+		}
+
+
+		public function resolveIn(n:LispNamespace, sym:Symbol):Object{
+			//note - ns-qualified vars must already exist
+			if(sym.ns != null)
+			{
+				var ns:LispNamespace = LispNamespace.find(this, sym1(sym.ns));
+				if(ns == null){
+					throw new Error("No such namespace: " + sym.ns);
+				}
+				var v:Var = ns.findInternedVar(sym1(sym.name));
+				if(v == null){
+					throw new Error("No such var: " + sym);
+				}
+				else if(v.ns != currentNS() && !v.isPublic()){
+					throw new Error("IllegalStateException: var: " + sym + " is not public");
+				}
+				return v;
+			}
+			else if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '[')
+			{
+				return classForName(sym.name);
+			}
+			else
+			{
+				var o:Object = n.getMapping(sym);
+				if(o == null){
+					throw new Error("Unable to resolve symbol: " + sym + " in this context");
+				}
+				return o;
+			}
+		}
+
+
 
 
 		public function loadStdLib(onComplete:Function = null):void{
@@ -373,7 +548,7 @@ package com.las3r.runtime{
 		}
 
 		public function getVar(ns:String, name:String):Var{
-			return Var.internNS(LispNamespace.findOrCreate(this, Symbol.intern2(this, null, ns)), Symbol.intern2(this, null, name));
+			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
 		}
 
 		public static function printToString(x:Object):String {
@@ -438,28 +613,28 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:IVector = IVector(sq.first());
-						print(v.nth(0), w);
-						w.write(' ');
-						print(v.nth(1), w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+				{
+					var v:IVector = IVector(sq.first());
+					print(v.nth(0), w);
+					w.write(' ');
+					print(v.nth(1), w);
+					if(sq.rest() != null)
+					w.write(", ");
+				}
+				w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-					for(var i:int = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+				for(var i:int = 0; i < a.count(); i++)
+				{
+					print(a.nth(i), w);
+					if(i < a.count() - 1)
+					w.write(' ');
+				}
+				w.write(']');
 			}
 			else w.write(x.toString());
 		}
