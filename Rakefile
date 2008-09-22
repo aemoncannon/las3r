@@ -10,12 +10,12 @@
 require 'rexml/document'
 include REXML
 
-MXMLC = PLATFORM =~ /windows/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
-DEBUG_PROJECTOR = PLATFORM =~ /windows/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
+MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
+DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
 
 SHARED_CLASS_PATH = [
                      "src/as3",
-                     "~/lib/flexunit/trunk/FlexUnitLib/src"
+                     File.expand_path("~/lib/flexunit/trunk/FlexUnitLib/src")
                     ]
 
 COMPILE_OPTIONS = [
