@@ -413,10 +413,7 @@ package com.las3r.runtime{
 			if(coll == null){
 				return new List(x);
 			}
-			else if(coll is IVector){
-				return coll.cons(x);
-			}
-			else if(coll is ISeq){
+			else if(coll is IVector || coll is ISeq || coll is IMap){
 				return coll.cons(x);
 			}
 			else
@@ -587,8 +584,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-				printInnerSeq(seq(x), w);
-				w.write(')');
+					printInnerSeq(seq(x), w);
+					w.write(')');
 			}
 			else if(x is String)
 			{
@@ -635,28 +632,28 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-				{
-					var v:IVector = IVector(sq.first());
-					print(v.nth(0), w);
-					w.write(' ');
-					print(v.nth(1), w);
-					if(sq.rest() != null)
-					w.write(", ");
-				}
-				w.write('}');
+					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+					{
+						var v:IVector = IVector(sq.first());
+						print(v.nth(0), w);
+						w.write(' ');
+						print(v.nth(1), w);
+						if(sq.rest() != null)
+						w.write(", ");
+					}
+					w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-				for(var i:int = 0; i < a.count(); i++)
-				{
-					print(a.nth(i), w);
-					if(i < a.count() - 1)
-					w.write(' ');
-				}
-				w.write(']');
+					for(var i:int = 0; i < a.count(); i++)
+					{
+						print(a.nth(i), w);
+						if(i < a.count() - 1)
+						w.write(' ');
+					}
+					w.write(']');
 			}
 			else w.write(x.toString());
 		}

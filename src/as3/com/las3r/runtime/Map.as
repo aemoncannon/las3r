@@ -82,6 +82,24 @@ package com.las3r.runtime{
 			return e != null;
 		}
 
+		public function cons(o:Object):IMap{
+			if(o is IVector)
+			{
+				var v:IVector = IVector(o);
+				if(v.count() != 2)
+				throw new Error("IllegalArgumentException: Vector arg to map conj must be a pair");
+				return assoc(v.nth(0), v.nth(1));
+			}
+
+			var ret:IMap = this;
+			for(var es:ISeq = RT.seq(o); es != null; es = es.rest())
+			{
+				var pair:IVector = IVector(es.first());
+				ret = ret.assoc(pair.nth(0), pair.nth(1));
+			}
+			return ret;
+		}
+
 		public function assoc(key:Object, val:Object):IMap{
 			_dict[key] = val;
 			return this;

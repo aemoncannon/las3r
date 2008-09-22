@@ -361,6 +361,20 @@ package com.las3r.test{
 				});
 		}
 
+		public function testLetSameNamedBindingShadows():void{
+			readAndLoad("(let* [a 1 a 2] a)",
+				function(rt:RT, val:*):void{
+					assertTrue("val is 2", val == 2);
+				});
+		}
+
+		public function testLetSameNameReferencingPrevious():void{
+			readAndLoad("(let* [a (fn* [] :dog) a (a)] a)",
+				function(rt:RT, val:*):void{
+					assertTrue("val is :dog", val == key1(rt, "dog"));
+				});
+		}
+
 
 		public function testLetReferingToSurroundingFunctionArg():void{
 			readAndLoad("(def *bird* ((fn* [a] (let* [b 1] a)) 10))",

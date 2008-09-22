@@ -18,6 +18,8 @@ package com.las3r.runtime{
 
 		function assoc(key:Object, val:Object):IMap;
 
+		function cons(o:Object):IMap;
+
 		function remove(key:Object):IMap;
 
 		function count():int;
