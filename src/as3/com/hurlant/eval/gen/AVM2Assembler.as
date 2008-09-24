@@ -254,6 +254,7 @@ package com.hurlant.eval.gen
 		const OP_debugfile:int = 0xF1
 		const OP_bkptline:int = 0xF2
 	    const OP_timestamp:int = 0xF3
+	    const DEBUG:Boolean = false;
 	
 
         const listify = false;
@@ -274,7 +275,17 @@ package com.hurlant.eval.gen
             this.current_scope_depth = initScopeDepth;
         }
 
+		protected function debug(name):void{
+			if(DEBUG){
+				trace(name);
+				trace("maxStack: " + maxStack);
+				trace("currentStack: " + current_stack_depth);
+				trace("\n");
+			}
+		}
+
         public function get maxStack() { return max_stack_depth }
+        public function get currentStack() { return current_stack_depth }
         public function get maxLocal() { return nextTemp }
         public function get maxScope() { return max_scope_depth }
         public function get currentScopeDepth() { return current_scope_depth }
@@ -323,6 +334,7 @@ package com.hurlant.eval.gen
             stack(1);
             list1(name);
             code.uint8(opcode);
+			debug(name);
         }
 
         public function I_dup() { pushOne("dup", 0x2A) }
@@ -344,6 +356,7 @@ package com.hurlant.eval.gen
             list2(name, v);
             code.uint8(opcode);
             code.uint30(v);
+			debug(name);
         }
 
         public function I_getglobalslot(index) { pushOneU30("getglobalslot", 0x6E, index) }
@@ -366,6 +379,7 @@ package com.hurlant.eval.gen
             stack(-1);
             list1(name);
             code.uint8(opcode);
+			debug(name);
         }
 
         public function I_add() { dropOne("add", 0xA0) }
@@ -412,6 +426,7 @@ package com.hurlant.eval.gen
             list2(name, v);
             code.uint8(opcode);
             code.uint30(v);
+			debug(name);
         }
 
         public function I_setglobalslot(index) { dropOneU30("setglobalslot", 0x6F, index) }
@@ -422,6 +437,7 @@ package com.hurlant.eval.gen
             //stack(0);
             list1(name);
             code.uint8(opcode);
+			debug(name);
         }
 
         public function I_bitnot() { dropNone("bitnot", 0x97) }
@@ -456,6 +472,7 @@ package com.hurlant.eval.gen
             list2(name, x);
             code.uint8(opcode);
             code.uint30(x);
+			debug(name);
         }
 
         public function I_astype(index) { dropNoneU30("astype", 0x86, index) }
@@ -535,7 +552,7 @@ package com.hurlant.eval.gen
             list2(name, L.name);
             code.uint8(opcode);
             relativeOffset(code.length+3, L);
-
+			debug(name);
             return L;
         }
 
@@ -557,6 +574,7 @@ package com.hurlant.eval.gen
                 code.uint8(0x09);
                 list1("label");
             }
+			debug("label");
             return L;
         }
 
@@ -623,6 +641,7 @@ package com.hurlant.eval.gen
             list2(name, nargs);
             code.uint8(opcode);
             code.uint30(nargs);
+			debug(name);
         }
 
         /*private*/ function construct(name, opcode, nargs) {
@@ -630,6 +649,7 @@ package com.hurlant.eval.gen
             list2(name, nargs);
             code.uint8(opcode);
             code.uint30(nargs);
+			debug(name);
         }
 
         public function I_call(nargs) { call("call", 0x41, nargs) }
@@ -693,6 +713,7 @@ package com.hurlant.eval.gen
             list2(name + (hasRTNS ? "<NS>" : "") + (hasRTName ? "<Name>" : ""), index);
             code.uint8(opcode);
             code.uint30(index);
+			debug(name);
         }
 
         public function I_deleteproperty(index) { propU30("deleteproperty", 1, 1, 0x6A, index) }

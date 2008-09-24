@@ -196,9 +196,8 @@
                   m)
               fdecl (if (map? (last fdecl))
                       (butlast fdecl)
-		      fdecl)
-              m (conj {:arglists (list 'quote (sigs fdecl))} m)
-	      ]
+                      fdecl)
+              m (conj {:arglists (list 'quote (sigs fdecl))} m)]
           (list 'def (with-meta name (conj (if (meta name) (meta name) {}) m))
                 (cons `fn fdecl)))))
 

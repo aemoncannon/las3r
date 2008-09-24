@@ -30,9 +30,9 @@ package com.las3r.runtime{
 		protected const BootLsr:Class;
 		var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
+		public static var instances:Array = [];
 
-		public static var instance:RT;
-
+		public var instanceId:int = -1;
 		public var internedStrings:Object = {};
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
@@ -65,6 +65,7 @@ package com.las3r.runtime{
 		public var IDENTICAL:Symbol;
 		public var IN_NAMESPACE:Symbol;
 		public var CURRENT_NS:Var;
+		public var RUNTIME:Var;
 		public var PRINT_READABLY:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
@@ -121,6 +122,8 @@ package com.las3r.runtime{
 
 		public function RT():void{
 			_this = this;
+			instances.push(this);
+			instanceId = instances.length - 1;
 			constants = [];
 			keywords = RT.map();
 			vars = RT.map();
@@ -132,6 +135,7 @@ package com.las3r.runtime{
 
 			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, sym1(LispNamespace.LAS3R_NAMESPACE_NAME));
 			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*ns*"), LAS3R_NAMESPACE);
+			RUNTIME = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*runtime*"), this);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 
 			IN_NAMESPACE = sym1("in-ns");
