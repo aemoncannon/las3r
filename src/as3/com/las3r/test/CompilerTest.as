@@ -590,11 +590,20 @@ package com.las3r.test{
 				});
 		}
 
+
 		public function testSyntaxQuotedListWithSimpleUnquote():void{
 			readAndLoad("(let* [a 1] `(~a b c))",
 				function(rt:RT, val:*):void{
 					var ns:String = LispNamespace.LAS3R_NAMESPACE_NAME;
 					assertTrue("val should be equivalent to quoted..", Util.equal(val, RT.list(1, sym2(rt,ns,"b"), sym2(rt,ns,"c"))));
+				});
+		}
+
+		public function testSyntaxQuotedListWithSimpleUnquoteSplicing():void{
+			readAndLoad("(let* [a '(a)] `(~@a b c))",
+				function(rt:RT, val:*):void{
+					var ns:String = LispNamespace.LAS3R_NAMESPACE_NAME;
+					assertTrue("val should be equivalent to quoted..", Util.equal(val, RT.list(sym1(rt,"a"), sym2(rt,ns,"b"), sym2(rt,ns,"c"))));
 				});
 		}
 
