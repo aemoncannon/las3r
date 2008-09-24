@@ -674,8 +674,8 @@ class CodeGen{
 	* Stack:   
 	*   anArray => aVector
 	*/
-	public function arraySliceToVector(i:int):void{
-		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"Vector"}, false))
+	public function arraySliceToList(i:int):void{
+		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"List"}, false))
 		asm.I_swap();
 		asm.I_pushint(emitter.constants.int32(i));
 		asm.I_callproperty(emitter.nameFromIdent("createFromArraySlice"), 2);
@@ -1318,7 +1318,7 @@ class FnExpr implements Expr{
 			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 			methGen.asm.I_getlocal(i);
 			// arguments object should be on TOS
-			methGen.arraySliceToVector(i - 1);
+			methGen.arraySliceToList(i - 1);
 			methGen.asm.I_setslot(restSlot);
 		}
 

@@ -266,7 +266,7 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun* 1 2))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([1, 2])))
+							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(1, 2)));
 						}, rt);
 				});
 		}
@@ -275,7 +275,7 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun*))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([])))
+							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list()));
 						}, rt);
 				});
 		}
@@ -284,8 +284,8 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [a & dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun* 1))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should be bound to a Vector.", v.get() is Vector);
-							assertTrue("*bird* should be empty.", Vector(v.get()).count() == 0);
+							assertTrue("*bird* should be bound to a List.", v.get() is List);
+							assertTrue("*bird* should be empty.", v.get().count() == 0);
 						}, rt);
 				});
 		}
@@ -294,9 +294,9 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [a & dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun* 1 2 3 4))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should be bound to a Vector.", v.get() is Vector);
-							assertTrue("*bird* should be empty.", Vector(v.get()).count() == 3);
-							assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([2, 3, 4])));
+							assertTrue("*bird* should be bound to a List.", v.get() is List);
+							assertTrue("*bird* should be empty.", v.get().count() == 3);
+							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(2, 3, 4)));
 						}, rt);
 				});
 		}
@@ -304,7 +304,7 @@ package com.las3r.test{
 		public function testOptionalsWithEmptyRestArg():void{
 			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2))", function(rt:RT, val:*):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([])));
+					assertTrue("*bird* should match....", Util.equal(v.get(), RT.list()));
 
 				});
 		}
@@ -313,7 +313,7 @@ package com.las3r.test{
 		public function testOptionalsWithRestArg():void{
 			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2 3 4))", function(rt:RT, val:*):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(Vector(v.get()), new Vector([3, 4])));
+					assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(3, 4)));
 				});
 		}
 

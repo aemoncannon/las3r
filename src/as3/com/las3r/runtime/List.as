@@ -33,6 +33,10 @@ package com.las3r.runtime{
 			_count = count;
 		}
 
+		public static function createFromArraySlice(items:Array, i:int):List{
+			return createFromArray(items.slice(i));
+		}
+
 		public static function createFromArray(init:Array):List{
 			var ret:List = List(EMPTY);
 			var len:int = init.length;
