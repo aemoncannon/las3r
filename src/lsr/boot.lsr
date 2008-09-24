@@ -158,17 +158,6 @@
                (seq ret)))))
 
 
-(def macroexpand-1 
-     (fn [form]
-       (. (. *runtime* compiler) (macroexpand1 form))))
-
-
-(def macroexpand
-     (fn [form]
-       (let [ex (macroexpand-1 form)]
-	 (if (identical? ex form)
-	   form
-	   (macroexpand ex)))))
 
 (def
  #^{:private true}
@@ -183,13 +172,13 @@
 
 (def 
 
- #^{:doc "Same as (def name (fn [params* ] exprs*)) or (def
-    name (fn ([params* ] exprs*)+)) with any doc-string or attrs added
+ #^{:doc "Same as (def name (fn [params* ] exprs*)) with any doc-string or attrs added
     to the var metadata"
     :arglists '([name doc-string? attr-map? [params*] body]
 		  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
  defn (fn defn [name & fdecl]
-        (let [m (if (string? (first fdecl))
+        (let [
+	      m (if (string? (first fdecl))
                   {:doc (first fdecl)}
                   {})
               fdecl (if (string? (first fdecl))
@@ -201,18 +190,35 @@
               fdecl (if (map? (first fdecl))
                       (rest fdecl)
                       fdecl)
-              fdecl (if (vector? (first fdecl))
-                      (list fdecl)
-                      fdecl)
               m (if (map? (last fdecl))
                   (conj m (last fdecl))
                   m)
               fdecl (if (map? (last fdecl))
                       (butlast fdecl)
                       fdecl)
-              m (conj {:arglists (list 'quote (sigs fdecl))} m)]
-          `(def ~(with-meta name (conj (if (meta name) (meta name) {}) m)) fn ~@fdecl))))
+              m (conj {:arglists (list 'quote (sigs fdecl))} m)
+	      ]
+          `(def ~(with-meta name (conj (if (meta name) (meta name) {}) m)) (fn ~@fdecl)))))
+
 
 (. (var defn) (setMacro))
 
 
+
+(defn macroexpand-1
+  "If form represents a macro form, returns its expansion,
+  else returns form."
+  [form]
+    (. (. *runtime* compiler) (macroexpand1 form)))
+
+
+
+(defn macroexpand
+  "Repeatedly calls macroexpand-1 on form until it no longer
+  represents a macro form, then returns it.  Note neither
+  macroexpand-1 nor macroexpand expand macros in subforms."
+  [form]
+    (let [ex (macroexpand-1 form)]
+      (if (identical? ex form)
+        form
+        (macroexpand ex))))
