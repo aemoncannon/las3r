@@ -22,6 +22,14 @@ package com.las3r.runtime{
 			return createFromArray(init);
 		}
 
+		public static function createFromSeq(seq:ISeq):Map{
+			var source:Array = [];
+			for(var c:ISeq = seq; c != null; c = c.rest()){
+				source.push(c.first());
+			}
+			return createFromArray(source);
+		}
+
 		public static function createFromArray(init:Array):Map{
 			var ret:Map = new Map();
 			var len:int = init.length;

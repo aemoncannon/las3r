@@ -176,19 +176,19 @@ package com.las3r.runtime{
 			VECTOR = sym1("vector");
 			Var.internWithRoot(LAS3R_NAMESPACE, VECTOR,
 				function(...args:Array):Object{
-					return RT.vector.apply(null, args);
+					return Vector.createFromArray(args);
 				});
 
 			HASHMAP = sym1("hash-map");
 			Var.internWithRoot(LAS3R_NAMESPACE, HASHMAP,
 				function(...args:Array):Object{
-					return RT.map.apply(null, args);
+					return Map.createFromArray(args);
 				});
 
 			LIST = sym1("list");
 			Var.internWithRoot(LAS3R_NAMESPACE, LIST,
 				function(...args:Array):Object{
-					return RT.list.apply(null, args);
+					return List.createFromArray(args);
 				});
 
 

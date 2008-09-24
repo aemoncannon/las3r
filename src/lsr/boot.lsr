@@ -209,7 +209,7 @@
   "If form represents a macro form, returns its expansion,
   else returns form."
   [form]
-    (. (. *runtime* compiler) (macroexpand1 form)))
+  (. (. *runtime* compiler) (macroexpand1 form)))
 
 
 
@@ -218,7 +218,20 @@
   represents a macro form, then returns it.  Note neither
   macroexpand-1 nor macroexpand expand macros in subforms."
   [form]
-    (let [ex (macroexpand-1 form)]
-      (if (identical? ex form)
-        form
-        (macroexpand ex))))
+  (let [ex (macroexpand-1 form)]
+    (if (identical? ex form)
+      form
+      (macroexpand ex))))
+
+
+(defn vector
+  "Creates a new vector containing the args."
+  [& args]
+  (. com.las3r.runtime.Vector (createFromSeq args)))
+
+
+(defn hash-map
+  "keyval => key val
+  Returns a new hash map with supplied mappings."
+  [& keyvals]
+     (. com.las3r.runtime.Map (createFromSeq keyvals)))
