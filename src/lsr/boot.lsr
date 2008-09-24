@@ -235,3 +235,47 @@
   Returns a new hash map with supplied mappings."
   [& keyvals]
      (. com.las3r.runtime.Map (createFromSeq keyvals)))
+
+(def
+
+ #^{:doc "Like defn, but the resulting function name is declared as a
+  macro and will be used as a macro by the compiler when it is
+  called."
+    :arglists '([name doc-string? attr-map? [params*] body]
+                [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+ defmacro (fn [name & args]
+            (list 'do
+                  (cons `defn (cons name args))
+                  (list '. (list 'var name) '(setMacro)))))
+
+(. (var defmacro) (setMacro))
+
+(defmacro when
+  "Evaluates test. If logical true, evaluates body in an implicit do."
+  [test & body]
+  (list 'if test (cons 'do body)))
+
+(defmacro when-not
+  "Evaluates test. If logical false, evaluates body in an implicit do."
+  [test & body]
+    (list 'if test nil (cons 'do body)))
+
+(defn nil?
+  "Returns true if x is nil, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x nil))
+
+(defn false?
+  "Returns true if x is the value false, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x false))
+
+(defn true?
+  "Returns true if x is the value true, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x true))
+
+(defn not
+  "Returns true if x is logical false, false otherwise."
+  {:tag Boolean}
+  [x] (if x false true))
