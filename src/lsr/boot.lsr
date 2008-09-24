@@ -157,6 +157,19 @@
                (recur (conj ret (first s)) (rest s))
                (seq ret)))))
 
+
+(def macroexpand-1 
+     (fn [form]
+       (. (. *runtime* compiler) (macroexpand1 form))))
+
+
+(def macroexpand
+     (fn [form]
+       (let [ex (macroexpand-1 form)]
+	 (if (identical? ex form)
+	   form
+	   (macroexpand ex)))))
+
 (def
  #^{:private true}
  sigs
