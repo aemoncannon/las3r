@@ -46,7 +46,7 @@ end
 REPL_TARGET = "./bin/repl.swf"
 file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 635 450"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/Main.mxml -output=#{REPL_TARGET}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
 end
 
 TRACE_SWF = "./bin/trace_swf.swf"
