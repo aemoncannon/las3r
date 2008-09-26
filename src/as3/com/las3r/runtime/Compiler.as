@@ -94,7 +94,9 @@ package com.las3r.runtime{
 					Var.popBindings(rt);
 					onComplete(result);
 				}
+
 			}
+
 			loadAllForms(null);
 		}
 
@@ -121,11 +123,9 @@ package com.las3r.runtime{
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
-			bytes.position = 0;
-			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
 			// Debug
-			rt.debugFunc(ABCDump.dump(swfBytes));
+			//rt.debugFunc(ABCDump.dump(swfBytes));
 
 			bytes.position = 0;
 			ByteLoader.loadBytes(bytes, function(e:Event):void{

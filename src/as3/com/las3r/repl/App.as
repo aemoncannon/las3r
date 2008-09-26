@@ -17,8 +17,8 @@ package com.las3r.repl{
 
 		public function App(){
 			stage.scaleMode = StageScaleMode.NO_SCALE;
-			var r:Repl = new Repl(stage.stageWidth - 100, stage.stageHeight - 100);
-			r.x = r.y = 50;
+			var r:Repl = new Repl(stage.stageWidth - 50, stage.stageHeight - 50);
+			r.x = r.y = 25;
 			addChild(r);
 		}
 
