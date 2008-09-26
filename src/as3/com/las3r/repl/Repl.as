@@ -44,6 +44,9 @@ package com.las3r.repl{
 				_outputField.appendText(str + "\n");
 				_outputField.scrollV = _outputField.maxScrollV;
 			}
+		}
+
+		public function init():void{
 			_rt.loadStdLib(function(val:*):void{
 					refreshUI();
 					_ui.visible = true;
