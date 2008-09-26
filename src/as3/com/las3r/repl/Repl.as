@@ -12,9 +12,11 @@ package com.las3r.repl{
 
 	import com.las3r.runtime.*;
 	import com.las3r.repl.ui.*;
+	import flash.ui.Keyboard;
 	import flash.display.*;
 	import flash.geom.Rectangle;
 	import flash.events.*;
+	import flash.text.*;
 
 	public class Repl extends Sprite{
 
@@ -23,6 +25,10 @@ package com.las3r.repl{
 		protected var _rt:RT;
 		protected var _ui:Sprite;
 		protected var _resizeGrip:DragGrip;
+		protected var _inputField:TextField;
+		protected var _outputField:TextField;
+		protected var _inputHistory:Array = [];
+		protected var _inputHistoryPos:int = 0;
 
 		public function Repl(w:int, h:int){
 			_width = w;
@@ -36,6 +42,11 @@ package com.las3r.repl{
 				});
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+
+			_rt.traceFunc = function(str:String):void{
+				_outputField.appendText(str + "\n");
+				_outputField.scrollV = _outputField.maxScrollV;
+			}
 		}
 
 		protected function onMouseDown(e:Event):void{
@@ -51,17 +62,53 @@ package com.las3r.repl{
 			addChild(_ui);
 
 			_resizeGrip = new DragGrip(10, 10, new Rectangle(100, 100, 1000, 1000));
-			_ui.addChild(_resizeGrip);
 			_resizeGrip.addEventListener(DragGrip.DRAGGED, onResizeGripDragged);
+			_ui.addChild(_resizeGrip);
+
+
+			var tf:TextFormat = new TextFormat();
+			tf.color = 0xFFFFFF;
+			tf.font = "Arial";
+			tf.indent = 3;
+			_inputField = new TextField();
+			_inputField.defaultTextFormat = tf;
+            _inputField.border = true;
+            _inputField.borderColor = 0x555555;
+            _inputField.background = true;
+			_inputField.backgroundColor = 0x222222;
+			_inputField.wordWrap = true;
+			_inputField.multiline = true;
+			_inputField.type = TextFieldType.INPUT;
+			_inputField.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{ e.stopPropagation(); });
+			_inputField.addEventListener(MouseEvent.MOUSE_UP, function(e:Event):void{ e.stopPropagation(); });
+			_inputField.addEventListener(TextEvent.TEXT_INPUT, onInputTextInput);
+			_inputField.addEventListener(KeyboardEvent.KEY_DOWN, onInputKeyDown);
+            _ui.addChild(_inputField);
+
+			_outputField = new TextField();
+			_outputField.defaultTextFormat = tf;
+            _outputField.border = true;
+            _outputField.borderColor = 0x555555;
+            _outputField.background = true;
+			_outputField.backgroundColor = 0x222222;
+			_outputField.wordWrap = true;
+			_outputField.multiline = true;
+			_outputField.type = TextFieldType.DYNAMIC;
+			_outputField.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{ e.stopPropagation(); });
+			_outputField.addEventListener(MouseEvent.MOUSE_UP, function(e:Event):void{ e.stopPropagation(); });
+            _ui.addChild(_outputField);
 		}
 
 		protected function onResizeGripDragged(e:Event):void{
 			_width = _resizeGrip.x + _resizeGrip.width;
 			_height = _resizeGrip.y + _resizeGrip.height;
 			refreshUI();
+			_outputField.scrollV = _outputField.maxScrollV;
 		}
 
 		protected function refreshUI():void{
+			var pad:int = 5;
+
 			var g:Graphics = _ui.graphics;
 			g.clear();
 			g.lineStyle(1, 0x333333, 1);
@@ -71,6 +118,56 @@ package com.las3r.repl{
 			
 			_resizeGrip.x = _width - _resizeGrip.width;
 			_resizeGrip.y = _height - _resizeGrip.height;
+
+			var inputHeight:int = 40;
+			_inputField.height = inputHeight;
+			_inputField.width = _width - _resizeGrip.width - (2 * pad);
+			_inputField.x = pad;
+			_inputField.y = _height - inputHeight - pad;
+
+			_outputField.height = _height - inputHeight - (3 * pad);
+			_outputField.width = _width - (2 * pad);
+			_outputField.x = pad;
+			_outputField.y = pad;
+		}
+
+		protected function onInputTextInput(e:TextEvent):void{
+			switch (e.text) {
+				case "\n" :
+				evalCurrentInput();
+				e.stopPropagation();
+				e.preventDefault();
+				break;
+			}
+		}
+
+		protected function onInputKeyDown(e:KeyboardEvent):void{
+			var key:uint = e.keyCode;
+			switch (key) {
+				case Keyboard.UP :
+ 				_inputHistoryPos = _inputHistoryPos - 1 + (_inputHistoryPos == 0 ? _inputHistory.length : 0);
+ 				_inputField.text = _inputHistory[_inputHistoryPos];
+ 				break;
+
+				case Keyboard.DOWN :
+ 				_inputHistoryPos = (_inputHistoryPos + 1) % _inputHistory.length;
+ 				_inputField.text = _inputHistory[_inputHistoryPos];
+ 				break;
+			
+			}
+		}
+
+
+		protected function evalCurrentInput():void{
+			var src:String = _inputField.text;
+			_inputField.text = "";
+
+			_inputHistory.push(src);
+			_inputHistoryPos = _inputHistory.length;
+
+			_rt.evalStr(src, function(val:*):void{ 
+					_rt.traceOut(RT.printToString(val)); 
+				});
 		}
 
 
