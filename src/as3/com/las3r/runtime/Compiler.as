@@ -100,7 +100,6 @@ package com.las3r.runtime{
 		}
 
 		protected function loadForm(form:Object, callback:Function):void{
-
 			// XXX Compiled LAS3R code stores result of expression here..
 			var resultKey:String = "load_result_" + _rt.nextID();
 

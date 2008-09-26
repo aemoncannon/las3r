@@ -21,7 +21,7 @@
 
  cons (fn* cons [x seq] (. com.las3r.runtime.RT (cons x seq))))
 
-					;during bootstrap we don't have destructuring let, loop or fn, will redefine later
+;;during bootstrap we don't have destructuring let, loop or fn, will redefine later
 (def
  #^{:macro true}
  let (fn* let [& decl] (cons 'let* decl)))
@@ -234,7 +234,7 @@
   "keyval => key val
   Returns a new hash map with supplied mappings."
   [& keyvals]
-     (. com.las3r.runtime.Map (createFromSeq keyvals)))
+  (. com.las3r.runtime.Map (createFromSeq keyvals)))
 
 (def
 
@@ -242,7 +242,7 @@
   macro and will be used as a macro by the compiler when it is
   called."
     :arglists '([name doc-string? attr-map? [params*] body]
-                [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+		  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
  defmacro (fn [name & args]
             (list 'do
                   (cons `defn (cons name args))
@@ -258,7 +258,7 @@
 (defmacro when-not
   "Evaluates test. If logical false, evaluates body in an implicit do."
   [test & body]
-    (list 'if test nil (cons 'do body)))
+  (list 'if test nil (cons 'do body)))
 
 (defn nil?
   "Returns true if x is nil, false otherwise."
@@ -279,3 +279,5 @@
   "Returns true if x is logical false, false otherwise."
   {:tag Boolean}
   [x] (if x false true))
+
+

@@ -63,6 +63,7 @@ package com.hurlant.eval {
 			out.position = 0;
 			return out;
 		}
+
 		/**
 		* Load the bytecodes passed into the flash VM, using
 		* the current application domain, or a child of it
@@ -74,28 +75,20 @@ package com.hurlant.eval {
 		*/
 		public static function loadBytes(bytes:*, onComplete:Function = null, inplace:Boolean=false):Boolean {
 			var callback:Function = onComplete || function(e:Event):void{};
-			if (bytes is Array || (getType(bytes)==2)) {
+			if (bytes is Array || (getType(bytes) == 2)) {
 				if (!(bytes is Array)) {
 					bytes = [ bytes ];
 				}
 				bytes = wrapInSWF(bytes);
 			}
-			try {
-				var c:LoaderContext = null;
-				if (inplace) {
-					c = new LoaderContext(false, ApplicationDomain.currentDomain, null);
-				}
-				var l:Loader = new Loader;
-				l.contentLoaderInfo.addEventListener(Event.INIT, callback);
-				l.loadBytes(bytes, c);
-				return true;
-			} catch (e:*) {
-				Debug.print(e);
-			} finally {
-				//trace("done.");
-				// darn it. the running of the bytes doesn't happen until current scripts are done. no try/catch can work
+			var c:LoaderContext = null;
+			if (inplace) {
+				c = new LoaderContext(false, ApplicationDomain.currentDomain, null);
 			}
-			return false;
+			var l:Loader = new Loader();
+			l.contentLoaderInfo.addEventListener(Event.INIT, callback);
+			l.loadBytes(bytes, c);
+			return true;
 		}
 		public static function isSWF(data:ByteArray):Boolean {
 			var type:int = getType(data);

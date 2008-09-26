@@ -50,6 +50,7 @@ package com.las3r.test{
 			rt.evalStr(str, willCall(function(val:*):void{ callback(rt, val); }, 1000));
 		}
 
+
 	}
 }
 
