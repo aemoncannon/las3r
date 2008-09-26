@@ -45,7 +45,9 @@ package com.las3r.test{
 			rt.loadStdLib(function(val:*):void{
 					readAndLoad("(not true)",function(rt:RT, val:*):void{
 							assertTrue("val should be false", val == false);
-						}, rt)
+						}, 
+						rt
+					);
 				});
 		}
 
