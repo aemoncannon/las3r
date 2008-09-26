@@ -12,11 +12,13 @@ package com.las3r.repl{
 
 	import com.las3r.runtime.*;
 	import com.las3r.repl.ui.*;
+	import com.las3r.util.ExecHelper;
 	import flash.ui.Keyboard;
 	import flash.display.*;
 	import flash.geom.Rectangle;
 	import flash.events.*;
 	import flash.text.*;
+	import flash.utils.setTimeout;
 
 	public class Repl extends Sprite{
 
@@ -36,17 +38,16 @@ package com.las3r.repl{
 			_rt = new RT();
 			createUI();
 			_ui.visible = false;
-			_rt.loadStdLib(function(val:*):void{
-					refreshUI();
-					_ui.visible = true;
-				});
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-
 			_rt.traceFunc = function(str:String):void{
 				_outputField.appendText(str + "\n");
 				_outputField.scrollV = _outputField.maxScrollV;
 			}
+			_rt.loadStdLib(function(val:*):void{
+					refreshUI();
+					_ui.visible = true;
+				});
 		}
 
 		protected function onMouseDown(e:Event):void{
@@ -153,7 +154,7 @@ package com.las3r.repl{
  				_inputHistoryPos = (_inputHistoryPos + 1) % _inputHistory.length;
  				_inputField.text = _inputHistory[_inputHistoryPos];
  				break;
-			
+				
 			}
 		}
 

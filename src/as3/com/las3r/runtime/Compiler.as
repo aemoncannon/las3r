@@ -86,6 +86,7 @@ package com.las3r.runtime{
 					rt.RUNTIME, rt.RUNTIME.get()
 				)
 			);
+
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					loadForm(forms.shift(), loadAllForms);
@@ -94,9 +95,7 @@ package com.las3r.runtime{
 					Var.popBindings(rt);
 					onComplete(result);
 				}
-
 			}
-
 			loadAllForms(null);
 		}
 
