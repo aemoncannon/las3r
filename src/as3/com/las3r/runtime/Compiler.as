@@ -1171,6 +1171,7 @@ class FnMethod{
 	var restParam:LocalBinding;
 	var body:BodyExpr;
 	var paramBindings:LocalBindingSet;
+	var startLabel:Object
 	private var _compiler:Compiler;
 
 	public function FnMethod(c:Compiler){
@@ -1353,17 +1354,18 @@ class FnExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
+		var methGen:CodeGen;
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
 			var formalsTypes:Array = [];
 			meth.reqParams.each(function(ea:Object):void{
-					formalsTypes.push(0); // '*'
+					formalsTypes.push(0/*'*'*/); 
 				});
 			meth.optionalParams.each(function(ea:Object):void{
-					formalsTypes.push(0); // '*'
+					formalsTypes.push(0/*'*'*/);
 				});
 			var initScopeDepth:int = gen.asm.currentScopeDepth;
-			var methGen:CodeGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, initScopeDepth);
+			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, initScopeDepth);
 			if(meth.optionalParams.count() > 0){
 				var defaults:Array = meth.optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 				methGen.meth.setDefaults(defaults);
@@ -1371,9 +1373,62 @@ class FnExpr implements Expr{
 			meth.emit(context, methGen);
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
-		// 		methods.each(function(meth:FnMethod):void{
+		else{
+			var initScopeDepth:int = gen.asm.currentScopeDepth;
+			methGen = gen.newMethodCodeGen([], false, true, initScopeDepth);
+			var argsIndex:int = 1;
 
-		// 			});
+			// Initialize all the jump labels
+			methods.each(function(meth:FnMethod):void{  meth.startLabel = methGen.asm.newLabel(); });
+
+			methods.each(function(meth:FnMethod):void{  
+					methGen.asm.I_getlocal(argsIndex);
+					methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
+					if(meth.restParam){
+						var minArity:int = meth.reqParams.count();
+						methGen.asm.I_pushuint(methGen.emitter.constants.uint32(minArity));
+						methGen.asm.I_ifge(meth.startLabel);
+					}
+					else{
+						var arity:int = meth.reqParams.count();
+						methGen.asm.I_pushuint(methGen.emitter.constants.uint32(arity));
+						methGen.asm.I_ifeq(meth.startLabel);
+					}
+				});
+
+			// If # of params at runtime doesn't match any of the overloads..
+			methGen.asm.I_pushstring( methGen.emitter.constants.stringUtf8("Variadic function invoked with invalid arity."));
+			methGen.asm.I_throw();
+
+			methods.each(function(meth:FnMethod):void{
+
+					methGen.asm.I_label(meth.startLabel);
+
+					var i:int = argsIndex;
+					methGen.asm.I_getlocal(i);
+					meth.reqParams.each(function(ea:Object):void{
+							methGen.asm.I_dup(); // Keep a copy of the arguments object.
+							methGen.asm.I_pushint(methGen.emitter.constants.int32(i));
+							methGen.asm.I_nextvalue();
+							methGen.asm.I_setlocal(i);
+							i++;
+						});
+					meth.optionalParams.each(function(ea:Object):void{
+							methGen.asm.I_dup(); // Keep a copy of the arguments object.
+							methGen.asm.I_pushint(methGen.emitter.constants.int32(i));
+							methGen.asm.I_nextvalue();
+							methGen.asm.I_setlocal(i);
+							i++;
+						});
+					// Now put the arguments object back into the locals, following all the params
+					methGen.asm.I_setlocal(i);
+
+					meth.emit(context, methGen);
+				});
+
+			gen.asm.I_newfunction(methGen.meth.finalize());
+		}
+
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 

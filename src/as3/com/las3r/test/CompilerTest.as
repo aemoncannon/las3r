@@ -324,6 +324,23 @@ package com.las3r.test{
 				});
 		}
 
+		public function testVariadicFunctionWithTwoMethods():void{
+			readAndLoad("((fn* ([a] a) ([a b] (list a b))) 1)", function(rt:RT, val:*):void{
+					assertTrue("return value should be 1", val == 1);
+				});
+		}
+
+		public function testVariadicFunctionWithTwoMethodsCallingSecond():void{
+			readAndLoad("((fn* ([a] a) ([a b] (list a b))) 1 2)", function(rt:RT, val:*):void{
+					assertTrue("return value should be (1 2)", Util.equal(val, RT.list(1, 2)));
+				});
+		}
+
+		public function testVariadicFunctionWithRestParam():void{
+			readAndLoad("((fn* ([a] a) ([a b & c] c)) 1 2 3 4)", function(rt:RT, val:*):void{
+					assertTrue("return value should be (1 2)", Util.equal(val, RT.list(3, 4)));
+				});
+		}
 
 		public function testSimpleClosure():void{
 			readAndLoad("(def *funA* (fn* [a] (fn* [] a)))", function(rt:RT, val:*):void{
