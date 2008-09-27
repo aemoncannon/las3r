@@ -10,6 +10,8 @@
 require 'rexml/document'
 include REXML
 
+$debug = true
+
 MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
 DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
 
@@ -40,26 +42,31 @@ DEMO_SWF_TARGETS = DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(e
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
 file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 1000 600"]
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
 REPL_TARGET = "./bin/repl.swf"
 file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 635 450"]
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
+end
+
+task :dist => [REPL_TARGET, UNIT_TEST_RUNNER_TARGET] do
+  cp REPL_TARGET, "dist"
+  cp UNIT_TEST_RUNNER_TARGET, "dist"
 end
 
 TRACE_SWF = "./bin/trace_swf.swf"
 file TRACE_SWF => SHARED_SOURCES do
-  options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 635 450"]
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/util/TraceSwf.as -output=#{TRACE_SWF}"
 end
 
 DEMO_SWF_ENTRY_POINTS.zip(DEMO_SWF_TARGETS).each do |pair|
   main, target = pair
   file target => SHARED_SOURCES - DEMO_SWF_ENTRY_POINTS + [main] do
-    options = COMPILE_OPTIONS + ["-compiler.debug=true", "-default-size 635 450"]
+    options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
     sh "#{MXMLC} #{options.join(" ")} -file-specs #{main} -output=#{target}"
   end
 end
