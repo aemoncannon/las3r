@@ -24,13 +24,10 @@ COMPILE_OPTIONS = [
                    "+configname=flex",
                    "-default-frame-rate=30",
                    "-compiler.warn-no-type-decl=false",
-                   
                    # ABCDump has tons of warnings unless we disable these:
                    "-compiler.warn-missing-namespace-decl=false",
                    "-compiler.warn-internal-error=false",
                    "-compiler.warn-duplicate-variable-def=false",
-
-
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}"
                   ]
 
