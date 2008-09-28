@@ -670,13 +670,13 @@ class CodeGen{
 
 	/*
 	* Stack:   
-	*   anArray => aVector
+	*   anArray => aList
 	*/
-	public function arraySliceToList(i:int):void{
-		asm.I_getlex(emitter.qname({ns: new PublicNamespace("com.las3r.runtime"), id:"List"}, false))
+	public function restFromArguments(i:int):void{
+		getRTClass();
 		asm.I_swap();
 		asm.I_pushint(emitter.constants.int32(i));
-		asm.I_callproperty(emitter.nameFromIdent("createFromArraySlice"), 2);
+		asm.I_callproperty(emitter.nameFromIdent("restFromArguments"), 2);
 	}
 
 
@@ -1283,7 +1283,7 @@ class FnMethod{
 			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 			methGen.asm.I_getlocal(i);
 			// arguments object should be on TOS
-			methGen.arraySliceToList(i - 1);
+			methGen.restFromArguments(i - 1);
 			methGen.asm.I_setslot(restSlot);
 		}
 		if(nameLb){

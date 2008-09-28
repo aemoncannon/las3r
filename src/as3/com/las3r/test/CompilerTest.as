@@ -275,7 +275,7 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun*))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list()));
+							assertTrue("*bird* should match....", Util.equal(v.get(), null));
 						}, rt);
 				});
 		}

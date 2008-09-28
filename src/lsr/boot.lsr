@@ -92,6 +92,7 @@
     c. Returns true or false"}
  instance? (fn instance? [c x] (. com.las3r.runtime.RT (isInstance c x))))
 
+
 (def
  #^{:arglists '([x])
     :doc "Return true if x implements ISeq"}
@@ -207,6 +208,10 @@
 (. (var defn) (setMacro))
 
 
+(defn cast
+  "Throws an Error if x is not a c, else returns x."
+  [c x] (. com.las3r.runtime.RT (cast c x)))
+
 
 (defn macroexpand-1
   "If form represents a macro form, returns its expansion,
@@ -282,9 +287,69 @@
   {:tag Boolean}
   [x] (if x false true))
 
+
+(defn str
+  "With no args, returns the empty string. With one arg x, returns
+  x.toString().  (str nil) returns the empty string. With more than
+  one arg, returns the concatenation of the str values of the args."
+  {:tag String}
+  ([] "")
+  ([x]
+     (if (nil? x) "" (cast String x)))
+  ([x & ys]
+     (loop [sb (str x) 
+	    more ys]
+       (if more
+	 (recur (. sb  (concat (str (first more)))) (rest more))
+	 (str sb)))))
+
+
 (defn symbol
   "Returns a Symbol with the given namespace and name."
   ([name] (. com.las3r.runtime.Symbol (intern1 *runtime* name)))
   ([ns name] (. com.las3r.runtime.Symbol (intern2 *runtime* ns name))))
 
 
+(defn keyword
+  "Returns a Keyword with the given namespace and name.  Do not use :
+  in the keyword strings, it will be added automatically."
+  ([name] (. com.las3r.runtime.Keyword (intern2 *runtime* nil name)))
+  ([ns name] (. com.las3r.runtime.Keyword (intern2 *runtime* ns name))))
+
+
+(defn gensym
+  "Returns a new symbol with a unique name. If a prefix string is
+  supplied, the name is prefix# where # is some unique number. If
+  prefix is not supplied, the prefix is 'G'."
+  ([] (gensym "G__"))
+  ([prefix-string] (. com.las3r.runtime.Symbol (intern1 *runtime* (str prefix-string (str (. *runtime* (nextID))))))))
+
+(defmacro cond
+  "Takes a set of test/expr pairs. It evaluates each test one at a
+  time.  If a test returns logical true, cond evaluates and returns
+  the value of the corresponding expr and doesn't evaluate any of the
+  other tests or exprs. (cond) returns nil."
+  [& clauses]
+  (when clauses
+    (list 'if (first clauses)
+	  (second clauses)
+	  (cons 'cond (rest (rest clauses))))))
+
+(defn spread
+  {:private true}
+  [arglist]
+  (cond
+   (nil? arglist) nil
+   (nil? (rest arglist)) (seq (first arglist))
+   :else (cons (first arglist) (spread (rest arglist)))))
+
+(defn apply
+  "Applies fn f to the argument list formed by prepending args to argseq."
+  {:arglists '([f args* argseq])}
+  [f & args]
+    (. f (apply* (spread args))))
+
+(defn list*
+  "Creates a new list containing the item prepended to more."
+  [item & more]
+    (spread (cons item more)))
