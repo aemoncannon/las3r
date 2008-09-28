@@ -18,6 +18,7 @@ package com.las3r.runtime{
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
 	import flash.events.Event;
+	import flash.display.Stage;
 	import flash.utils.Dictionary;
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
@@ -50,11 +51,16 @@ package com.las3r.runtime{
 		private var id:int = 1;
 		private var _this:RT;
 		private var _resultsDict:Dictionary = new Dictionary();
+
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
 
 		private var _lispReader:LispReader;
 		public function get lispReader():LispReader { return _lispReader }
+
+		private var _stage:Stage;
+		public function get stage():Stage { return _stage }
+
 
 		public static var T:Boolean = true;
 		public static var F:Boolean = false;
@@ -66,6 +72,7 @@ package com.las3r.runtime{
 		public var IN_NAMESPACE:Symbol;
 		public var CURRENT_NS:Var;
 		public var RUNTIME:Var;
+		public var STAGE:Var;
 		public var PRINT_READABLY:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
@@ -120,8 +127,9 @@ package com.las3r.runtime{
 			);
 		}
 
-		public function RT():void{
+		public function RT(stage:Stage = null):void{
 			_this = this;
+			_stage = stage;
 			var forceImport:Array = [Numbers];
 			instances.push(this);
 			instanceId = instances.length - 1;
@@ -137,6 +145,7 @@ package com.las3r.runtime{
 			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, sym1(LispNamespace.LAS3R_NAMESPACE_NAME));
 			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*ns*"), LAS3R_NAMESPACE);
 			RUNTIME = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*runtime*"), this);
+			STAGE = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*stage*"), _stage);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 
 			IN_NAMESPACE = sym1("in-ns");

@@ -33,10 +33,10 @@ package com.las3r.repl{
 		protected var _inputHistory:Array = [];
 		protected var _inputHistoryPos:int = 0;
 
-		public function Repl(w:int, h:int){
+		public function Repl(w:int, h:int, stage:Stage = null){
 			_width = w;
 			_height = h;
-			_rt = new RT();
+			_rt = new RT(stage);
 			createUI();
 			_ui.visible = false;
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);

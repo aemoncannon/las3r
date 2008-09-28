@@ -83,7 +83,8 @@ package com.las3r.runtime{
 			Var.pushBindings(rt, 
 				RT.map(
 					rt.CURRENT_NS, rt.CURRENT_NS.get(),
-					rt.RUNTIME, rt.RUNTIME.get()
+					rt.RUNTIME, rt.RUNTIME.get(),
+					rt.STAGE, rt.STAGE.get()
 				)
 			);
 
