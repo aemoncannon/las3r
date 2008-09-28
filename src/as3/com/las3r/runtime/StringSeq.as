@@ -12,7 +12,7 @@
 
 package com.las3r.runtime{
 
-	class StringSeq extends ASeq implements ISeq{
+	class StringSeq extends ASeq implements ISeq, IReduce{
 		//todo - something more efficient
 		private var str:String;
 		private var i:int;
@@ -40,7 +40,7 @@ package com.las3r.runtime{
 			return str.length - i;
 		}
 
-		public function reduce(f:Function, start:Object = null):Object {
+		override public function reduce(f:Function, start:Object = null):Object {
 			var st:Object = start || first();
 			var ret:Object = f(st, str.charAt(i));
 			for(var x:int = i + 1; x < str.length; x++){

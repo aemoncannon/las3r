@@ -14,7 +14,7 @@ package com.las3r.runtime{
 	import flash.utils.Dictionary;
 	import com.las3r.util.Util;
 
-	public class Map extends Obj implements IMap{
+	public class Map extends Obj implements IMap, IReduce{
 
 		private var _dict:Dictionary;
 
@@ -129,6 +129,10 @@ package com.las3r.runtime{
 			for(var key:* in _dict){ iterator(key, _dict[key]); }
 		}
 
+		public function reduce(f:Function, start:Object = null):Object {
+			return MapSeq(seq()).reduce(f, start);
+		}
+
 	}
 }
 
@@ -163,7 +167,7 @@ class MapSeq extends ASeq implements ISeq{
 		return keys.length - i;
 	}
 
-	public function reduce(f:Function, start:Object = null):Object {
+	override public function reduce(f:Function, start:Object = null):Object {
 		var st:Object = start || first();
 		var ret:Object = f(st, m.valAt(keys[i]));
 		for(var x:int = i + 1; x < m.count(); x++){

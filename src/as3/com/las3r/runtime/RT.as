@@ -122,6 +122,7 @@ package com.las3r.runtime{
 
 		public function RT():void{
 			_this = this;
+			var forceImport:Array = [Numbers];
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
@@ -423,8 +424,9 @@ package com.las3r.runtime{
 				else if(coll is IVector || coll is ISeq || coll is IMap){
 					return coll.cons(x);
 				}
-				else
-				throw new ("UnsupportedOperationException: conj not supported on this object: " + coll);
+				else{
+					throw new Error("UnsupportedOperationException: conj not supported on this object: " + coll);
+				}
 			}
 
 			public static function get(coll:Object, key:Object, notFound:Object = null):Object{
@@ -596,8 +598,8 @@ package com.las3r.runtime{
 				else if(x is ISeq || x is IList)
 				{
 					w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+						printInnerSeq(seq(x), w);
+						w.write(')');
 				}
 				else if(x is String)
 				{
@@ -644,42 +646,42 @@ package com.las3r.runtime{
 				else if(x is IMap)
 				{
 					w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:IVector = IVector(sq.first());
-						print(v.nth(0), w);
-						w.write(' ');
-						print(v.nth(1), w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+						for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+						{
+							var v:IVector = IVector(sq.first());
+							print(v.nth(0), w);
+							w.write(' ');
+							print(v.nth(1), w);
+							if(sq.rest() != null)
+							w.write(", ");
+						}
+						w.write('}');
+				}
+				else if(x is IVector)
+				{
+					var a:IVector = IVector(x);
+					w.write('[');
+						for(var i:int = 0; i < a.count(); i++)
+						{
+							print(a.nth(i), w);
+							if(i < a.count() - 1)
+							w.write(' ');
+						}
+						w.write(']');
+				}
+				else w.write(x.toString());
 			}
-			else if(x is IVector)
-			{
-				var a:IVector = IVector(x);
-				w.write('[');
-					for(var i:int = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+
+
+			private static function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
+				for(var sq:ISeq = x; sq != null; sq = sq.rest())
+				{
+					print(sq.first(), w);
+					if(sq.rest() != null)
+					w.write(' ');
+				}
 			}
-			else w.write(x.toString());
+
+
 		}
-
-
-		private static function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
-			for(var sq:ISeq = x; sq != null; sq = sq.rest())
-			{
-				print(sq.first(), w);
-				if(sq.rest() != null)
-				w.write(' ');
-			}
-		}
-
-
 	}
-}

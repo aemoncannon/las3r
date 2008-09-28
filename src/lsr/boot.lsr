@@ -347,9 +347,115 @@
   "Applies fn f to the argument list formed by prepending args to argseq."
   {:arglists '([f args* argseq])}
   [f & args]
-    (. f (apply* (spread args))))
+  (apply* f (spread args)))
 
 (defn list*
   "Creates a new list containing the item prepended to more."
   [item & more]
-    (spread (cons item more)))
+  (spread (cons item more)))
+
+
+
+;;;;;;;;;;;;;;;;at this point all the support for syntax-quote exists;;;;;;;;;;;;;;;;;;;;;;
+
+(defn =
+  "Equality. Returns true if x equals y, false if not. Same as
+  Java x.equals(y) except it also works for nil, and compares
+  numbers in a type-independent manner.  Clojure's immutable data
+  structures define equals() (and thus =) as a value, not an identity,
+  comparison."
+  {:tag Boolean} 
+  ([x] true)
+  ([x y] (. com.las3r.util.Util (equal x y)))
+  ([x y & more]
+     (if (= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (= y (first more)))
+       false)))
+
+(defn not=
+  "Same as (not (= obj1 obj2))"
+  {:tag Boolean}
+  ([x] false)
+  ([x y] (not (= x y)))
+  ([x y & more]
+     (not (apply = x y more))))
+
+
+(defn compare
+  "Comparator. Returns 0 if x equals y, -1 if x is logically 'less
+  than' y, else 1. Same as Java x.compareTo(y) except it also works
+  for nil, and compares numbers in a type-independent manner. x must
+  implement Comparable"
+  {:tag Number
+   :inline (fn [x y] `(. com.las3r.util.Util compare ~x ~y))} 
+  [x y] (. com.las3r.util.Util (compare x y)))
+
+(defmacro and
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns logical false (nil or false), and returns that value and
+  doesn't evaluate any of the other expressions, otherwise it returns
+  the value of the last expr. (and) returns true."
+  ([] true)
+  ([x] x)
+  ([x & rest]
+     `(let [and# ~x]
+	(if and# (and ~@rest) and#))))
+
+(defmacro or
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns a logical true value, or returns that value and doesn't
+  evaluate any of the other expressions, otherwise it returns the
+  value of the last expression. (or) returns nil."
+  ([] nil)
+  ([x] x)
+  ([x & rest]
+     `(let [or# ~x]
+	(if or# or# (or ~@rest)))))
+
+
+
+;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn reduce
+  "f should be a function of 2 arguments. If val is not supplied,
+  returns the result of applying f to the first 2 items in coll, then
+  applying f to that result and the 3rd item, etc. If coll contains no
+  items, f must accept no arguments as well, and reduce returns the
+  result of calling f with no arguments.  If coll has only 1 item, it
+  is returned and f is not called.  If val is supplied, returns the
+  result of applying f to val and the first item in coll, then
+  applying f to that result and the 2nd item, etc. If coll contains no
+  items, returns val and f is not called."
+  ([f coll]
+     (let [s (seq coll)]
+       (if s
+	 (if (instance? com.las3r.runtime.IReduce s)
+	   (. #^com.las3r.runtime.IReduce s (reduce f))
+	   (reduce f (first s) (rest s)))
+	 (f))))
+  ([f val coll]
+     (let [s (seq coll)]
+       (if (instance? com.las3r.runtime.IReduce s)
+         (. #^com.las3r.runtime.IReduce s (reduce f val))
+         ((fn [f val s]
+            (if s
+              (recur f (f val (first s)) (rest s))
+              val))
+          f val s)))))
+
+(defn reverse
+  "Returns a seq of the items in coll in reverse order. Not lazy."
+  [coll]
+  (reduce conj nil coll))
+
+
+;;math stuff
+(defn +
+  "Returns the sum of nums. (+) returns 0."
+  ([] 0)
+  ([x] (cast Number x))
+  ([x y] (. com.las3r.runtime.Numbers (add x y)))
+  ([x y & more]
+     (reduce + (+ x y) more)))

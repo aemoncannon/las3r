@@ -37,6 +37,7 @@ package com.las3r.util{
 					if(k1 > k2) return 1;
 					return 0;
 				}
+				return k1.compareTo(k2);
 			}
 			return -1;
 		}

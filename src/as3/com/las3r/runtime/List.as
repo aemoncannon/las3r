@@ -69,15 +69,6 @@ package com.las3r.runtime{
 			return EMPTY;	
 		}
 
-		public function reduce(f:Function, start:Object = null):Object{
-			var st:Object = start || first();
-			var ret:Object = f(st, first());
-			for(var s:ISeq = rest(); s != null; s = s.rest()){
-				ret = f(ret, s.first());
-			}
-			return ret;
-		}
-
 		
 	}
 }

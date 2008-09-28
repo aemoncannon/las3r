@@ -658,9 +658,10 @@ class SyntaxQuoteReader implements IReaderMacro{
 
 		_reader.pushGensymEnv(RT.map());
 		var form:Object = _reader.read(r, true, null);
+		var result:Object = syntaxQuote(_rt, _reader, form)
 		_reader.popGensymEnv();
 
-		return syntaxQuote(_rt, _reader, form);
+		return result;
 	}
 
 	public static function syntaxQuote(rt:RT, reader:LispReader, form:Object):Object{
@@ -674,8 +675,9 @@ class SyntaxQuoteReader implements IReaderMacro{
 			if(sym.ns == null && sym.name.match(/\#$/))
 			{
 				var gmap:IMap = reader.currentGensymEnv;
-				if(gmap == null)
-				throw new Error("IllegalStateException: Gensym literal not in syntax-quote");
+				if(gmap == null){
+					throw new Error("IllegalStateException: Gensym literal not in syntax-quote");
+				}
 				var gs:Symbol = Symbol(gmap.valAt(sym));
 				if(gs == null){
 					gs = rt.sym2(null, sym.name.substring(0, sym.name.length - 1) + "__" + rt.nextID());

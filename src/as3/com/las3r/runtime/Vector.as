@@ -14,7 +14,7 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	dynamic public class Vector extends Array implements IVector, IObj{
+	dynamic public class Vector extends Array implements IVector, IObj, IReduce{
 
 		protected var _meta:IMap;
 
@@ -131,6 +131,10 @@ package com.las3r.runtime{
 			return null;
 		}
 
+		public function reduce(f:Function, start:Object = null):Object {
+			return VectorSeq(seq()).reduce(f, start);
+		}
+
 		public function includes(obj:Object):Boolean{
 			return indexOf(obj) > -1;
 		}
@@ -170,7 +174,7 @@ class VectorSeq extends ASeq implements ISeq{
 		return v.count() - i;
 	}
 
-	public function reduce(f:Function, start:Object = null):Object {
+	override public function reduce(f:Function, start:Object = null):Object {
 		var st:Object = start || first();
 		var ret:Object = f(st, v.nth(i));
 		for(var x:int = i + 1; x < v.count(); x++){
