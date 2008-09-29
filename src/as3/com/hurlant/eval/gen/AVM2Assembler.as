@@ -4,34 +4,34 @@ package com.hurlant.eval.gen
 	import com.hurlant.eval.Util;
 	import com.hurlant.eval.abc.ABCConstantPool;
 	
-	    /*********************************************************************************
-	     * AVM2 assembler for one code block.
-	     *
-	     * This is a lightweight class that is used to emit bytes for
-	     * instructions and data, to maintain stack and scope depths,
-	     * count local slots used, and to handle branch targets and
-	     * backpatching.  It has no code generation logic save for fairly
-	     * simple abstractions (eg, I_getlocal() maps to "getlocal_n" or
-	     * to the general "getlocal" instruction, depending on its
-	     * parameter value).
-	     *
-	     * FIXME:
-	     *  - There needs to be a way to set the scope stack depth to 0, to be used
-	     *    when generating code for exception handling
-	     *  - It would be nice if we could check that every join point has the same
-	     *    stack depth, this requires that the next linear instruction following
-	     *    an unconditional nonreturning control flow (return, throw, jump) is
-	     *    a label always, or is ignored for the purposes of computing the stack
-	     *    depth.
-	     *  - Ditto for the scope depth, really.
-	     */
+	/*********************************************************************************
+	* AVM2 assembler for one code block.
+	*
+	* This is a lightweight class that is used to emit bytes for
+	* instructions and data, to maintain stack and scope depths,
+	* count local slots used, and to handle branch targets and
+	* backpatching.  It has no code generation logic save for fairly
+	* simple abstractions (eg, I_getlocal() maps to "getlocal_n" or
+	* to the general "getlocal" instruction, depending on its
+	* parameter value).
+	*
+	* FIXME:
+	*  - There needs to be a way to set the scope stack depth to 0, to be used
+	*    when generating code for exception handling
+	*  - It would be nice if we could check that every join point has the same
+	*    stack depth, this requires that the next linear instruction following
+	*    an unconditional nonreturning control flow (return, throw, jump) is
+	*    a label always, or is ignored for the purposes of computing the stack
+	*    depth.
+	*  - Ditto for the scope depth, really.
+	*/
 	public class AVM2Assembler
 	{
 
 	    /*******************************************************************
-	     * ABC constants
-	     */
-	
+	    * ABC constants
+	    */
+		
 	    static public const CONSTANT_Utf8               = 0x01;
 	    static public const CONSTANT_Integer            = 0x03;
 	    static public const CONSTANT_UInt               = 0x04;
@@ -59,12 +59,12 @@ package com.hurlant.eval.gen
 	    static public const CONSTANT_StaticProtectedNS  = 0x1A;
 	    static public const CONSTANT_MultinameL         = 0x1B;
 	    static public const CONSTANT_MultinameLA        = 0x1C;
-	
+		
 	    static public const CONSTANT_ClassSealed        = 0x01;
 	    static public const CONSTANT_ClassFinal         = 0x02;
 	    static public const CONSTANT_ClassInterface     = 0x04;
 	    static public const CONSTANT_ClassProtectedNs   = 0x08;
-	
+		
 	    static public const TRAIT_Slot                  = 0;
 	    static public const TRAIT_Method                = 1;
 	    static public const TRAIT_Getter                = 2;
@@ -72,18 +72,18 @@ package com.hurlant.eval.gen
 	    static public const TRAIT_Class                 = 4;
 	    static public const TRAIT_Function              = 5;
 	    static public const TRAIT_Const                 = 6;
-	
+		
 	    static public const ATTR_Final                  = 0x01;
 	    static public const ATTR_Override               = 0x02;
 	    static public const ATTR_Metadata               = 0x04;
-	
+		
 	    static public const SLOT_var                    = 0;
 	    static public const SLOT_method                 = 1;
 	    static public const SLOT_getter                 = 2;
 	    static public const SLOT_setter                 = 3;
 	    static public const SLOT_class                  = 4;
 	    static public const SLOT_function               = 6;
-	
+		
 	    static public const METHOD_Arguments            = 0x1;
 	    static public const METHOD_Activation           = 0x2;
 	    static public const METHOD_Needrest             = 0x4;
@@ -92,7 +92,7 @@ package com.hurlant.eval.gen
 	    static public const METHOD_Native               = 0x20;
 	    static public const METHOD_Setsdxns             = 0x40;
 	    static public const METHOD_HasParamNames        = 0x80;
-	
+		
 	    
 		const OP_bkpt:int = 0x01
 		const OP_nop:int = 0x02
@@ -255,20 +255,20 @@ package com.hurlant.eval.gen
 		const OP_bkptline:int = 0xF2
 	    const OP_timestamp:int = 0xF3
 	    const DEBUG:Boolean = false;
-	
+		
 
         const listify = false;
         const indent = "        ";
 
         function AVM2Assembler(constants:ABCConstantPool, numberOfFormals:int, needRest:Boolean, needArguments:Boolean, initScopeDepth:int) {
             this.constants = constants;
-            this.nextTemp = numberOfFormals + 1; // local 0 is always "this"
+            this.useTempRange(0, numberOfFormals + 1); // local 0 is always "this"
 			if(needRest) {
-				this.nextTemp += 1;
+				this.useTemp(numberOfFormals + 1);
 				need_rest = true;
 			}
 			else if(needArguments) {
-				this.nextTemp += 1;
+				this.useTemp(numberOfFormals + 1);
 				need_arguments = true;
 			}
 			this.init_scope_depth = initScopeDepth;
@@ -286,7 +286,7 @@ package com.hurlant.eval.gen
 
         public function get maxStack() { return max_stack_depth }
         public function get currentStack() { return current_stack_depth }
-        public function get maxLocal() { return nextTemp }
+        public function get maxLocal(){ return max_local + 1; }
         public function get maxScope() { return max_scope_depth }
         public function get currentScopeDepth() { return current_scope_depth }
         public function get initScopeDepth() { return init_scope_depth }
@@ -301,33 +301,33 @@ package com.hurlant.eval.gen
 
         /*private*/ function listL(n) {
             if (listify)
-                Debug.print(n);
+            Debug.print(n);
         }
 
         /*private*/ function list1(name) {
             if (listify)
-                Debug.print(indent + name);
+            Debug.print(indent + name);
         }
 
         /*private*/ function list2(name, v) {
             if (listify)
-                Debug.print(indent + name + " " + v);
+            Debug.print(indent + name + " " + v);
         }
 
         /*private*/ function list3(name, v1, v2) {
             if (listify)
-                Debug.print(indent + name + " " + v1 + " " + v2);
+            Debug.print(indent + name + " " + v1 + " " + v2);
         }
 
         /*private*/ function list5(name, v1, v2, v3, v4) {
             if (listify)
-                Debug.print(indent + name + " " + v1 + " " + v2 + " " + v3 + " " + v4);
+            Debug.print(indent + name + " " + v1 + " " + v2 + " " + v3 + " " + v4);
         }
-/*         function listn(name, ...rest) {
-            if (listify)
-                print(indent + name + " " + rest.join(" "));
+		/*         function listn(name, ...rest) {
+        if (listify)
+        print(indent + name + " " + rest.join(" "));
         }
-*/
+		*/
 
         // Instructions that push one value, with a single opcode byte
         /*private*/ function pushOne(name, opcode) {
@@ -410,10 +410,10 @@ package com.hurlant.eval.gen
         public function I_pushwith() { scope(1); dropOne("pushwith", 0x1C) }
         public function I_returnvalue() { dropOne("returnvalue", 0x48) }
         public function I_rshift() { dropOne("rshift", 0xA6) }
-        public function I_setlocal_0() { dropOne("setlocal_0", 0xD4) }
-        public function I_setlocal_1() { dropOne("setlocal_1", 0xD5) }
-        public function I_setlocal_2() { dropOne("setlocal_2", 0xD6) }
-        public function I_setlocal_3() { dropOne("setlocal_3", 0xD7) }
+        public function I_setlocal_0() { useTemp(0); dropOne("setlocal_0", 0xD4) }
+        public function I_setlocal_1() { useTemp(1); dropOne("setlocal_1", 0xD5) }
+        public function I_setlocal_2() { useTemp(2); dropOne("setlocal_2", 0xD6) }
+        public function I_setlocal_3() { useTemp(3); dropOne("setlocal_3", 0xD7) }
         public function I_strictequals() { dropOne("strictequals", 0xAC) }
         public function I_subtract() { dropOne("subtract", 0xA1) }
         public function I_subtract_i() { dropOne("subtract_i", 0xC6) }
@@ -491,21 +491,24 @@ package com.hurlant.eval.gen
 
         public function I_getlocal(index) {
             switch (index) {
-            case 0: I_getlocal_0(); break;
-            case 1: I_getlocal_1(); break;
-            case 2: I_getlocal_2(); break;
-            case 3: I_getlocal_3(); break;
-            default: pushOneU30("getlocal", 0x62, index);
+				case 0: I_getlocal_0(); break;
+				case 1: I_getlocal_1(); break;
+				case 2: I_getlocal_2(); break;
+				case 3: I_getlocal_3(); break;
+				default: pushOneU30("getlocal", 0x62, index);
             }
         }
 
         public function I_setlocal(index) {
             switch (index) {
-            case 0: I_setlocal_0(); break;
-            case 1: I_setlocal_1(); break;
-            case 2: I_setlocal_2(); break;
-            case 3: I_setlocal_3(); break;
-            default: dropOneU30("setlocal", 0x63, index);
+				case 0: I_setlocal_0(); break;
+				case 1: I_setlocal_1(); break;
+				case 2: I_setlocal_2(); break;
+				case 3: I_setlocal_3(); break;
+				default: {
+					dropOneU30("setlocal", 0x63, index);
+					useTemp(index);
+				}
             }
         }
 
@@ -536,7 +539,7 @@ package com.hurlant.eval.gen
 
         /*private*/ function relativeOffset(base, L) {
             if (L.address != -1)
-                code.int24(L.address - base);
+            code.int24(L.address - base);
             else {
                 backpatches.push({ "loc": code.length, "base": base, "label": L });
                 code.int24(0);
@@ -547,7 +550,7 @@ package com.hurlant.eval.gen
             stack(stk);
 
             if (L === undefined)
-                L = newLabel();
+            L = newLabel();
 
             list2(name, L.name);
             code.uint8(opcode);
@@ -630,7 +633,7 @@ package com.hurlant.eval.gen
             relativeOffset(base, default_label);
             code.uint30(case_labels.length-1);
             for ( var i=0 ; i < case_labels.length ; i++ )
-                relativeOffset(base, case_labels[i]);
+            relativeOffset(base, case_labels[i]);
 
             return default_label;
         }
@@ -702,9 +705,9 @@ package com.hurlant.eval.gen
         }
 
         /* Generic property operation when there may be a namespace or
-           name on the stack.  The instruction pops and pushes some
-           fixed amount and may pop one or two more items, depending
-           on the kind of name that index references.
+        name on the stack.  The instruction pops and pushes some
+        fixed amount and may pop one or two more items, depending
+        on the kind of name that index references.
         */
         /*private*/ function propU30(name, pops, pushes, opcode, index) {
             var hasRTNS = constants.hasRTNS(index);
@@ -761,16 +764,38 @@ package com.hurlant.eval.gen
             code.uint30(index);
         }
 
-        public function getTemp() {
-            if (freeTemps.length > 0)
-                return freeTemps.pop();
-            else
-                return nextTemp++;
+		public function tempIsUsed(i:int):Boolean{
+			return usedTemps.indexOf(i) > -1;
+		}
+
+        public function useTempRange(start:int, count:int){
+			for(var i:int = start; i < (start + count); i++){
+				if(!tempIsUsed(i)){
+					usedTemps.push(i);
+					max_local = Math.max(i, max_local);
+				}
+			}
         }
 
-        public function killTemp(t) {
-            freeTemps.push(t);
-            I_kill(t);
+        public function getTemp() {
+			for(var i:int = 0; i < usedTemps.length + 1; i++){
+				if(!tempIsUsed(i)){
+					return i;
+				}
+			}
+			throw new Error("Should be able to find a free register...")
+        }
+
+        public function useTemp(i:int) {
+			useTempRange(i, 1);
+        }
+
+        public function freeTemp(i):void {
+			var index:int = usedTemps.indexOf(i);
+			if(index > -1){
+				usedTemps.splice(index, 1);
+			}
+            I_kill(i);
         }
 
         public function get length() {
@@ -786,7 +811,7 @@ package com.hurlant.eval.gen
             for ( var i=0 ; i < backpatches.length ; i++ ) {
                 var bp = backpatches[i];
                 if (bp.label.address == -1)
-                    throw "Missing definition for label " + bp.label.name;
+                throw "Missing definition for label " + bp.label.name;
                 var v = bp.label.address - bp.base;
                 code.setInt24(bp.loc, v);
             }
@@ -803,7 +828,7 @@ package com.hurlant.eval.gen
         /*private*/ function scope(n) {
             current_scope_depth = current_scope_depth + n;
             if (current_scope_depth > max_scope_depth)
-                max_scope_depth = current_scope_depth;
+            max_scope_depth = current_scope_depth;
         }
 
         /*private*/ var code = new ABCByteStream;
@@ -811,11 +836,11 @@ package com.hurlant.eval.gen
         /*private*/ var backpatches = [];
         /*private*/ var current_scope_depth = 0;
         /*private*/ var max_scope_depth = 0;
+        /*private*/ var max_local = 0;
         /*private*/ var init_scope_depth = 0;
         /*private*/ var current_stack_depth = 0;
         /*private*/ var max_stack_depth = 0;
-        /*private*/ var nextTemp;
-        /*private*/ var freeTemps = [];
+        /*private*/ var usedTemps = [];
         /*private*/ var constants;
         /*private*/ var set_dxns = false;
         /*private*/ var need_activation = false;

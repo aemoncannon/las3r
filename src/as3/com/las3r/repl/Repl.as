@@ -74,6 +74,7 @@ package com.las3r.repl{
 			var tf:TextFormat = new TextFormat();
 			tf.color = 0xFFFFFF;
 			tf.font = "Arial";
+			tf.size = 14;
 			tf.indent = 3;
 			_inputField = new TextField();
 			_inputField.defaultTextFormat = tf;

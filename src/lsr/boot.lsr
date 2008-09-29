@@ -9,6 +9,9 @@
 
 (in-ns 'las3r)
 
+
+
+
 (def
  #^{:arglists '([& items])
     :doc "Creates a new list containing the items."}
@@ -206,6 +209,13 @@
 
 
 (. (var defn) (setMacro))
+
+
+
+(defn print 
+  "Trace an object to *runtime*'s default output."
+  [obj] (. *runtime* (traceOut (. com.las3r.runtime.RT (printToString obj)))))
+
 
 
 (defn cast
@@ -431,11 +441,11 @@
   ([f coll]
      (let [s (seq coll)]
        (if s
-	 (if (instance? com.las3r.runtime.IReduce s)
-	   (. #^com.las3r.runtime.IReduce s (reduce f))
-	   (reduce f (first s) (rest s)))
+	 (reduce f (first s) (rest s))
 	 (f))))
   ([f val coll]
+     (print val)
+     (print coll)
      (let [s (seq coll)]
        (if (instance? com.las3r.runtime.IReduce s)
          (. #^com.las3r.runtime.IReduce s (reduce f val))
@@ -459,3 +469,5 @@
   ([x y] (. com.las3r.runtime.Numbers (add x y)))
   ([x y & more]
      (reduce + (+ x y) more)))
+
+

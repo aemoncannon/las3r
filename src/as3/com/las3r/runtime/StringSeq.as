@@ -40,9 +40,8 @@ package com.las3r.runtime{
 			return str.length - i;
 		}
 
-		override public function reduce(f:Function, start:Object = null):Object {
-			var st:Object = start || first();
-			var ret:Object = f(st, str.charAt(i));
+		override public function reduce(f:Function, start:Object):Object {
+			var ret:Object = f(start, str.charAt(i));
 			for(var x:int = i + 1; x < str.length; x++){
 				ret = f(ret, str.charAt(x));
 			}

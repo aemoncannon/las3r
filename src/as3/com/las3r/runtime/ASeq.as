@@ -34,14 +34,14 @@ package com.las3r.runtime{
 			return true;
 		}
 
-		public function reduce(f:Function, start:Object = null):Object{
-			var st:Object = start || first();
-			var ret:Object = f(st, first());
+		public function reduce(f:Function, start:Object):Object{
+			var ret:Object = f(start, first());
 			for(var s:ISeq = rest(); s != null; s = s.rest()){
 				ret = f(ret, s.first());
 			}
 			return ret;
 		}
+
 
 		public function count():int{
 			var i:int = 1;

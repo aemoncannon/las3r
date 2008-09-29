@@ -342,6 +342,12 @@ package com.las3r.test{
 				});
 		}
 
+		public function testVariadicFunctionStartingWithArityGreaterThanOnex():void{
+			readAndLoad("((fn* ([a b] (list a b)) ([a b c] (list a b c))) 1 2)", function(rt:RT, val:*):void{
+					assertTrue("return value should be (1 2)", Util.equal(val, RT.list(1, 2)));
+				});
+		}
+
 		public function testSimpleClosure():void{
 			readAndLoad("(def *funA* (fn* [a] (fn* [] a)))", function(rt:RT, val:*):void{
 					readAndLoad("(def *funB* (*funA* :bird))", function(rt:RT, val:*):void{

@@ -503,7 +503,7 @@ class CodeGen{
 		asm.I_dup();
 		asm.I_pushscope();
 		currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
-		var i:int = asm.getTemp()
+		var i:int = asm.getTemp();
 		asm.I_setlocal(i);
 		this.scopeToLocalMap.cons(i);
 	}
@@ -563,7 +563,7 @@ class CodeGen{
 	*/
 	public function popScope():void{
 		asm.I_popscope();
-		asm.killTemp(scopeToLocalMap.popEnd());
+		asm.freeTemp(scopeToLocalMap.popEnd());
 	}
 
 
@@ -1174,13 +1174,15 @@ class FnMethod{
 	var paramBindings:LocalBindingSet;
 	var startLabel:Object
 	private var _compiler:Compiler;
+	private var _func:FnExpr;
 
-	public function FnMethod(c:Compiler){
+	public function FnMethod(c:Compiler, f:FnExpr){
 		_compiler = c;
+		_func = f;
 	}
 
 	public static function parse(c:Compiler, context:C, form:ISeq, f:FnExpr):FnMethod{
-		var meth:FnMethod = new FnMethod(c);
+		var meth:FnMethod = new FnMethod(c, f);
 		meth.params = Vector(RT.first(form));
 		if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
 			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
@@ -1325,6 +1327,10 @@ class FnExpr implements Expr{
 		_compiler = c;
 	}
 
+	public function get isVariadic():Boolean{
+		return methods.count() > 1;
+	}
+
 	public static function parse(c:Compiler, context:C, form:ISeq):Expr{
 		var f:FnExpr = new FnExpr(c);
 		//arglist might be preceded by symbol naming this fn
@@ -1365,8 +1371,7 @@ class FnExpr implements Expr{
 			meth.optionalParams.each(function(ea:Object):void{
 					formalsTypes.push(0/*'*'*/);
 				});
-			var initScopeDepth:int = gen.asm.currentScopeDepth;
-			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, initScopeDepth);
+			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth);
 			if(meth.optionalParams.count() > 0){
 				var defaults:Array = meth.optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 				methGen.meth.setDefaults(defaults);
@@ -1374,9 +1379,9 @@ class FnExpr implements Expr{
 			meth.emit(context, methGen);
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
-		else{
-			var initScopeDepth:int = gen.asm.currentScopeDepth;
-			methGen = gen.newMethodCodeGen([], false, true, initScopeDepth);
+		else{ // Function is variadic, we must xdispatch at runtime to the correct method...
+
+			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth);
 			var argsIndex:int = 1;
 
 			// Initialize all the jump labels
@@ -1423,10 +1428,9 @@ class FnExpr implements Expr{
 						});
 					// Now put the arguments object back into the locals, following all the params
 					methGen.asm.I_setlocal(i);
-
 					meth.emit(context, methGen);
 				});
-
+			
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
 
@@ -1554,20 +1558,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-		// 			PersistentVector restArgs = PersistentVector.EMPTY;
-		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-		// 			{
-		// 				restArgs = restArgs.cons(args.nth(i));
-		// 			}
-		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-		// 		}
+			// 			PersistentVector restArgs = PersistentVector.EMPTY;
+			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+			// 			{
+				// 				restArgs = restArgs.cons(args.nth(i));
+				// 			}
+			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+			// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-		// 			FnMethod method = (FnMethod) METHOD.get();
-		// 			method.emitClearLocals(gen);
-		// 		}
+			// 			FnMethod method = (FnMethod) METHOD.get();
+			// 			method.emitClearLocals(gen);
+			// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}

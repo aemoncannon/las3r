@@ -131,7 +131,7 @@ package com.las3r.runtime{
 			return null;
 		}
 
-		public function reduce(f:Function, start:Object = null):Object {
+		public function reduce(f:Function, start:Object):Object {
 			return VectorSeq(seq()).reduce(f, start);
 		}
 
@@ -174,9 +174,8 @@ class VectorSeq extends ASeq implements ISeq{
 		return v.count() - i;
 	}
 
-	override public function reduce(f:Function, start:Object = null):Object {
-		var st:Object = start || first();
-		var ret:Object = f(st, v.nth(i));
+	override public function reduce(f:Function, start:Object):Object {
+		var ret:Object = f(start, v.nth(i));
 		for(var x:int = i + 1; x < v.count(); x++){
 			ret = f(ret, v.nth(x));
 		}

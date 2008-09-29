@@ -51,6 +51,28 @@ package com.las3r.test{
 				});
 		}
 
+		public function testReduce3():void{
+			var rt:RT = new RT();
+			rt.loadStdLib(function(val:*):void{
+					readAndLoad("(reduce + 0 '(1 2 3))",function(rt:RT, val:*):void{
+							assertTrue("val should be false", val == 6);
+						}, 
+						rt
+					);
+				});
+		}
+
+		public function testReduce2():void{
+			var rt:RT = new RT();
+			rt.loadStdLib(function(val:*):void{
+					readAndLoad("(reduce + '(1 2 3))",function(rt:RT, val:*):void{
+							assertTrue("val should be false", val == 6);
+						}, 
+						rt
+					);
+				});
+		}
+
 
 	}
 }

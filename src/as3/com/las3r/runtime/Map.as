@@ -129,7 +129,7 @@ package com.las3r.runtime{
 			for(var key:* in _dict){ iterator(key, _dict[key]); }
 		}
 
-		public function reduce(f:Function, start:Object = null):Object {
+		public function reduce(f:Function, start:Object):Object {
 			return MapSeq(seq()).reduce(f, start);
 		}
 
@@ -167,9 +167,8 @@ class MapSeq extends ASeq implements ISeq{
 		return keys.length - i;
 	}
 
-	override public function reduce(f:Function, start:Object = null):Object {
-		var st:Object = start || first();
-		var ret:Object = f(st, m.valAt(keys[i]));
+	override public function reduce(f:Function, start:Object):Object {
+		var ret:Object = f(start, m.valAt(keys[i]));
 		for(var x:int = i + 1; x < m.count(); x++){
 			ret = f(ret, m.valAt(keys[x]));
 		}

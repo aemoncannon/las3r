@@ -12,7 +12,7 @@
 package com.las3r.runtime{
 
 	public interface IReduce{
-		function reduce(f:Function, start:Object = null):Object;
+		function reduce(f:Function, start:Object):Object;
 	}
 
 }
