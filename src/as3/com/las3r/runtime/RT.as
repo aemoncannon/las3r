@@ -595,7 +595,7 @@ package com.las3r.runtime{
 		}
 
 		public static function restFromArguments(a:Array, i:int):List{
-			if(a.length == 0) return null;
+			if(i > (a.length - 1)) return null;
 			return List.createFromArray(a.slice(i));
 		}
 
