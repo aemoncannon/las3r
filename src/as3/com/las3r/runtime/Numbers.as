@@ -16,5 +16,25 @@ package com.las3r.runtime{
 
 		static public function add(a:Number, b:Number):Number{ return a + b; }
 
+		static public function multiply(a:Number, b:Number):Number{ return a * b; }
+
+		static public function divide(a:Number, b:Number):Number{ return a / b; }
+
+		static public function minus(a:Number, b:Number):Number{ return a - b; }
+
+		static public function lt(a:Number, b:Number):Boolean{ return a < b; }
+
+		static public function lte(a:Number, b:Number):Boolean{ return a <= b; }
+
+		static public function gt(a:Number, b:Number):Boolean{ return a > b; }
+
+		static public function gte(a:Number, b:Number):Boolean{ return a >= b; }
+
+		static public function equiv(a:Number, b:Number):Boolean{ return a === b; }
+
+		static public function inc(a:Number):Number{ return a + 1; }
+
+		static public function dec(a:Number):Number{ return a - 1; }
+
 	}
 }

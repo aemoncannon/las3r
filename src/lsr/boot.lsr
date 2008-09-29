@@ -468,4 +468,110 @@
   ([x y & more]
      (reduce + (+ x y) more)))
 
+(defn *
+  "Returns the product of nums. (*) returns 1."
+  ([] 1)
+  ([x] (cast Number x))
+  ([x y] (. com.las3r.runtime.Numbers (multiply x y)))
+  ([x y & more]
+     (reduce * (* x y) more)))
+
+(defn /
+  "If no denominators are supplied, returns 1/numerator,
+  else returns numerator divided by all of the denominators."
+  ([x] (/ 1 x))
+  ([x y] (. com.las3r.runtime.Numbers (divide x y)))
+  ([x y & more]
+     (reduce / (/ x y) more)))
+
+(defn -
+  "If no ys are supplied, returns the negation of x, else subtracts
+  the ys from x and returns the result."
+  ([x] (. com.las3r.runtime.Numbers (minus x)))
+  ([x y] (. com.las3r.runtime.Numbers (minus x y)))
+  ([x y & more]
+     (reduce - (- x y) more)))
+
+(defn <
+  "Returns non-nil if nums are in monotonically increasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.las3r.runtime.Numbers (lt x y)))
+  ([x y & more]
+     (if (< x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (< y (first more)))
+       false)))
+
+(defn <=
+  "Returns non-nil if nums are in monotonically non-decreasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.las3r.runtime.Numbers (lte x y)))
+  ([x y & more]
+     (if (<= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (<= y (first more)))
+       false)))
+
+(defn >
+  "Returns non-nil if nums are in monotonically decreasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.las3r.runtime.Numbers (gt x y)))
+  ([x y & more]
+     (if (> x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (> y (first more)))
+       false)))
+
+(defn >=
+  "Returns non-nil if nums are in monotonically non-increasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.las3r.runtime.Numbers (gte x y)))
+  ([x y & more]
+     (if (>= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (>= y (first more)))
+       false)))
+
+(defn ==
+  "Returns non-nil if nums all have the same value, otherwise false"
+  ([x] true)
+  ([x y] (. com.las3r.runtime.Numbers (equiv x y)))
+  ([x y & more]
+     (if (== x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (== y (first more)))
+       false)))
+
+(defn max
+  "Returns the greatest of the nums."
+  ([x] x)
+  ([x y] (if (> x y) x y))
+  ([x y & more]
+     (reduce max (max x y) more)))
+
+(defn min
+  "Returns the least of the nums."
+  ([x] x)
+  ([x y] (if (< x y) x y))
+  ([x y & more]
+     (reduce min (min x y) more)))
+
+(defn inc
+  "Returns a number one greater than num."
+  [x] (. com.las3r.runtime.Numbers (inc x)))
+
+(defn dec
+  "Returns a number one less than num."
+  [x] (. com.las3r.runtime.Numbers (dec x)))
+
+
 

@@ -205,7 +205,7 @@ package com.las3r.runtime{
 			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
 			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
 			DEREF = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
-			SLASH = sym1("/");
+			SLASH = sym2(null, "/"); // Don't want namespace.
 
 
 			DEF = sym1("def");
@@ -325,372 +325,372 @@ package com.las3r.runtime{
 				return v;
 			}
 			else if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '[')
+			{
+				return classForName(sym.name);
+			}
+			else
+			{
+				var o:Object = n.getMapping(sym);
+				if(o == null){
+					throw new Error("Unable to resolve symbol: " + sym + " in this context");
+				}
+				return o;
+			}
+		}
+
+
+
+
+		public function loadStdLib(onComplete:Function = null):void{
+			_compiler.load(new PushbackReader(new StringReader(BOOT_LSR)), onComplete || function(val:*):void{});
+		}
+
+
+		public function evalStr(src:String, _onComplete:Function = null):void{
+			var onComplete:Function = _onComplete || function(val:*):void{};
+			_compiler.load(new PushbackReader(new StringReader(src)), onComplete);
+		}
+
+		
+		/**
+		* As code is loaded asynchronously, we provide a facility for the loaded code to store it's own result at 
+		* a known location.
+		* 
+		* @param val 
+		* @param key 
+		* @return 
+		*/		
+		public function storeResult(val:*, key:String):void{
+			_resultsDict[key] = val;
+		}
+		public function getResult(key:String):*{
+			return _resultsDict[key];
+		}
+
+
+		public function currentNS():LispNamespace{
+			return LispNamespace(CURRENT_NS.get());
+		}
+
+		public function classForName(name:String):Class{
+			return (getDefinitionByName(name) as Class);
+		}
+
+		public function traceOut(str:String):void{
+			traceFunc(str);
+		}
+
+		public static function boundedLength(list:ISeq, limit:int):int{
+			var i:int = 0;
+			for(var c:ISeq = list; c != null && i <= limit; c = c.rest()){
+				i++;
+			}
+			return i;
+		}
+
+		public static function count(o:Object):int{
+			if(o == null)
+			return 0;
+			else if(o is ASeq)
+			return (ASeq(o)).count();
+			else if(o is String)
+			return (String(o)).length;
+			else if(o is Array)
+			return o.length;
+			throw new Error("UnsupportedOperationException: count not supported on this type.");
+		}
+
+		public static function length(list:ISeq):int{
+			var i:int = 0;
+			for(var c:ISeq = list; c != null; c = c.rest()){
+				i++;
+			}
+			return i;
+		}
+
+
+		public function nextID():int{
+			this.id += 1;
+			return this.id;
+		}
+
+		public static function list(...rest:Array):ISeq{
+			return List.createFromArray(rest);
+		}
+
+		public static function isInstance(c:Class, x:Object):Boolean{
+			return x is c;
+		}
+
+		public static function cast(c:Class, x:Object):*{
+			return c(x);
+		}
+
+		public static function conj(coll:Object, x:Object):Object{
+			if(coll == null){
+				return new List(x);
+			}
+			else if(coll is IVector || coll is ISeq || coll is IMap){
+				return coll.cons(x);
+			}
+			else{
+				throw new Error("UnsupportedOperationException: conj not supported on this object: " + coll);
+			}
+		}
+
+		public static function get(coll:Object, key:Object, notFound:Object = null):Object{
+			if(coll == null)
+			return notFound;
+			else if(coll is IMap)
+			{
+				var m:IMap = IMap(coll);
+				if(m.containsKey(key))
+				return m.valAt(key);
+				return notFound;
+			}
+			else if(key is Number && (coll is String || coll is Array || coll is IVector))
+			{
+				var n:int = int(key);
+				return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
+			}
+			return notFound;
+		}
+
+
+		public static function nth(coll:Object, n:int):Object{
+			if(coll == null)
+			return null;
+			else if(coll is IVector)
+			return IVector(coll).nth(n);
+			else if(coll is String)
+			return String(coll).charAt(n);
+			else if(coll is Array)
+			return coll[n];
+			else if(coll is ISeq)
+			{
+				var seq:ISeq = ISeq(coll);
+				for(var i:int = 0; i <= n && seq != null; ++i, seq = seq.rest())
 				{
-					return classForName(sym.name);
+					if(i == n)
+					return seq.first();
 				}
-				else
-				{
-					var o:Object = n.getMapping(sym);
-					if(o == null){
-						throw new Error("Unable to resolve symbol: " + sym + " in this context");
-					}
-					return o;
-				}
+				throw new Error("IndexOutOfBoundsException");
 			}
+			else
+			throw new ("UnsupportedOperationException: nth not supported on this object: " + coll);
+		}
 
 
+		public static function cons(x:Object, coll:Object):ISeq{
+			var y:ISeq = seq(coll);
+			if(y == null)
+			return new List(x);
+			return y.cons(x);
+		}
 
-
-			public function loadStdLib(onComplete:Function = null):void{
-				_compiler.load(new PushbackReader(new StringReader(BOOT_LSR)), onComplete || function(val:*):void{});
+		public static function concat(...all:Array):ISeq{
+			var len:int = all.length;
+			var x:Object = all[0];
+			var y:Object = all[1];
+			if(len == 0){
+				return null;
 			}
-
-
-			public function evalStr(src:String, _onComplete:Function = null):void{
-				var onComplete:Function = _onComplete || function(val:*):void{};
-				_compiler.load(new PushbackReader(new StringReader(src)), onComplete);
+			else if(len == 1){
+				return seq(x);
 			}
-
-			
-			/**
-			* As code is loaded asynchronously, we provide a facility for the loaded code to store it's own result at 
-			* a known location.
-			* 
-			* @param val 
-			* @param key 
-			* @return 
-			*/		
-			public function storeResult(val:*, key:String):void{
-				_resultsDict[key] = val;
-			}
-			public function getResult(key:String):*{
-				return _resultsDict[key];
-			}
-
-
-			public function currentNS():LispNamespace{
-				return LispNamespace(CURRENT_NS.get());
-			}
-
-			public function classForName(name:String):Class{
-				return (getDefinitionByName(name) as Class);
-			}
-
-			public function traceOut(str:String):void{
-				traceFunc(str);
-			}
-
-			public static function boundedLength(list:ISeq, limit:int):int{
-				var i:int = 0;
-				for(var c:ISeq = list; c != null && i <= limit; c = c.rest()){
-					i++;
-				}
-				return i;
-			}
-
-			public static function count(o:Object):int{
-				if(o == null)
-				return 0;
-				else if(o is ASeq)
-				return (ASeq(o)).count();
-				else if(o is String)
-				return (String(o)).length;
-				else if(o is Array)
-				return o.length;
-				throw new Error("UnsupportedOperationException: count not supported on this type.");
-			}
-
-			public static function length(list:ISeq):int{
-				var i:int = 0;
-				for(var c:ISeq = list; c != null; c = c.rest()){
-					i++;
-				}
-				return i;
-			}
-
-
-			public function nextID():int{
-				this.id += 1;
-				return this.id;
-			}
-
-			public static function list(...rest:Array):ISeq{
-				return List.createFromArray(rest);
-			}
-
-			public static function isInstance(c:Class, x:Object):Boolean{
-				return x is c;
-			}
-
-			public static function cast(c:Class, x:Object):*{
-				return c(x);
-			}
-
-			public static function conj(coll:Object, x:Object):Object{
-				if(coll == null){
-					return new List(x);
-				}
-				else if(coll is IVector || coll is ISeq || coll is IMap){
-					return coll.cons(x);
+			else if(len == 2){
+				if(x){
+					return cons(first(x), concat(rest(x), y));
 				}
 				else{
-					throw new Error("UnsupportedOperationException: conj not supported on this object: " + coll);
+					return seq(y);
 				}
 			}
-
-			public static function get(coll:Object, key:Object, notFound:Object = null):Object{
-				if(coll == null)
-				return notFound;
-				else if(coll is IMap)
-				{
-					var m:IMap = IMap(coll);
-					if(m.containsKey(key))
-					return m.valAt(key);
-					return notFound;
-				}
-				else if(key is Number && (coll is String || coll is Array || coll is IVector))
-				{
-					var n:int = int(key);
-					return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
-				}
-				return notFound;
-			}
-
-
-			public static function nth(coll:Object, n:int):Object{
-				if(coll == null)
-				return null;
-				else if(coll is IVector)
-				return IVector(coll).nth(n);
-				else if(coll is String)
-				return String(coll).charAt(n);
-				else if(coll is Array)
-				return coll[n];
-				else if(coll is ISeq)
-				{
-					var seq:ISeq = ISeq(coll);
-					for(var i:int = 0; i <= n && seq != null; ++i, seq = seq.rest())
-					{
-						if(i == n)
-						return seq.first();
-					}
-					throw new Error("IndexOutOfBoundsException");
-				}
-				else
-				throw new ("UnsupportedOperationException: nth not supported on this object: " + coll);
-			}
-
-
-			public static function cons(x:Object, coll:Object):ISeq{
-				var y:ISeq = seq(coll);
-				if(y == null)
-				return new List(x);
-				return y.cons(x);
-			}
-
-			public static function concat(...all:Array):ISeq{
-				var len:int = all.length;
-				var x:Object = all[0];
-				var y:Object = all[1];
-				if(len == 0){
-					return null;
-				}
-				else if(len == 1){
-					return seq(x);
-				}
-				else if(len == 2){
-					if(x){
-						return cons(first(x), concat(rest(x), y));
+			else{
+				var cat:Function = function(x:Object, y:Object, rest:Array):ISeq{
+					var xy:ISeq = concat(x, y);
+					if(rest.length == 0){
+						return xy;
 					}
 					else{
-						return seq(y);
+						return cat(xy, rest[0], rest.slice(1));
 					}
-				}
-				else{
-					var cat:Function = function(x:Object, y:Object, rest:Array):ISeq{
-						var xy:ISeq = concat(x, y);
-						if(rest.length == 0){
-							return xy;
-						}
-						else{
-							return cat(xy, rest[0], rest.slice(1));
-						}
-					};
-					return cat(x, y, all.slice(2));
-				}
+				};
+				return cat(x, y, all.slice(2));
 			}
-
-			public static function first(x:Object):Object{
-				var seq:ISeq = seq(x);
-				if(seq == null)
-				return null;
-				return seq.first();
-			}
-
-			public static function second(x:Object):Object{
-				return first(rest(x));
-			}
-
-			public static function third(x:Object):Object{
-				return first(rest(rest(x)));
-			}
-
-			public static function fourth(x:Object):Object{
-				return first(rest(rest(rest(x))));
-			}
-
-			public static function rest(x:Object):ISeq{
-				var seq:ISeq = seq(x);
-				if(seq == null)
-				return null;
-				return seq.rest();
-			}
-
-			public static function rrest(x:Object):ISeq{
-				return rest(rest(x));
-			}
-
-			public static function seq(coll:Object):ISeq{
-				if(coll == null){
-					return null;
-				}
-				else if(coll is ISeq){
-					return (ISeq(coll)).seq();
-				}
-				else if(coll is IVector){
-					return IVector(coll).seq();
-				}
-				else if(coll is IMap){
-					return IMap(coll).seq();
-				}
-				else if(coll is String){
-					return new StringSeq(String(coll), 0);
-				}
-				else{
-					throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
-				}
-			}
-
-			public static function assoc(map:IMap, key:Object, val:Object):IMap{
-				map.assoc(key, val);
-				return map;
-			}
-
-			public static function map(...init:Array):IMap{
-				return Map.createFromArray(init);
-			}
-
-			public static function vector(...init:Array):IVector{
-				return new Vector(init);
-			}
-
-			public function getVar(ns:String, name:String):Var{
-				return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
-			}
-
-			public static function printToString(x:Object):String {
-				var w:NaiveStringWriter = new NaiveStringWriter();
-				print(x, w);
-				return w.toString();
-			}
-
-			public static function restFromArguments(a:Array, i:int):List{
-				if(a.length == 0) return null;
-				return List.createFromArray(a.slice(i));
-			}
-
-			public static function print(x:Object, w:NaiveStringWriter):void {
-				//TODO - make extensible
-				var readably:Boolean = true;
-				if(x == null)
-				w.write("nil");
-				else if(x is ISeq || x is IList)
-				{
-					w.write('(');
-						printInnerSeq(seq(x), w);
-						w.write(')');
-				}
-				else if(x is String)
-				{
-					var s:String = String(x);
-					if(!readably)
-					w.write(s);
-					else
-					{
-						w.write('"');
-						//w.write(x.toString());
-						for(var i:int = 0; i < s.length; i++)
-						{
-							var c:String = s.charAt(i);
-							switch(c)
-							{
-								case '\n':
-								w.write("\\n");
-								break;
-								case '\t':
-								w.write("\\t");
-								break;
-								case '\r':
-								w.write("\\r");
-								break;
-								case '"':
-								w.write("\\\"");
-								break;
-								case '\\':
-								w.write("\\\\");
-								break;
-								case '\f':
-								w.write("\\f");
-								break;
-								case '\b':
-								w.write("\\b");
-								break;
-								default:
-								w.write(c);
-							}
-						}
-						w.write('"');
-					}
-				}
-				else if(x is IMap)
-				{
-					w.write('{');
-						for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-						{
-							var v:IVector = IVector(sq.first());
-							print(v.nth(0), w);
-							w.write(' ');
-							print(v.nth(1), w);
-							if(sq.rest() != null)
-							w.write(", ");
-						}
-						w.write('}');
-				}
-				else if(x is IVector)
-				{
-					var a:IVector = IVector(x);
-					w.write('[');
-						for(var i:int = 0; i < a.count(); i++)
-						{
-							print(a.nth(i), w);
-							if(i < a.count() - 1)
-							w.write(' ');
-						}
-						w.write(']');
-				}
-				else w.write(x.toString());
-			}
-
-
-			private static function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
-				for(var sq:ISeq = x; sq != null; sq = sq.rest())
-				{
-					print(sq.first(), w);
-					if(sq.rest() != null)
-					w.write(' ');
-				}
-			}
-
-
 		}
+
+		public static function first(x:Object):Object{
+			var seq:ISeq = seq(x);
+			if(seq == null)
+			return null;
+			return seq.first();
+		}
+
+		public static function second(x:Object):Object{
+			return first(rest(x));
+		}
+
+		public static function third(x:Object):Object{
+			return first(rest(rest(x)));
+		}
+
+		public static function fourth(x:Object):Object{
+			return first(rest(rest(rest(x))));
+		}
+
+		public static function rest(x:Object):ISeq{
+			var seq:ISeq = seq(x);
+			if(seq == null)
+			return null;
+			return seq.rest();
+		}
+
+		public static function rrest(x:Object):ISeq{
+			return rest(rest(x));
+		}
+
+		public static function seq(coll:Object):ISeq{
+			if(coll == null){
+				return null;
+			}
+			else if(coll is ISeq){
+				return (ISeq(coll)).seq();
+			}
+			else if(coll is IVector){
+				return IVector(coll).seq();
+			}
+			else if(coll is IMap){
+				return IMap(coll).seq();
+			}
+			else if(coll is String){
+				return new StringSeq(String(coll), 0);
+			}
+			else{
+				throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
+			}
+		}
+
+		public static function assoc(map:IMap, key:Object, val:Object):IMap{
+			map.assoc(key, val);
+			return map;
+		}
+
+		public static function map(...init:Array):IMap{
+			return Map.createFromArray(init);
+		}
+
+		public static function vector(...init:Array):IVector{
+			return new Vector(init);
+		}
+
+		public function getVar(ns:String, name:String):Var{
+			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
+		}
+
+		public static function printToString(x:Object):String {
+			var w:NaiveStringWriter = new NaiveStringWriter();
+			print(x, w);
+			return w.toString();
+		}
+
+		public static function restFromArguments(a:Array, i:int):List{
+			if(a.length == 0) return null;
+			return List.createFromArray(a.slice(i));
+		}
+
+		public static function print(x:Object, w:NaiveStringWriter):void {
+			//TODO - make extensible
+			var readably:Boolean = true;
+			if(x == null)
+			w.write("nil");
+			else if(x is ISeq || x is IList)
+			{
+				w.write('(');
+					printInnerSeq(seq(x), w);
+					w.write(')');
+			}
+			else if(x is String)
+			{
+				var s:String = String(x);
+				if(!readably)
+				w.write(s);
+				else
+				{
+					w.write('"');
+					//w.write(x.toString());
+					for(var i:int = 0; i < s.length; i++)
+					{
+						var c:String = s.charAt(i);
+						switch(c)
+						{
+							case '\n':
+							w.write("\\n");
+							break;
+							case '\t':
+							w.write("\\t");
+							break;
+							case '\r':
+							w.write("\\r");
+							break;
+							case '"':
+							w.write("\\\"");
+							break;
+							case '\\':
+							w.write("\\\\");
+							break;
+							case '\f':
+							w.write("\\f");
+							break;
+							case '\b':
+							w.write("\\b");
+							break;
+							default:
+							w.write(c);
+						}
+					}
+					w.write('"');
+				}
+			}
+			else if(x is IMap)
+			{
+				w.write('{');
+					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+					{
+						var v:IVector = IVector(sq.first());
+						print(v.nth(0), w);
+						w.write(' ');
+						print(v.nth(1), w);
+						if(sq.rest() != null)
+						w.write(", ");
+					}
+					w.write('}');
+			}
+			else if(x is IVector)
+			{
+				var a:IVector = IVector(x);
+				w.write('[');
+					for(var i:int = 0; i < a.count(); i++)
+					{
+						print(a.nth(i), w);
+						if(i < a.count() - 1)
+						w.write(' ');
+					}
+					w.write(']');
+			}
+			else w.write(x.toString());
+		}
+
+
+		private static function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
+			for(var sq:ISeq = x; sq != null; sq = sq.rest())
+			{
+				print(sq.first(), w);
+				if(sq.rest() != null)
+				w.write(' ');
+			}
+		}
+
+
 	}
+}
