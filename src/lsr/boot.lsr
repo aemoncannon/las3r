@@ -683,7 +683,7 @@
   (assert-false (and true nil))
 
   (assert-true (= :unicorn (cond nil :horse
-				  nil :dog
-				  :else :unicorn)))
+				 nil :dog
+				 :else :unicorn)))
 
   )
