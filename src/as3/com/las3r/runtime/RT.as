@@ -76,6 +76,7 @@ package com.las3r.runtime{
 		public var PRINT_READABLY:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
+		public var PRIVATE_KEY:Keyword;
 		public var NAME_KEY:Keyword;
 		public var NS_KEY:Keyword;
 
@@ -139,6 +140,7 @@ package com.las3r.runtime{
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
+			PRIVATE_KEY = key1(sym1("private"));
 			NS_KEY = key1(sym1("ns"));
 			NAME_KEY = key1(sym1("name"));
 
@@ -244,6 +246,8 @@ package com.las3r.runtime{
 					DOT,
 					ASSIGN,
 					TRY,
+					CATCH, 
+					FINALLY, 
 					THROW,
 					NEW,
 					_AMP_
@@ -271,8 +275,9 @@ package com.las3r.runtime{
 
 		public function resolveSymbol(sym:Symbol):Symbol{
 			//already qualified or classname?
-			if(sym.name.indexOf('.') > 0)
-			return sym;
+			if(sym.name.indexOf('.') > 0){
+				return sym;
+			}
 			if(sym.ns != null)
 			{
 				var ns:LispNamespace = namespaceFor(sym);
@@ -281,10 +286,12 @@ package com.las3r.runtime{
 				return sym2(ns.name.name, sym.name);
 			}
 			var o:Object = currentNS().getMapping(sym);
-			if(o == null)
-			return sym2(currentNS().name.name, sym.name);
-			else if(o is Class)
-			return sym2(null, getQualifiedClassName(Class(o)));
+			if(o == null){
+				return sym2(currentNS().name.name, sym.name);
+			}
+			else if(o is Class){
+				return sym2(null, getQualifiedClassName(Class(o)));
+			}
 			else if(o is Var)
 			{
 				var v:Var = Var(o);
@@ -588,27 +595,28 @@ package com.las3r.runtime{
 			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
 		}
 
-		public static function printToString(x:Object):String {
-			var w:NaiveStringWriter = new NaiveStringWriter();
-			print(x, w);
-			return w.toString();
-		}
-
 		public static function restFromArguments(a:Array, i:int):List{
 			if(i > (a.length - 1)) return null;
 			return List.createFromArray(a.slice(i));
 		}
 
-		public static function print(x:Object, w:NaiveStringWriter):void {
+
+		public function printToString(x:Object):String {
+			var w:NaiveStringWriter = new NaiveStringWriter();
+			print(x, w);
+			return w.toString();
+		}
+
+		public function print(x:Object, w:NaiveStringWriter):void {
 			//TODO - make extensible
-			var readably:Boolean = true;
+			var readably:Boolean = Boolean(PRINT_READABLY.get());
 			if(x == null)
 			w.write("nil");
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+				printInnerSeq(seq(x), w);
+				w.write(')');
 			}
 			else if(x is String)
 			{
@@ -655,34 +663,34 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:IVector = IVector(sq.first());
-						print(v.nth(0), w);
-						w.write(' ');
-						print(v.nth(1), w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+				{
+					var v:IVector = IVector(sq.first());
+					print(v.nth(0), w);
+					w.write(' ');
+					print(v.nth(1), w);
+					if(sq.rest() != null)
+					w.write(", ");
+				}
+				w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-					for(var i:int = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+				for(var i:int = 0; i < a.count(); i++)
+				{
+					print(a.nth(i), w);
+					if(i < a.count() - 1)
+					w.write(' ');
+				}
+				w.write(']');
 			}
 			else w.write(x.toString());
 		}
 
 
-		private static function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
+		private function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
 			for(var sq:ISeq = x; sq != null; sq = sq.rest())
 			{
 				print(sq.first(), w);

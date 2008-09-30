@@ -10,8 +10,6 @@
 (in-ns 'las3r)
 
 
-
-
 (def
  #^{:arglists '([& items])
     :doc "Creates a new list containing the items."}
@@ -212,12 +210,6 @@
 
 
 
-(defn print 
-  "Trace an object to *runtime*'s default output."
-  [obj] (. *runtime* (traceOut (. com.las3r.runtime.RT (printToString obj)))))
-
-
-
 (defn cast
   "Throws an Error if x is not a c, else returns x."
   [c x] (. com.las3r.runtime.RT (cast c x)))
@@ -305,7 +297,7 @@
   {:tag String}
   ([] "")
   ([x]
-     (if (nil? x) "" (cast String x)))
+     (if (nil? x) "" (cast String x )))
   ([x & ys]
      (loop [sb (str x) 
 	    more ys]
@@ -363,6 +355,8 @@
   "Creates a new list containing the item prepended to more."
   [item & more]
   (spread (cons item more)))
+
+
 
 
 
@@ -426,6 +420,9 @@
 
 
 
+
+
+
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn reduce
@@ -459,7 +456,9 @@
   (reduce conj nil coll))
 
 
+
 ;;math stuff
+
 (defn +
   "Returns the sum of nums. (+) returns 0."
   ([] 0)
@@ -575,3 +574,116 @@
 
 
 
+
+
+;;;;;;;;; var stuff      
+
+
+(defmacro binding
+  "binding => var-symbol init-expr 
+
+  Creates new bindings for the (already-existing) vars, with the
+  supplied initial values, executes the exprs in an implicit do, then
+  re-establishes the bindings that existed before."  
+  [bindings & body]
+  (let [var-ize (fn [var-vals]
+		  (loop [ret [] vvs (seq var-vals)]
+		    (if vvs
+		      (recur  (conj (conj ret `(var ~(first vvs))) (second vvs))
+			      (rest (rest vvs)))
+		      (seq ret))))]
+    `(do
+       (. com.las3r.runtime.Var (pushBindings *runtime* (hash-map ~@(var-ize bindings))))
+       (try
+	~@body
+	(finally
+	 (. com.las3r.runtime.Var (popBindings *runtime*)))))))
+
+
+(defn find-var
+  "Returns the global var named by the namespace-qualified symbol, or
+  nil if no var with that name."
+  [sym] (. com.las3r.runtime.Var (find *runtime* sym)))
+
+
+
+
+;;;;;;;;;;;;;;;;; Tracing to console...
+
+(defn pr
+  "Trace out the object. By default, pr and prn print in a way that objects
+  can be read by the reader"
+  ([] nil)
+  ([x]
+     (. *runtime* (traceOut (. *runtime* (printToString x))))
+     nil)
+  ([x & more]
+     (pr x)
+     (. *runtime* (traceOut \space))
+     (apply pr more)))
+
+
+(defn newline 
+  "Writes a newline to the output stream that is the current value of
+  *out*" 
+  []
+  (. *runtime* (traceOut \newline))
+  nil)
+
+
+(defn prn
+  "Same as pr followed by (newline)."
+  [& more]
+  (apply pr more)
+  (newline))
+
+
+(defn print
+  "Trace out the object(s). print and println produce output for human consumption."
+  [& more]
+  (binding [*print-readably* nil]
+    (apply pr more)))
+
+
+(defn println
+  "Same as print followed by (newline)"
+  [& more]
+  (binding [*print-readably* nil]
+    (apply prn more)))
+
+
+
+
+;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
+
+
+(defmacro assert-true
+  [form]
+  `(try (if ~form
+	  (print ".")
+	  (println (list "Failure:  " '~form "   Expecting truthy")))
+	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+
+
+(defmacro assert-false
+  [form]
+  `(try (if (not ~form)
+	  (print ".")
+	  (println (list "Failure:  " '~form "   Expecting falsy")))
+	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+
+
+
+(defn run-tests []
+  (assert-true (= (reduce + '(1 2 3)) 6))
+  (assert-true (= (reduce + 0 '(1 2 3)) 6))
+  (assert-true (= (reverse '(0 1 2 3)) '(3 2 1 0)))
+
+  (assert-true (and true 1 2 :horse))
+  (assert-false (and true nil))
+
+  (assert-true (= :unicorn (cond nil :horse
+				  nil :dog
+				  :else :unicorn)))
+
+  )

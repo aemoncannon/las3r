@@ -42,15 +42,24 @@ package com.las3r.repl{
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			_rt.traceFunc = function(str:String):void{
-				_outputField.appendText(str + "\n");
+				_outputField.appendText(str);
 				_outputField.scrollV = _outputField.maxScrollV;
 			}
 		}
 
-		public function init():void{
+		public function init(toEval:String = null):void{
 			_rt.loadStdLib(function(val:*):void{
-					refreshUI();
-					_ui.visible = true;
+					if(toEval){
+						_rt.evalStr(toEval, function(val:*):void{
+								refreshUI();
+								_ui.visible = true;
+							});
+					}
+					else{
+						refreshUI();
+						_ui.visible = true;
+						
+					}
 				});
 		}
 
@@ -172,7 +181,7 @@ package com.las3r.repl{
 			_inputHistoryPos = _inputHistory.length;
 
 			_rt.evalStr(src, function(val:*):void{ 
-					_rt.traceOut(RT.printToString(val)); 
+					_rt.traceOut(_rt.printToString(val) + "\n"); 
 				});
 		}
 

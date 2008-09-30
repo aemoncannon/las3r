@@ -65,5 +65,6 @@ package com.las3r.runtime{
 			throw new Error("Subclass responsibility, 'rest'")
 		}
 
+
 	}
 }

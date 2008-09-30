@@ -33,9 +33,6 @@ package com.las3r.runtime{
 			setMeta(RT.map());
 		}
 
-		public function isPublic():Boolean{
-			return true;
-		}
 
 		public function toString():String {
 			if(ns != null)
@@ -186,6 +183,11 @@ package com.las3r.runtime{
 		public function isMacro():Boolean{
 			return (_meta.valAt(_rt.MACRO_KEY) != null);
 		}
+
+		public function isPublic():Boolean{
+			return (_meta.valAt(_rt.PRIVATE_KEY) == null);
+		}
+
 
 	}
 }

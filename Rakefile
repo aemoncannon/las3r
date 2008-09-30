@@ -49,6 +49,12 @@ file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
 end
 
+LISP_UNITS_TARGET = "./bin/lisp_units.swf"
+file LISP_UNITS_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/LispTestRunner.as -output=#{LISP_UNITS_TARGET}"
+end
+
 task :dist => [REPL_TARGET, UNIT_TEST_RUNNER_TARGET] do
   cp REPL_TARGET, "dist"
   cp UNIT_TEST_RUNNER_TARGET, "dist"
@@ -70,6 +76,10 @@ end
 
 task :repl => [REPL_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{REPL_TARGET}"
+end
+
+task :lisp_units => [LISP_UNITS_TARGET] do
+  sh "#{DEBUG_PROJECTOR} #{LISP_UNITS_TARGET}"
 end
 
 task :demos => DEMO_SWF_TARGETS do end

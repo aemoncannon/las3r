@@ -84,7 +84,8 @@ package com.las3r.runtime{
 				RT.map(
 					rt.CURRENT_NS, rt.CURRENT_NS.get(),
 					rt.RUNTIME, rt.RUNTIME.get(),
-					rt.STAGE, rt.STAGE.get()
+					rt.STAGE, rt.STAGE.get(),
+					rt.PRINT_READABLY, rt.PRINT_READABLY.get()
 				)
 			);
 

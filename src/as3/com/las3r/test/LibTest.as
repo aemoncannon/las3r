@@ -17,7 +17,8 @@ package com.las3r.test{
 	import com.las3r.util.*;
 
 	public class LibTest extends LAS3RTest {
-		
+
+
 		override public function setUp():void {
 		}
 		
