@@ -131,7 +131,7 @@ package com.las3r.runtime{
 		public function RT(stage:Stage = null):void{
 			_this = this;
 			_stage = stage;
-			var forceImport:Array = [Numbers];
+			var forceImport:Array = [Numbers, LazyCons];
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];

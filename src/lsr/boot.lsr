@@ -357,6 +357,32 @@
   (spread (cons item more)))
 
 
+(defmacro lazy-cons
+  "Expands to code which produces a seq object whose first is
+  first-expr and whose rest is rest-expr, neither of which is
+  evaluated until first/rest is called. Each expr will be evaluated at most
+  once per step in the sequence, e.g. calling first/rest repeatedly on the
+  same node of the seq evaluates first/rest-expr once - the values they yield are
+  cached."
+  [first-expr & rest-expr]
+  (list 'new 'com.las3r.runtime.LazyCons (list `fn (list [] first-expr) (list* [(gensym)] rest-expr))))
+
+
+(defn concat
+  "Returns a lazy seq representing the concatenation of	the elements in the supplied colls."
+  ([] nil)
+  ([x] (seq x))
+  ([x y] 
+     (if (seq x) 
+       (lazy-cons (first x) (concat (rest x) y))
+       (seq y)))
+  ([x y & zs]
+     (let [cat (fn cat [xys zs]
+		 (if (seq xys)
+		   (lazy-cons (first xys) (cat (rest xys) zs))
+		   (when zs
+		     (recur (first zs) (rest zs)))))]
+       (cat (concat x y) zs))))
 
 
 
@@ -421,8 +447,6 @@
 
 
 
-
-
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn reduce
@@ -454,6 +478,53 @@
   "Returns a seq of the items in coll in reverse order. Not lazy."
   [coll]
   (reduce conj nil coll))
+
+
+;; Special functions
+
+(defn complement
+  "Takes a fn f and returns a fn that takes the same arguments as f,
+  has the same effects, if any, and returns the opposite truth value."  
+  [f] (fn [& args]
+        (not (apply f args))))
+
+
+(defn constantly
+  "Returns a function that takes any number of arguments and returns x."
+  [x] (fn [& args] x))
+
+
+(defn identity
+  "Returns its argument."
+  [x] x)
+
+
+(defn comp
+  "Takes a set of functions and returns a fn that is the composition
+  of those fns.  The returned fn takes a variable number of args,
+  applies the rightmost of fns to the args, the next
+  fn (right-to-left) to the result, etc."
+  [& fs]
+  (let [fs (reverse fs)]
+    (fn [& args]
+      (loop [ret (apply (first fs) args) fs (rest fs)]
+	(if fs
+	  (recur ((first fs) ret) (rest fs))
+	  ret)))))
+
+
+(defn partial
+  "Takes a function f and fewer than the normal arguments to f, and
+  returns a fn that takes a variable number of additional args. When
+  called, the returned function calls f with args + additional args."
+  ([f arg1]
+     (fn [& args] (apply f arg1 args)))
+  ([f arg1 arg2]
+     (fn [& args] (apply f arg1 arg2 args)))
+  ([f arg1 arg2 arg3]
+     (fn [& args] (apply f arg1 arg2 arg3 args)))
+  ([f arg1 arg2 arg3 & more]
+     (fn [& args] (apply f arg1 arg2 arg3 (concat more args)))))
 
 
 
@@ -572,9 +643,17 @@
   "Returns a number one less than num."
   [x] (. com.las3r.runtime.Numbers (dec x)))
 
+(defn pos?
+  "Returns true if num is greater than zero, else false"
+  [x] (> x 0))
 
+(defn neg?
+  "Returns true if num is less than zero, else false"
+  [x] (< x 0))
 
-
+(defn zero?
+  "Returns true if num is zero, else false"
+  [x] (= x 0))
 
 ;;;;;;;;; var stuff      
 
@@ -606,6 +685,190 @@
   [sym] (. com.las3r.runtime.Var (find *runtime* sym)))
 
 
+
+;; Collection stuff
+
+(defn count
+  "Returns the number of items in the collection. (count nil) returns
+  0.  Also works on strings, arrays and maps"
+  [coll] (. com.las3r.runtime.RT (count coll)))
+
+
+;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
+  
+(defn every?
+  "Returns true if (pred x) is logical true for every x in coll, else
+  false."  
+  {:tag Boolean}
+  [pred coll]
+  (if (seq coll)
+    (and (pred (first coll))
+	 (recur pred (rest coll)))
+    true))
+
+(def
+ #^{:tag Boolean
+    :doc "Returns false if (pred x) is logical true for every x in 
+  coll, else true."
+    :arglists '([pred coll])}
+ not-every? (comp not every?))
+
+(defn some
+  "Returns the first logical true value of (pred x) for any x in coll,
+  else nil."
+  [pred coll]
+  (when (seq coll)
+    (or (pred (first coll)) (recur pred (rest coll)))))
+
+(def 
+ #^{:tag Boolean
+    :doc "Returns false if (pred x) is logical true for any x in coll,
+  else true."
+    :arglists '([pred coll])}
+ not-any? (comp not some))
+
+(defn map
+  "Returns a lazy seq consisting of the result of applying f to the
+  set of first items of each coll, followed by applying f to the set
+  of second items in each coll, until any one of the colls is
+  exhausted.  Any remaining items in other colls are ignored. Function
+  f should accept number-of-colls arguments."
+  ([f coll]
+     (when (seq coll)
+       (lazy-cons (f (first coll)) (map f (rest coll)))))
+  ([f coll & colls]
+     (when (and (seq coll) (every? seq colls))
+       (lazy-cons (apply f (first coll) (map first colls))
+		  (apply map f (rest coll) (map rest colls))))))
+;;
+;;(defn mapcat
+;;  "Returns the result of applying concat to the result of applying map
+;;  to f and colls.  Thus function f should return a collection."
+;;  [f & colls]
+;;    (apply concat (apply map f colls)))
+;;
+;;(defn filter
+;;  "Returns a lazy seq of the items in coll for which
+;;  (pred item) returns true. pred must be free of side-effects."
+;;  [pred coll]
+;;    (when (seq coll)
+;;      (if (pred (first coll))
+;;        (lazy-cons (first coll) (filter pred (rest coll)))
+;;        (recur pred (rest coll)))))
+;;
+;;(defn take
+;;  "Returns a lazy seq of the first n items in coll, or all items if
+;;  there are fewer than n."  
+;;  [n coll]
+;;    (when (and (pos? n) (seq coll))
+;;      (lazy-cons (first coll) (take (dec n) (rest coll)))))
+;;
+;;(defn take-while
+;;  "Returns a lazy seq of successive items from coll while
+;;  (pred item) returns true. pred must be free of side-effects."
+;;  [pred coll]
+;;    (when (and (seq coll) (pred (first coll)))
+;;      (lazy-cons (first coll) (take-while pred (rest coll)))))
+;;
+;;(defn drop
+;;  "Returns a lazy seq of all but the first n items in coll."
+;;  [n coll]
+;;    (if (and (pos? n) (seq coll))
+;;      (recur (dec n) (rest coll))
+;;      (seq coll)))
+;;
+;;(defn drop-last
+;;  "Return a lazy seq of all but the last n (default 1) items in coll"
+;;  ([s] (drop-last 1 s))
+;;  ([n s] (map (fn [x _] x) (seq s) (drop n s))))
+;;
+;;(defn drop-while
+;;  "Returns a lazy seq of the items in coll starting from the first
+;;  item for which (pred item) returns nil."
+;;  [pred coll]
+;;    (if (and (seq coll) (pred (first coll)))
+;;      (recur pred (rest coll))
+;;      (seq coll)))
+;;
+;;(defn cycle
+;;  "Returns a lazy (infinite!) seq of repetitions of the items in
+;;  coll."  
+;;  [coll]
+;;    (when (seq coll)
+;;      (let [rep (fn thisfn [xs]
+;;                    (if xs
+;;                      (lazy-cons (first xs) (thisfn (rest xs)))
+;;                      (recur (seq coll))))]
+;;        (rep (seq coll)))))
+;;
+;;(defn split-at
+;;  "Returns a vector of [(take n coll) (drop n coll)]"
+;;  [n coll]
+;;    [(take n coll) (drop n coll)])
+;;
+;;(defn split-with
+;;  "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"
+;;  [pred coll]
+;;    [(take-while pred coll) (drop-while pred coll)])
+;;
+;;(defn repeat
+;;  "Returns a lazy (infinite!) seq of xs."
+;;  [x] (lazy-cons x (repeat x)))
+;;
+;;(defn replicate
+;;  "Returns a lazy seq of n xs."
+;;  [n x] (take n (repeat x)))
+;;  
+;;(defn iterate
+;;  "Returns a lazy seq of x, (f x), (f (f x)) etc. f must be free of side-effects"
+;;  [f x] (lazy-cons x (iterate f (f x))))
+;;
+;;;;(defn range
+;;;;  "Returns a lazy seq of nums from start (inclusive) to end
+;;;;  (exclusive), by step, where start defaults to 0 and step to 1."
+;;;;  ([end] (if (and (> end 0) (< end (. Integer MAX_VALUE)))
+;;;;           (new clojure.lang.Range 0 end)
+;;;;           (take end (iterate inc 0))))
+;;;;  ([start end] (if (and (< start end) (< end (. Integer MAX_VALUE)))
+;;;;                 (new clojure.lang.Range start end)
+;;;;                 (take (- end start) (iterate inc start))))
+;;;;  ([start end step]
+;;;;   (take-while (partial (if (pos? step) > <) end) (iterate (partial + step) start))))
+;;
+;;(defn merge
+;;  "Returns a map that consists of the rest of the maps conj-ed onto
+;;  the first.  If a key occurs in more than one map, the mapping from
+;;  the latter (left-to-right) will be the mapping in the result."
+;;  [& maps] (reduce conj maps))
+;;
+;;(defn merge-with
+;;  "Returns a map that consists of the rest of the maps conj-ed onto
+;;  the first.  If a key occurs in more than one map, the mapping(s)
+;;  from the latter (left-to-right) will be combined with the mapping in
+;;  the result by calling (f val-in-result val-in-latter)."
+;;  [f & maps]
+;;    (let [merge-entry (fn [m e]
+;;			(let [k (key e) v (val e)]
+;;			  (if (contains? m k)
+;;			    (assoc m k (f (m k) v))
+;;			    (assoc m k v))))
+;;          merge2 (fn [m1 m2]
+;;		   (reduce merge-entry m1 (seq m2)))]
+;;      (reduce merge2 maps)))
+;;
+;;
+;;
+;;(defn zipmap
+;;  "Returns a map with the keys mapped to the corresponding vals."
+;;  [keys vals]
+;;    (loop [map {}
+;;           ks (seq keys)
+;;           vs (seq vals)]
+;;      (if (and ks vs)
+;;        (recur (assoc map (first ks) (first vs))
+;;               (rest ks)
+;;               (rest vs))
+;;        map)))
 
 
 ;;;;;;;;;;;;;;;;; Tracing to console...
