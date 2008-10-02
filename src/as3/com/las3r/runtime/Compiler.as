@@ -123,13 +123,19 @@ package com.las3r.runtime{
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
-
-			// Debug
-			//rt.debugFunc(ABCDump.dump(swfBytes));
-
 			bytes.position = 0;
-			ByteLoader.loadBytes(bytes, function(e:Event):void{
-					callback(_rt.getResult(resultKey));
+			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
+
+			ByteLoader.loadBytes(swfBytes, function(e:Event):void{
+					var result:* = _rt.getResult(resultKey);
+					if(_rt.SAVE_BYTECODES.get() && result is IObj){
+						var r:IObj = IObj(result);
+						var bytecodeDump:String = ABCDump.dump(swfBytes);
+						callback(r.withMeta(r.meta.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
+					}
+					else{
+						callback(result);
+					}
 				}
 			);	
 		}

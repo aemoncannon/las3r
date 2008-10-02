@@ -74,8 +74,10 @@ package com.las3r.runtime{
 		public var RUNTIME:Var;
 		public var STAGE:Var;
 		public var PRINT_READABLY:Var;
+		public var SAVE_BYTECODES:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
+		public var BYTECODES_KEY:Keyword;
 		public var PRIVATE_KEY:Keyword;
 		public var NAME_KEY:Keyword;
 		public var NS_KEY:Keyword;
@@ -140,6 +142,7 @@ package com.las3r.runtime{
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
+			BYTECODES_KEY = key1(sym1("bytecodes"));
 			PRIVATE_KEY = key1(sym1("private"));
 			NS_KEY = key1(sym1("ns"));
 			NAME_KEY = key1(sym1("name"));
@@ -149,6 +152,7 @@ package com.las3r.runtime{
 			RUNTIME = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*runtime*"), this);
 			STAGE = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*stage*"), _stage);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
+			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
 
 			IN_NAMESPACE = sym1("in-ns");
 			Var.internWithRoot(LAS3R_NAMESPACE, IN_NAMESPACE, 

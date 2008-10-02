@@ -694,13 +694,58 @@
   [coll] (. com.las3r.runtime.RT (count coll)))
 
 
+;;;;;;;;;;;;;;;;; Tracing to console...
+
+(defn pr
+  "Trace out the object. By default, pr and prn print in a way that objects
+  can be read by the reader"
+  ([] nil)
+  ([x]
+     (. *runtime* (traceOut (. *runtime* (printToString x))))
+     nil)
+  ([x & more]
+     (pr x)
+     (. *runtime* (traceOut \space))
+     (apply pr more)))
+
+
+(defn newline 
+  "Writes a newline to the output stream that is the current value of
+  *out*" 
+  []
+  (. *runtime* (traceOut \newline))
+  nil)
+
+
+(defn prn
+  "Same as pr followed by (newline)."
+  [& more]
+  (apply pr more)
+  (newline))
+
+
+(defn print
+  "Trace out the object(s). print and println produce output for human consumption."
+  [& more]
+  (binding [*print-readably* nil]
+    (apply pr more)))
+
+
+(defn println
+  "Same as print followed by (newline)"
+  [& more]
+  (binding [*print-readably* nil]
+    (apply prn more)))
+
+
+
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
   
 (defn every?
   "Returns true if (pred x) is logical true for every x in coll, else
   false."  
-  {:tag Boolean}
   [pred coll]
+  (println coll)
   (if (seq coll)
     (and (pred (first coll))
 	 (recur pred (rest coll)))
@@ -871,48 +916,6 @@
 ;;        map)))
 
 
-;;;;;;;;;;;;;;;;; Tracing to console...
-
-(defn pr
-  "Trace out the object. By default, pr and prn print in a way that objects
-  can be read by the reader"
-  ([] nil)
-  ([x]
-     (. *runtime* (traceOut (. *runtime* (printToString x))))
-     nil)
-  ([x & more]
-     (pr x)
-     (. *runtime* (traceOut \space))
-     (apply pr more)))
-
-
-(defn newline 
-  "Writes a newline to the output stream that is the current value of
-  *out*" 
-  []
-  (. *runtime* (traceOut \newline))
-  nil)
-
-
-(defn prn
-  "Same as pr followed by (newline)."
-  [& more]
-  (apply pr more)
-  (newline))
-
-
-(defn print
-  "Trace out the object(s). print and println produce output for human consumption."
-  [& more]
-  (binding [*print-readably* nil]
-    (apply pr more)))
-
-
-(defn println
-  "Same as print followed by (newline)"
-  [& more]
-  (binding [*print-readably* nil]
-    (apply prn more)))
 
 
 
