@@ -128,14 +128,15 @@ package com.las3r.runtime{
 
 			ByteLoader.loadBytes(swfBytes, function(e:Event):void{
 					var result:* = _rt.getResult(resultKey);
-					if(_rt.SAVE_BYTECODES.get() && result is IObj){
-						var r:IObj = IObj(result);
-						var bytecodeDump:String = ABCDump.dump(swfBytes);
-						callback(r.withMeta(r.meta.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
-					}
-					else{
+// 					if(result && result is IObj){
+// 						var r:IObj = IObj(result);
+// 						var bytecodeDump:String = ABCDump.dump(swfBytes);
+// 						var mm:IMap = r.meta || RT.map();
+// 						callback(r.withMeta(mm.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
+// 					}
+// 					else{
 						callback(result);
-					}
+//					}
 				}
 			);	
 		}
