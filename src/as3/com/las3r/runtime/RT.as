@@ -577,6 +577,9 @@ package com.las3r.runtime{
 			else if(coll is String){
 				return new StringSeq(String(coll), 0);
 			}
+			else if(coll is Array){
+				return Vector.createFromArray(coll as Array).seq();
+			}
 			else{
 				throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
 			}

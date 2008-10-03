@@ -28,15 +28,15 @@ package com.las3r.test{
 		}
 
 		protected function key1(rt:RT, name:String):Keyword{
-			return Keyword.intern1(rt, sym1(rt, name));
+			return rt.key1(sym1(rt, name));
 		}
 
 		protected function sym1(rt:RT, name:String):Symbol{
-			return Symbol.intern1(rt, name);
+			return rt.sym1(name);
 		}
 
 		protected function sym2(rt:RT, ns:String, name:String):Symbol{
-			return Symbol.intern2(rt, ns, name);
+			return rt.sym2(ns, name);
 		}
 
 		protected function readAndLoad(str:String, callback:Function, runtime:RT = null):void{

@@ -43,35 +43,35 @@ package com.las3r.test{
 
 		public function testNotFunction():void{
 			var rt:RT = new RT();
-			rt.loadStdLib(function(val:*):void{
-					readAndLoad("(not true)",function(rt:RT, val:*):void{
-							assertTrue("val should be false", val == false);
-						}, 
-						rt
-					);
-				});
+			rt.loadStdLib(willCall(function(val:*):void{
+						readAndLoad("(not true)",function(rt:RT, val:*):void{
+								assertTrue("val should be false", val == false);
+							}, 
+							rt
+						);
+					}, 5000));
 		}
 
 		public function testReduce3():void{
 			var rt:RT = new RT();
-			rt.loadStdLib(function(val:*):void{
-					readAndLoad("(reduce + 0 '(1 2 3))",function(rt:RT, val:*):void{
-							assertTrue("val should be false", val == 6);
-						}, 
-						rt
-					);
-				});
+			rt.loadStdLib(willCall(function(val:*):void{
+						readAndLoad("(reduce + 0 '(1 2 3))",function(rt:RT, val:*):void{
+								assertTrue("val should be false", val == 6);
+							}, 
+							rt
+						);
+					}, 5000));
 		}
 
 		public function testReduce2():void{
 			var rt:RT = new RT();
-			rt.loadStdLib(function(val:*):void{
-					readAndLoad("(reduce + '(1 2 3))",function(rt:RT, val:*):void{
-							assertTrue("val should be false", val == 6);
-						}, 
-						rt
-					);
-				});
+			rt.loadStdLib(willCall(function(val:*):void{
+						readAndLoad("(reduce + '(1 2 3))",function(rt:RT, val:*):void{
+								assertTrue("val should be false", val == 6);
+							}, 
+							rt
+						);
+					}, 5000));
 		}
 
 

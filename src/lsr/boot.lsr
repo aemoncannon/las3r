@@ -786,22 +786,22 @@
      (when (and (seq coll) (every? seq colls))
        (lazy-cons (apply f (first coll) (map first colls))
 		  (apply map f (rest coll) (map rest colls))))))
-;;
-;;(defn mapcat
-;;  "Returns the result of applying concat to the result of applying map
-;;  to f and colls.  Thus function f should return a collection."
-;;  [f & colls]
-;;    (apply concat (apply map f colls)))
-;;
-;;(defn filter
-;;  "Returns a lazy seq of the items in coll for which
-;;  (pred item) returns true. pred must be free of side-effects."
-;;  [pred coll]
-;;    (when (seq coll)
-;;      (if (pred (first coll))
-;;        (lazy-cons (first coll) (filter pred (rest coll)))
-;;        (recur pred (rest coll)))))
-;;
+
+(defn mapcat
+  "Returns the result of applying concat to the result of applying map
+  to f and colls.  Thus function f should return a collection."
+  [f & colls]
+  (apply concat (apply map f colls)))
+
+(defn filter
+  "Returns a lazy seq of the items in coll for which
+  (pred item) returns true. pred must be free of side-effects."
+  [pred coll]
+  (when (seq coll)
+    (if (pred (first coll))
+      (lazy-cons (first coll) (filter pred (rest coll)))
+      (recur pred (rest coll)))))
+
 ;;(defn take
 ;;  "Returns a lazy seq of the first n items in coll, or all items if
 ;;  there are fewer than n."  
@@ -917,7 +917,47 @@
 ;;        map)))
 
 
+(defmacro doseq
+  "Repeatedly executes body (presumably for side-effects) with
+  binding-form bound to successive items from coll.  Does not retain
+  the head of the sequence. Returns nil."
+  [item list & body]
+  `(loop [list# (seq ~list)]
+     (when list#
+       (let [~item (first list#)]
+         ~@body)
+       (recur (rest list#)))))
 
+
+(defn into
+  "Returns a new coll consisting of to-coll with all of the items of
+  from-coll conjoined."
+  [to from]
+  (let [ret to items (seq from)]
+    (if items
+      (recur (conj ret (first items)) (rest items))
+      ret)))
+
+
+(defn grab-objects-at
+  [x y]
+  (let [p (new flash.geom.Point x y)
+	found (into [] (. *stage* (getObjectsUnderPoint p)))]
+    (filter (fn [ea]
+	      (and (not (instance? flash.display.Shape))
+		   (not (instance? flash.display.Bitmap))))
+	    found)))
+		
+(defn grab
+  ([] (grab (fn [found] (println found))))
+  ([func]
+     (. *stage* (addEventListener 
+		 "mouseDown"
+		 (fn self [e] 
+		   (. *stage* (removeEventListener "mouseDown" self true))
+		   (func (grab-objects-at (. *stage* mouseX) (. *stage* mouseY))))
+		 true))
+     (println "Please click an object on the stage.")))
 
 
 
