@@ -435,14 +435,10 @@ package com.las3r.test{
 
 
 		public function testRecurCallToTopOfSimpleFunction():void{
-			readAndLoad("(def *fun* (fn* [a] (if a (recur false) :hello)))", function(rt:RT, val:*):void{
-					readAndLoad("(def *bird* (*fun* true))", function(rt:RT, val:*):void{
-							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should be bound to :hello.", v.get() == key1(rt, "hello"));
-						}, rt);
+			readAndLoad("((fn* [a] (if a (recur false) :hello)) true)", function(rt:RT, val:*):void{
+					assertTrue("val should be :hello.", val == key1(rt, "hello"));
 				});
 		}
-
 
 		public function testRecurCallToTopOfLoop():void{
 			readAndLoad("(def *bird* (loop* [a true] (if a (recur false) :hello)))", function(rt:RT, val:*):void{

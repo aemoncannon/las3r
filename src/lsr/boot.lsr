@@ -764,12 +764,14 @@
   (when (seq coll)
     (or (pred (first coll)) (recur pred (rest coll)))))
 
+
 (def 
  #^{:tag Boolean
     :doc "Returns false if (pred x) is logical true for any x in coll,
   else true."
     :arglists '([pred coll])}
  not-any? (comp not some))
+
 
 (defn map
   "Returns a lazy seq consisting of the result of applying f to the
@@ -950,5 +952,17 @@
   (assert-true (= :unicorn (cond nil :horse
 				 nil :dog
 				 :else :unicorn)))
+
+  (assert-true (every? pos? '(1 2 3 4)))
+  (assert-false (every? pos? '(1 -1 3 4)))
+
+  (assert-true (not-every? pos? '(1 -1 3 4)))
+  (assert-false (not-every? pos? '(1 2 3 4)))
+
+  (assert-true (not-any? neg? '(1 1 3 4)))
+
+  (assert-true (= (some neg? '(1 1 -2 4)) true))
+
+  (assert-true (= (map (fn [ea] (+ ea 1)) '(0 1 2 3)) '(1 2 3 4)))
 
   )

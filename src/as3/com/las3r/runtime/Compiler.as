@@ -85,7 +85,8 @@ package com.las3r.runtime{
 					rt.CURRENT_NS, rt.CURRENT_NS.get(),
 					rt.RUNTIME, rt.RUNTIME.get(),
 					rt.STAGE, rt.STAGE.get(),
-					rt.PRINT_READABLY, rt.PRINT_READABLY.get()
+					rt.PRINT_READABLY, rt.PRINT_READABLY.get(),
+					rt.SAVE_BYTECODES, rt.SAVE_BYTECODES.get()
 				)
 			);
 
@@ -128,15 +129,15 @@ package com.las3r.runtime{
 
 			ByteLoader.loadBytes(swfBytes, function(e:Event):void{
 					var result:* = _rt.getResult(resultKey);
-// 					if(result && result is IObj){
-// 						var r:IObj = IObj(result);
-// 						var bytecodeDump:String = ABCDump.dump(swfBytes);
-// 						var mm:IMap = r.meta || RT.map();
-// 						callback(r.withMeta(mm.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
-// 					}
-// 					else{
+					if(result && result is IObj && _rt.SAVE_BYTECODES.get()){
+ 						var r:IObj = IObj(result);
+ 						var bytecodeDump:String = ABCDump.dump(swfBytes);
+ 						var mm:IMap = r.meta || RT.map();
+ 						callback(r.withMeta(mm.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
+ 					}
+ 					else{
 						callback(result);
-//					}
+					}
 				}
 			);	
 		}
@@ -1495,9 +1496,7 @@ class LetExpr implements Expr{
 		if(isLoop){
 			c.pushLoopLocals(lbs);
 		}
-
 		var bodyExpr:BodyExpr = BodyExpr(BodyExpr.parse(c, isLoop ? C.RETURN : context, body));
-
 		if(isLoop){
 			c.popLoopLocals();
 		}
@@ -1522,11 +1521,14 @@ class LetExpr implements Expr{
 				}
 			});
 
-		var loopLabel:Object = gen.asm.I_label(undefined);
-
-		_compiler.pushLoopLabel(loopLabel);
+		if(isLoop){
+			var loopLabel:Object = gen.asm.I_label(undefined);
+			_compiler.pushLoopLabel(loopLabel);
+		}
 		body.emit(context, gen);
-		_compiler.popLoopLabel();
+		if(isLoop){
+			_compiler.popLoopLabel();
+		}
 	}
 
 }
