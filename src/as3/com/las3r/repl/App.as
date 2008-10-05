@@ -21,17 +21,12 @@ package com.las3r.repl{
 
 		public function App(){
 			stage.scaleMode = StageScaleMode.NO_SCALE;
-			_repl = new Repl(stage.stageWidth - 50, stage.stageHeight - 50, stage);
+			_repl = new Repl(stage.stageWidth, stage.stageHeight, stage);
 			addChild(_repl);
 			_repl.init();
-			stage.addEventListener(Event.RESIZE, onStageResize);
-			onStageResize(null);
 		}
 
-		protected function onStageResize(e:Event):void{
-			_repl.x = (stage.stageWidth / 2) - (_repl.width / 2);
-			_repl.y = (stage.stageHeight / 2) - (_repl.height / 2);
-		}
+
 
 	}
 }
