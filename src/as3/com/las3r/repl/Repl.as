@@ -38,7 +38,8 @@ package com.las3r.repl{
 			_height = h;
 			_rt = new RT(stage);
 			createUI();
-			_ui.visible = false;
+			refreshUI();
+			_inputField.visible = false;
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			_rt.traceFunc = function(str:String):void{
@@ -52,12 +53,12 @@ package com.las3r.repl{
 					if(toEval){
 						_rt.evalStr(toEval, function(val:*):void{
 								refreshUI();
-								_ui.visible = true;
+								_inputField.visible = true;
 							});
 					}
 					else{
 						refreshUI();
-						_ui.visible = true;
+						_inputField.visible = true;
 						
 					}
 				});
