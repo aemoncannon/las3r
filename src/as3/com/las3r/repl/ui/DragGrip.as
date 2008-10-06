@@ -33,20 +33,20 @@ package com.las3r.repl.ui{
 			g.endFill();
 
 			buttonMode = true;
-
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 
 		protected function onMouseDown(e:Event):void{
 			startDrag(false, _motionRect);
 			addEventListener(Event.ENTER_FRAME, onDrag);
+			stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			e.stopPropagation();
 		}
 
 		protected function onMouseUp(e:Event):void{
 			stopDrag();
 			removeEventListener(Event.ENTER_FRAME, onDrag);
+			stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			e.stopPropagation();
 		}
 

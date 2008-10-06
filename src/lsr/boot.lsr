@@ -215,24 +215,6 @@
   [c x] (. com.las3r.runtime.RT (cast c x)))
 
 
-(defn macroexpand-1
-  "If form represents a macro form, returns its expansion,
-  else returns form."
-  [form]
-  (. (. *runtime* compiler) (macroexpand1 form)))
-
-
-
-(defn macroexpand
-  "Repeatedly calls macroexpand-1 on form until it no longer
-  represents a macro form, then returns it.  Note neither
-  macroexpand-1 nor macroexpand expand macros in subforms."
-  [form]
-  (let [ex (macroexpand-1 form)]
-    (if (identical? ex form)
-      form
-      (macroexpand ex))))
-
 (defn vector
   "Creates a new vector containing the args."
   [& args]
@@ -918,6 +900,13 @@
       map)))
 
 
+(defn eval
+  "Evaluates the form data structure (not text!) and calls back with the result
+   if callback is provided."
+  ([form] (. *runtime* (evalStr form)))
+  ([form callback] (. *runtime* (evalStr form callback))))
+
+
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
   binding-form bound to successive items from coll.  Does not retain
@@ -929,6 +918,43 @@
          ~@body)
        (recur (rest list#)))))
 
+(defn dorun
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. dorun can
+  be used to force any effects. Walks through the successive rests of
+  the seq, does not retain the head and returns nil."
+  ([coll]
+   (when (and (seq coll) (or (first coll) true))
+     (recur (rest coll))))
+  ([n coll]
+   (when (and (seq coll) (pos? n) (or (first coll) true))
+     (recur (dec n) (rest coll)))))
+
+(defn doall
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. doall can
+  be used to force any effects. Walks through the successive rests of
+  the seq, retains the head and returns it, thus causing the entire
+  seq to reside in memory at one time."
+  ([coll]
+   (dorun coll)
+   coll)
+  ([n coll]
+   (dorun n coll)
+   coll))
+
+(defmacro dotimes
+  "Repeatedly executes body (presumably for side-effects) with name
+  bound to integers from 0 through n-1."
+  [i n & body]
+  `(let [n# ~n]
+     (loop [~i 0]
+       (when (< ~i n#)
+         ~@body
+         (recur (inc ~i))))))
+
 
 (defn into
   "Returns a new coll consisting of to-coll with all of the items of
@@ -938,6 +964,27 @@
     (if items
       (recur (conj ret (first items)) (rest items))
       ret)))
+
+(defn macroexpand-1
+  "If form represents a macro form, returns its expansion,
+  else returns form."
+  [form]
+  (. (. *runtime* compiler) (macroexpand1 form)))
+
+
+
+(defn macroexpand
+  "Repeatedly calls macroexpand-1 on form until it no longer
+  represents a macro form, then returns it.  Note neither
+  macroexpand-1 nor macroexpand expand macros in subforms."
+  [form]
+  (let [ex (macroexpand-1 form)]
+    (if (identical? ex form)
+      form
+      (macroexpand ex))))
+
+
+
 
 
 (defn grab-objects-at
@@ -959,6 +1006,10 @@
 		   (func (grab-objects-at (. *stage* mouseX) (. *stage* mouseY))))
 		 true))
      (println "Please click an object on the stage.")))
+
+
+
+
 
 
 
