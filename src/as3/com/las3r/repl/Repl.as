@@ -46,6 +46,7 @@ package com.las3r.repl{
 				_outputField.appendText(str);
 				_outputField.scrollV = _outputField.maxScrollV;
 			}
+			
 		}
 
 		public function init(toEval:String = null):void{
@@ -63,6 +64,7 @@ package com.las3r.repl{
 					}
 				});
 		}
+
 
 		protected function onMouseDown(e:Event):void{
 			startDrag();

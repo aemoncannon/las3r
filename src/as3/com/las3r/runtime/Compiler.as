@@ -90,6 +90,7 @@ package com.las3r.runtime{
 				)
 			);
 
+
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					loadForm(forms.shift(), loadAllForms);
@@ -121,6 +122,7 @@ package com.las3r.runtime{
 			gen.pushNewActivationScope();
 			expr.emit(C.EXPRESSION, gen);
 			gen.storeResult(resultKey);
+
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
@@ -994,7 +996,9 @@ class IfExpr implements Expr{
 		if(t != null && t != RT.F){
 			return thenExpr.interpret();
 		}
-		return elseExpr.interpret();
+		else{
+			return elseExpr.interpret();
+		}
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
@@ -1116,8 +1120,9 @@ class DefExpr implements Expr{
 	}
 
 	public function interpret():Object{
-		if(initProvided)
-		aVar.bindRoot(init.interpret());
+		if(initProvided){
+			aVar.bindRoot(init.interpret());
+		}
 		return aVar;
 	}
 

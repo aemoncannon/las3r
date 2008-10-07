@@ -86,7 +86,7 @@ package com.hurlant.eval {
 				c = new LoaderContext(false, ApplicationDomain.currentDomain, null);
 			}
 			var l:Loader = new Loader();
-			l.contentLoaderInfo.addEventListener(Event.COMPLETE, callback);
+			l.contentLoaderInfo.addEventListener(Event.COMPLETE, callback, false, 10000);
 			l.loadBytes(bytes, c);
 			return true;
 		}
