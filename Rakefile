@@ -22,7 +22,7 @@ SHARED_CLASS_PATH = [
 
 COMPILE_OPTIONS = [
                    "+configname=flex",
-                   "-default-frame-rate=1000",
+                   "-default-frame-rate=99",
                    "-compiler.warn-no-type-decl=false",
                    "-compiler.optimize=true",
                    # ABCDump has tons of warnings unless we disable these:
