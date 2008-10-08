@@ -352,8 +352,9 @@ package com.las3r.runtime{
 
 
 
-		public function loadStdLib(onComplete:Function = null):void{
-			_compiler.load(new PushbackReader(new StringReader(BOOT_LSR)), onComplete || function(val:*):void{});
+		public function loadStdLib(onComplete:Function = null, prog:Function = null):void{
+			var comp:Function = onComplete || function(val:*):void{};
+			_compiler.load(new PushbackReader(new StringReader(BOOT_LSR)), onComplete || function(val:*):void{}, prog);
 		}
 
 

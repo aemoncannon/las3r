@@ -50,19 +50,27 @@ package com.las3r.repl{
 		}
 
 		public function init(toEval:String = null):void{
+			_rt.traceFunc("Compiling forms:\n");
 			_rt.loadStdLib(function(val:*):void{
 					if(toEval){
 						_rt.evalStr(toEval, function(val:*):void{
-								refreshUI();
-								_inputField.visible = true;
+								showInput();
 							});
 					}
 					else{
-						refreshUI();
-						_inputField.visible = true;
-						
+						showInput();
 					}
-				});
+				},
+				function(i:int, total:int):void{
+					if(i == total){_rt.traceFunc(".\n"); }
+					else{ _rt.traceFunc("."); }
+				}
+			);
+		}
+
+		protected function showInput():void{
+			refreshUI();
+			_inputField.visible = true;
 		}
 
 
@@ -164,12 +172,12 @@ package com.las3r.repl{
 			switch (key) {
 				case Keyboard.UP :
  				_inputHistoryPos = _inputHistoryPos - 1 + (_inputHistoryPos == 0 ? _inputHistory.length : 0);
- 				_inputField.text = _inputHistory[_inputHistoryPos];
+ 				_inputField.text = _inputHistory[_inputHistoryPos] || "";
  				break;
 
 				case Keyboard.DOWN :
  				_inputHistoryPos = (_inputHistoryPos + 1) % _inputHistory.length;
- 				_inputField.text = _inputHistory[_inputHistoryPos];
+ 				_inputField.text = _inputHistory[_inputHistoryPos] || "";
  				break;
 				
 			}

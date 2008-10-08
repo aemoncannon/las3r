@@ -71,8 +71,9 @@ package com.las3r.runtime{
 		}
 
 
-		public function load(rdr:PushbackReader, onComplete:Function = null, sourcePath:String = null, sourceName:String = null):void{
-			var callback:Function = onComplete || function(val:*):void{};
+		public function load(rdr:PushbackReader, _onComplete:Function = null, _progress:Function = null, sourcePath:String = null, sourceName:String = null):void{
+			var onComplete:Function = _onComplete || function(val:*):void{};
+			var progress:Function = _progress || function(i:int, j:int):void{};
 
 			var EOF:Object = new Object();
 			var forms:Vector = Vector(RT.vector());
@@ -90,8 +91,10 @@ package com.las3r.runtime{
 				)
 			);
 
+			var totalLength:int = forms.length;
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
+					progress(totalLength - forms.length + 1, totalLength);
 					loadForm(forms.shift(), loadAllForms);
 				}
 				else{

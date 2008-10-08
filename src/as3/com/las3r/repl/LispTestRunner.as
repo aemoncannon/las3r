@@ -20,7 +20,6 @@ package com.las3r.repl{
 			var r:Repl = new Repl(stage.stageWidth - 50, stage.stageHeight - 50, stage);
 			r.x = r.y = 25;
 			addChild(r);
-			r.init("(run-tests)");
 		}
 
 	}
