@@ -776,7 +776,7 @@ class VectorReader implements IReaderMacro{
 
 
 class WrappingReader implements IReaderMacro{
-	var sym:Symbol;
+	public var sym:Symbol;
 
 	protected var _reader:LispReader;
 

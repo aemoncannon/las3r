@@ -12,7 +12,7 @@
 
 package com.las3r.runtime{
 
-	class StringSeq extends ASeq implements ISeq, IReduce{
+	public class StringSeq extends ASeq implements ISeq, IReduce{
 		//todo - something more efficient
 		private var str:String;
 		private var i:int;

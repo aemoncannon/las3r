@@ -24,6 +24,6 @@ package com.hurlant.eval.abc
                 traits[i].serialize(bs);
         }
 
-        /*private*/ var init, traits = [];
+        private var init, traits = [];
     }
 }

@@ -29,7 +29,7 @@ package com.las3r.runtime{
 
 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
 		protected const BootLsr:Class;
-		var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
+		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
 		public static var instances:Array = [];
 

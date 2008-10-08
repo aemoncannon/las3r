@@ -11,7 +11,7 @@
 
 
 package com.las3r.runtime{
-	class Frame{
+	public class Frame{
 		//Var->Box
 		var bindings:IMap;
 

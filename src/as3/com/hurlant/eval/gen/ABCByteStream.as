@@ -6,7 +6,7 @@ package com.hurlant.eval.gen
 	
     public class ABCByteStream
     {
-        /*private*/ var bytes:ByteArray;
+        private var bytes:ByteArray;
         // If a ByteArray is passed in, then it is used to construct the ABCByteStream, otherwise a new empty ByteArray is used
         function ABCByteStream (b:ByteArray = null) {
         	bytes = (b!=null? b : new ByteArray )

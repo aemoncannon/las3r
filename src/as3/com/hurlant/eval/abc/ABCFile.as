@@ -20,12 +20,12 @@ package com.hurlant.eval.abc
         public const major_version = 46;
         public const minor_version = 16;
 
-        const methods = [];
-        const metadatas = [];
-        const instances = [];
-        const classes = [];
-        const scripts = [];
-        const bodies = [];
+        private const methods = [];
+        private const metadatas = [];
+        private const instances = [];
+        private const classes = [];
+        private const scripts = [];
+        private const bodies = [];
         var constants : ABCConstantPool;
 
         public function getBytes(): * /* same type as ABCByteStream.getBytes() */ {

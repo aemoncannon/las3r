@@ -94,173 +94,172 @@ package com.hurlant.eval.gen
 	    static public const METHOD_HasParamNames        = 0x80;
 		
 	    
-		const OP_bkpt:int = 0x01
-		const OP_nop:int = 0x02
-		const OP_throw:int = 0x03
-		const OP_getsuper:int = 0x04
-		const OP_setsuper:int = 0x05
-		const OP_dxns:int = 0x06
-		const OP_dxnslate:int = 0x07
-		const OP_kill:int = 0x08
-		const OP_label:int = 0x09
-		const OP_ifnlt:int = 0x0C
-		const OP_ifnle:int = 0x0D
-		const OP_ifngt:int = 0x0E
-		const OP_ifnge:int = 0x0F
-		const OP_jump:int = 0x10
-		const OP_iftrue:int = 0x11
-		const OP_iffalse:int = 0x12
-		const OP_ifeq:int = 0x13
-		const OP_ifne:int = 0x14
-		const OP_iflt:int = 0x15
-		const OP_ifle:int = 0x16
-		const OP_ifgt:int = 0x17
-		const OP_ifge:int = 0x18
-		const OP_ifstricteq:int = 0x19
-		const OP_ifstrictne:int = 0x1A
-		const OP_lookupswitch:int = 0x1B
-		const OP_pushwith:int = 0x1C
-		const OP_popscope:int = 0x1D
-		const OP_nextname:int = 0x1E
-		const OP_hasnext:int = 0x1F
-		const OP_pushnull:int = 0x20
-		const OP_pushundefined:int = 0x21
-		const OP_pushconstant:int = 0x22
-		const OP_nextvalue:int = 0x23
-		const OP_pushbyte:int = 0x24
-		const OP_pushshort:int = 0x25
-		const OP_pushtrue:int = 0x26
-		const OP_pushfalse:int = 0x27
-		const OP_pushnan:int = 0x28
-		const OP_pop:int = 0x29
-		const OP_dup:int = 0x2A
-		const OP_swap:int = 0x2B
-		const OP_pushstring:int = 0x2C
-		const OP_pushint:int = 0x2D
-		const OP_pushuint:int = 0x2E
-		const OP_pushdouble:int = 0x2F
-		const OP_pushscope:int = 0x30
-		const OP_pushnamespace:int = 0x31
-		const OP_hasnext2:int = 0x32
-		const OP_newfunction:int = 0x40
-		const OP_call:int = 0x41
-		const OP_construct:int = 0x42
-		const OP_callmethod:int = 0x43
-		const OP_callstatic:int = 0x44
-		const OP_callsuper:int = 0x45
-		const OP_callproperty:int = 0x46
-		const OP_returnvoid:int = 0x47
-		const OP_returnvalue:int = 0x48
-		const OP_constructsuper:int = 0x49
-		const OP_constructprop:int = 0x4A
-		const OP_callsuperid:int = 0x4B
-		const OP_callproplex:int = 0x4C
-		const OP_callinterface:int = 0x4D
-		const OP_callsupervoid:int = 0x4E
-		const OP_callpropvoid:int = 0x4F
-		const OP_newobject:int = 0x55
-		const OP_newarray:int = 0x56
-		const OP_newactivation:int = 0x57
-		const OP_newclass:int = 0x58
-		const OP_getdescendants:int = 0x59
-		const OP_newcatch:int = 0x5A
-		const OP_findpropstrict:int = 0x5D
-		const OP_findproperty:int = 0x5E
-		const OP_finddef:int = 0x5F
-		const OP_getlex:int = 0x60
-		const OP_setproperty:int = 0x61
-		const OP_getlocal:int = 0x62
-		const OP_setlocal:int = 0x63
-		const OP_getglobalscope:int = 0x64
-		const OP_getscopeobject:int = 0x65
-		const OP_getproperty:int = 0x66
-		const OP_getpropertylate:int = 0x67
-		const OP_initproperty:int = 0x68
-		const OP_setpropertylate:int = 0x69
-		const OP_deleteproperty:int = 0x6A
-		const OP_deletepropertylate:int = 0x6B
-		const OP_getslot:int = 0x6C
-		const OP_setslot:int = 0x6D
-		const OP_getglobalslot:int = 0x6E
-		const OP_setglobalslot:int = 0x6F
-		const OP_convert_s:int = 0x70
-		const OP_esc_xelem:int = 0x71
-		const OP_esc_xattr:int = 0x72
-		const OP_convert_i:int = 0x73
-		const OP_convert_u:int = 0x74
-		const OP_convert_d:int = 0x75
-		const OP_convert_b:int = 0x76
-		const OP_convert_o:int = 0x77
-	    const OP_checkfilter:int = 0x78
-		const OP_coerce:int = 0x80
-		const OP_coerce_b:int = 0x81
-		const OP_coerce_a:int = 0x82
-		const OP_coerce_i:int = 0x83
-		const OP_coerce_d:int = 0x84
-		const OP_coerce_s:int = 0x85
-		const OP_astype:int = 0x86
-		const OP_astypelate:int = 0x87
-		const OP_coerce_u:int = 0x88
-		const OP_coerce_o:int = 0x89
-		const OP_negate:int = 0x90
-		const OP_increment:int = 0x91
-		const OP_inclocal:int = 0x92
-		const OP_decrement:int = 0x93
-		const OP_declocal:int = 0x94
-		const OP_typeof:int = 0x95
-		const OP_not:int = 0x96
-		const OP_bitnot:int = 0x97
-		const OP_concat:int = 0x9A
-		const OP_add_d:int = 0x9B
-		const OP_add:int = 0xA0
-		const OP_subtract:int = 0xA1
-		const OP_multiply:int = 0xA2
-		const OP_divide:int = 0xA3
-		const OP_modulo:int = 0xA4
-		const OP_lshift:int = 0xA5
-		const OP_rshift:int = 0xA6
-		const OP_urshift:int = 0xA7
-		const OP_bitand:int = 0xA8
-		const OP_bitor:int = 0xA9
-		const OP_bitxor:int = 0xAA
-		const OP_equals:int = 0xAB
-		const OP_strictequals:int = 0xAC
-		const OP_lessthan:int = 0xAD
-		const OP_lessequals:int = 0xAE
-		const OP_greaterthan:int = 0xAF
-		const OP_greaterequals:int = 0xB0
-		const OP_instanceof:int = 0xB1
-		const OP_istype:int = 0xB2
-		const OP_istypelate:int = 0xB3
-		const OP_in:int = 0xB4
-		const OP_increment_i:int = 0xC0
-		const OP_decrement_i:int = 0xC1
-		const OP_inclocal_i:int = 0xC2
-		const OP_declocal_i:int = 0xC3
-		const OP_negate_i:int = 0xC4
-		const OP_add_i:int = 0xC5
-		const OP_subtract_i:int = 0xC6
-		const OP_multiply_i:int = 0xC7
-		const OP_getlocal0:int = 0xD0
-		const OP_getlocal1:int = 0xD1
-		const OP_getlocal2:int = 0xD2
-		const OP_getlocal3:int = 0xD3
-		const OP_setlocal0:int = 0xD4
-		const OP_setlocal1:int = 0xD5
-		const OP_setlocal2:int = 0xD6
-		const OP_setlocal3:int = 0xD7
-		const OP_debug:int = 0xEF
-		const OP_debugline:int = 0xF0
-		const OP_debugfile:int = 0xF1
-		const OP_bkptline:int = 0xF2
-	    const OP_timestamp:int = 0xF3
-	    const DEBUG:Boolean = false;
-		
+		private const OP_bkpt:int = 0x01
+		private const OP_nop:int = 0x02
+		private const OP_throw:int = 0x03
+		private const OP_getsuper:int = 0x04
+		private const OP_setsuper:int = 0x05
+		private const OP_dxns:int = 0x06
+		private const OP_dxnslate:int = 0x07
+		private const OP_kill:int = 0x08
+		private const OP_label:int = 0x09
+		private const OP_ifnlt:int = 0x0C
+		private const OP_ifnle:int = 0x0D
+		private const OP_ifngt:int = 0x0E
+		private const OP_ifnge:int = 0x0F
+		private const OP_jump:int = 0x10
+		private const OP_iftrue:int = 0x11
+		private const OP_iffalse:int = 0x12
+		private const OP_ifeq:int = 0x13
+		private const OP_ifne:int = 0x14
+		private const OP_iflt:int = 0x15
+		private const OP_ifle:int = 0x16
+		private const OP_ifgt:int = 0x17
+		private const OP_ifge:int = 0x18
+		private const OP_ifstricteq:int = 0x19
+		private const OP_ifstrictne:int = 0x1A
+		private const OP_lookupswitch:int = 0x1B
+		private const OP_pushwith:int = 0x1C
+		private const OP_popscope:int = 0x1D
+		private const OP_nextname:int = 0x1E
+		private const OP_hasnext:int = 0x1F
+		private const OP_pushnull:int = 0x20
+		private const OP_pushundefined:int = 0x21
+		private const OP_pushconstant:int = 0x22
+		private const OP_nextvalue:int = 0x23
+		private const OP_pushbyte:int = 0x24
+		private const OP_pushshort:int = 0x25
+		private const OP_pushtrue:int = 0x26
+		private const OP_pushfalse:int = 0x27
+		private const OP_pushnan:int = 0x28
+		private const OP_pop:int = 0x29
+		private const OP_dup:int = 0x2A
+		private const OP_swap:int = 0x2B
+		private const OP_pushstring:int = 0x2C
+		private const OP_pushint:int = 0x2D
+		private const OP_pushuint:int = 0x2E
+		private const OP_pushdouble:int = 0x2F
+		private const OP_pushscope:int = 0x30
+		private const OP_pushnamespace:int = 0x31
+		private const OP_hasnext2:int = 0x32
+		private const OP_newfunction:int = 0x40
+		private const OP_call:int = 0x41
+		private const OP_construct:int = 0x42
+		private const OP_callmethod:int = 0x43
+		private const OP_callstatic:int = 0x44
+		private const OP_callsuper:int = 0x45
+		private const OP_callproperty:int = 0x46
+		private const OP_returnvoid:int = 0x47
+		private const OP_returnvalue:int = 0x48
+		private const OP_constructsuper:int = 0x49
+		private const OP_constructprop:int = 0x4A
+		private const OP_callsuperid:int = 0x4B
+		private const OP_callproplex:int = 0x4C
+		private const OP_callinterface:int = 0x4D
+		private const OP_callsupervoid:int = 0x4E
+		private const OP_callpropvoid:int = 0x4F
+		private const OP_newobject:int = 0x55
+		private const OP_newarray:int = 0x56
+		private const OP_newactivation:int = 0x57
+		private const OP_newclass:int = 0x58
+		private const OP_getdescendants:int = 0x59
+		private const OP_newcatch:int = 0x5A
+		private const OP_findpropstrict:int = 0x5D
+		private const OP_findproperty:int = 0x5E
+		private const OP_finddef:int = 0x5F
+		private const OP_getlex:int = 0x60
+		private const OP_setproperty:int = 0x61
+		private const OP_getlocal:int = 0x62
+		private const OP_setlocal:int = 0x63
+		private const OP_getglobalscope:int = 0x64
+		private const OP_getscopeobject:int = 0x65
+		private const OP_getproperty:int = 0x66
+		private const OP_getpropertylate:int = 0x67
+		private const OP_initproperty:int = 0x68
+		private const OP_setpropertylate:int = 0x69
+		private const OP_deleteproperty:int = 0x6A
+		private const OP_deletepropertylate:int = 0x6B
+		private const OP_getslot:int = 0x6C
+		private const OP_setslot:int = 0x6D
+		private const OP_getglobalslot:int = 0x6E
+		private const OP_setglobalslot:int = 0x6F
+		private const OP_convert_s:int = 0x70
+		private const OP_esc_xelem:int = 0x71
+		private const OP_esc_xattr:int = 0x72
+		private const OP_convert_i:int = 0x73
+		private const OP_convert_u:int = 0x74
+		private const OP_convert_d:int = 0x75
+		private const OP_convert_b:int = 0x76
+		private const OP_convert_o:int = 0x77
+	    private const OP_checkfilter:int = 0x78
+		private const OP_coerce:int = 0x80
+		private const OP_coerce_b:int = 0x81
+		private const OP_coerce_a:int = 0x82
+		private const OP_coerce_i:int = 0x83
+		private const OP_coerce_d:int = 0x84
+		private const OP_coerce_s:int = 0x85
+		private const OP_astype:int = 0x86
+		private const OP_astypelate:int = 0x87
+		private const OP_coerce_u:int = 0x88
+		private const OP_coerce_o:int = 0x89
+		private const OP_negate:int = 0x90
+		private const OP_increment:int = 0x91
+		private const OP_inclocal:int = 0x92
+		private const OP_decrement:int = 0x93
+		private const OP_declocal:int = 0x94
+		private const OP_typeof:int = 0x95
+		private const OP_not:int = 0x96
+		private const OP_bitnot:int = 0x97
+		private const OP_concat:int = 0x9A
+		private const OP_add_d:int = 0x9B
+		private const OP_add:int = 0xA0
+		private const OP_subtract:int = 0xA1
+		private const OP_multiply:int = 0xA2
+		private const OP_divide:int = 0xA3
+		private const OP_modulo:int = 0xA4
+		private const OP_lshift:int = 0xA5
+		private const OP_rshift:int = 0xA6
+		private const OP_urshift:int = 0xA7
+		private const OP_bitand:int = 0xA8
+		private const OP_bitor:int = 0xA9
+		private const OP_bitxor:int = 0xAA
+		private const OP_equals:int = 0xAB
+		private const OP_strictequals:int = 0xAC
+		private const OP_lessthan:int = 0xAD
+		private const OP_lessequals:int = 0xAE
+		private const OP_greaterthan:int = 0xAF
+		private const OP_greaterequals:int = 0xB0
+		private const OP_instanceof:int = 0xB1
+		private const OP_istype:int = 0xB2
+		private const OP_istypelate:int = 0xB3
+		private const OP_in:int = 0xB4
+		private const OP_increment_i:int = 0xC0
+		private const OP_decrement_i:int = 0xC1
+		private const OP_inclocal_i:int = 0xC2
+		private const OP_declocal_i:int = 0xC3
+		private const OP_negate_i:int = 0xC4
+		private const OP_add_i:int = 0xC5
+		private const OP_subtract_i:int = 0xC6
+		private const OP_multiply_i:int = 0xC7
+		private const OP_getlocal0:int = 0xD0
+		private const OP_getlocal1:int = 0xD1
+		private const OP_getlocal2:int = 0xD2
+		private const OP_getlocal3:int = 0xD3
+		private const OP_setlocal0:int = 0xD4
+		private const OP_setlocal1:int = 0xD5
+		private const OP_setlocal2:int = 0xD6
+		private const OP_setlocal3:int = 0xD7
+		private const OP_debug:int = 0xEF
+		private const OP_debugline:int = 0xF0
+		private const OP_debugfile:int = 0xF1
+		private const OP_bkptline:int = 0xF2
+	    private const OP_timestamp:int = 0xF3
+	    private const DEBUG:Boolean = false;
 
-        const listify = false;
-        const indent = "        ";
+        private const listify = false;
+        private const indent = "        ";
 
-        function AVM2Assembler(constants:ABCConstantPool, numberOfFormals:int, needRest:Boolean, needArguments:Boolean, initScopeDepth:int) {
+        public function AVM2Assembler(constants:ABCConstantPool, numberOfFormals:int, needRest:Boolean, needArguments:Boolean, initScopeDepth:int) {
             this.constants = constants;
             this.useTempRange(0, numberOfFormals + 1); // local 0 is always "this"
 			if(needRest) {
@@ -299,38 +298,33 @@ package com.hurlant.eval.gen
 				(need_arguments ? METHOD_Arguments : 0)
 			)}
 
-        /*private*/ function listL(n) {
+        private function listL(n) {
             if (listify)
             Debug.print(n);
         }
 
-        /*private*/ function list1(name) {
+        private function list1(name) {
             if (listify)
             Debug.print(indent + name);
         }
 
-        /*private*/ function list2(name, v) {
+        private function list2(name, v) {
             if (listify)
             Debug.print(indent + name + " " + v);
         }
 
-        /*private*/ function list3(name, v1, v2) {
+        private function list3(name, v1, v2) {
             if (listify)
             Debug.print(indent + name + " " + v1 + " " + v2);
         }
 
-        /*private*/ function list5(name, v1, v2, v3, v4) {
+        private function list5(name, v1, v2, v3, v4) {
             if (listify)
             Debug.print(indent + name + " " + v1 + " " + v2 + " " + v3 + " " + v4);
         }
-		/*         function listn(name, ...rest) {
-        if (listify)
-        print(indent + name + " " + rest.join(" "));
-        }
-		*/
 
         // Instructions that push one value, with a single opcode byte
-        /*private*/ function pushOne(name, opcode) {
+        private function pushOne(name, opcode) {
             stack(1);
             list1(name);
             code.uint8(opcode);
@@ -351,7 +345,7 @@ package com.hurlant.eval.gen
         public function I_pushundefined() { pushOne("pushundefined", 0x21) }
 
         // Instructions that push one value, with an opcode byte followed by a u30 argument
-        /*private*/ function pushOneU30(name, opcode, v) {
+        private function pushOneU30(name, opcode, v) {
             stack(1);
             list2(name, v);
             code.uint8(opcode);
@@ -375,7 +369,7 @@ package com.hurlant.eval.gen
         public function startCatch() { stack(1) }
 
         // Instructions that pop one value, with a single opcode byte
-        /*private*/ function dropOne(name, opcode) {
+        private function dropOne(name, opcode) {
             stack(-1);
             list1(name);
             code.uint8(opcode);
@@ -421,7 +415,7 @@ package com.hurlant.eval.gen
         public function I_urshift() { dropOne("urshift", 0xA7) }
 
         // Instructions that pop one value, with an opcode byte followed by an u30 argument
-        /*private*/ function dropOneU30(name, opcode, v) {
+        private function dropOneU30(name, opcode, v) {
             stack(-1);
             list2(name, v);
             code.uint8(opcode);
@@ -432,7 +426,7 @@ package com.hurlant.eval.gen
         public function I_setglobalslot(index) { dropOneU30("setglobalslot", 0x6F, index) }
 
         // Instructions that do not change the stack height, with a single opcode byte
-        /*private*/ function dropNone(name, opcode)
+        private function dropNone(name, opcode)
         {
             //stack(0);
             list1(name);
@@ -467,7 +461,7 @@ package com.hurlant.eval.gen
 
         // Instructions that do not change the stack height, with an opcode byte
         // followed by a u30 argument
-        /*private*/ function dropNoneU30(name, opcode, x) {
+        private function dropNoneU30(name, opcode, x) {
             //stack(0)
             list2(name, x);
             code.uint8(opcode);
@@ -537,7 +531,7 @@ package com.hurlant.eval.gen
             return { "name": nextLabel++, "address": -1, "stack": current_stack_depth, "scope": current_scope_depth };
         }
 
-        /*private*/ function relativeOffset(base, L) {
+        private function relativeOffset(base, L) {
             if (L.address != -1)
             code.int24(L.address - base);
             else {
@@ -546,7 +540,7 @@ package com.hurlant.eval.gen
             }
         }
 
-        /*private*/ function jmp(stk, name, opcode, L) {
+        private function jmp(stk, name, opcode, L) {
             stack(stk);
 
             if (L === undefined)
@@ -639,7 +633,7 @@ package com.hurlant.eval.gen
         }
 
         // Standard function calls
-        /*private*/ function call(name, opcode, nargs) {
+        private function call(name, opcode, nargs) {
             stack(1-(nargs+2)); /* pop function/receiver/args; push result */
             list2(name, nargs);
             code.uint8(opcode);
@@ -647,7 +641,7 @@ package com.hurlant.eval.gen
 			debug(name);
         }
 
-        /*private*/ function construct(name, opcode, nargs) {
+        private function construct(name, opcode, nargs) {
             stack(1-(nargs+1)); /* pop function/receiver/args; push result */
             list2(name, nargs);
             code.uint8(opcode);
@@ -665,7 +659,7 @@ package com.hurlant.eval.gen
             code.uint30(nargs);
         }
 
-        /*private*/ function callIDX(name, opcode, index, nargs) {
+        private function callIDX(name, opcode, index, nargs) {
             stack(1-(nargs+1)); /* pop receiver/args; push result */
             list3(name, index, nargs);
             code.uint8(opcode);
@@ -676,7 +670,7 @@ package com.hurlant.eval.gen
         public function I_callmethod(index, nargs) { callIDX("callmethod", 0x43, index, nargs) }
         public function I_callstatic(index, nargs) { callIDX("callstatic", 0x44, index, nargs) }
 
-        /*private*/ function callMN(name, opcode, index, nargs, isVoid) {
+        private function callMN(name, opcode, index, nargs, isVoid) {
             /* pop receiver/NS?/Name?/args; push result? */
             var hasRTNS = constants.hasRTNS(index);
             var hasRTName = constants.hasRTName(index);
@@ -709,7 +703,7 @@ package com.hurlant.eval.gen
         fixed amount and may pop one or two more items, depending
         on the kind of name that index references.
         */
-        /*private*/ function propU30(name, pops, pushes, opcode, index) {
+        private function propU30(name, pops, pushes, opcode, index) {
             var hasRTNS = constants.hasRTNS(index);
             var hasRTName = constants.hasRTName(index);
             stack(pushes - (pops + (hasRTNS ? 1 : 0) + (hasRTName ? 1 : 0)));
@@ -807,7 +801,7 @@ package com.hurlant.eval.gen
             return code;
         }
 
-        /*private*/ function resolveBackpatches() {
+        private function resolveBackpatches() {
             for ( var i=0 ; i < backpatches.length ; i++ ) {
                 var bp = backpatches[i];
                 if (bp.label.address == -1)
@@ -818,34 +812,34 @@ package com.hurlant.eval.gen
             backpatches.length = 0;
         }
 
-        /*private*/ function stack(n) {
+        private function stack(n) {
             current_stack_depth = current_stack_depth + n;
             if (current_stack_depth > max_stack_depth) {
                 max_stack_depth = current_stack_depth;
             }
         }
 
-        /*private*/ function scope(n) {
+        private function scope(n) {
             current_scope_depth = current_scope_depth + n;
             if (current_scope_depth > max_scope_depth)
             max_scope_depth = current_scope_depth;
         }
 
-        /*private*/ var code = new ABCByteStream;
-        /*private*/ var nextLabel = 1000;
-        /*private*/ var backpatches = [];
-        /*private*/ var current_scope_depth = 0;
-        /*private*/ var max_scope_depth = 0;
-        /*private*/ var max_local = 0;
-        /*private*/ var init_scope_depth = 0;
-        /*private*/ var current_stack_depth = 0;
-        /*private*/ var max_stack_depth = 0;
-        /*private*/ var usedTemps = [];
-        /*private*/ var constants;
-        /*private*/ var set_dxns = false;
-        /*private*/ var need_activation = false;
-        /*private*/ var need_rest = false;
-        /*private*/ var need_arguments = false;
+        private var code:ABCByteStream = new ABCByteStream;
+        private var nextLabel:int = 1000;
+        private var backpatches:Array = [];
+        private var current_scope_depth:int = 0;
+        private var max_scope_depth:int = 0;
+        private var max_local:int = 0;
+        private var init_scope_depth:int = 0;
+        private var current_stack_depth:int = 0;
+        private var max_stack_depth:int = 0;
+        private var usedTemps:Array = [];
+        private var constants;
+        private var set_dxns:Boolean = false;
+        private var need_activation:Boolean = false;
+        private var need_rest:Boolean = false;
+        private var need_arguments:Boolean = false;
     }
 }
 
