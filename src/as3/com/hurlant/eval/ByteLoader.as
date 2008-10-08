@@ -83,6 +83,9 @@ package com.hurlant.eval {
 			var c:LoaderContext = null;
 			if (inplace) {
 				c = new LoaderContext(false, ApplicationDomain.currentDomain, null);
+				if(Object(c).hasOwnProperty("allowLoadBytesCodeExecution")){
+					Object(c).allowLoadBytesCodeExecution = true;
+				}
 			}
 			var l:Loader = new Loader();
 			l.loadBytes(bytes, c);

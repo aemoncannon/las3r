@@ -132,7 +132,7 @@ package com.las3r.runtime{
 			bytes.position = 0;
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
-			ByteLoader.loadBytes(swfBytes);
+			ByteLoader.loadBytes(swfBytes, true);
 		}
 
 		public function currentNS():LispNamespace{
