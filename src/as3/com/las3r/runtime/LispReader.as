@@ -120,7 +120,7 @@ package com.las3r.runtime{
 						if(CharUtil.isDigit(ch2))
 						{
 							unread(r, ch2);
-							var n:Object = readNumber(r, ch);
+							n = readNumber(r, ch);
 							return n;
 						}
 						unread(r, ch2);
@@ -636,7 +636,7 @@ class UnquoteReader implements IReaderMacro{
 		else
 		{
 			_reader.unread(r, ch);
-			var o:Object = _reader.read(r, true, null);
+			o = _reader.read(r, true, null);
 			return new Unquote(o);
 		}
 	}

@@ -18,6 +18,6 @@ package com.hurlant.eval.abc
             bs.uint30(var_name);
         }
 
-        /*private*/ var first_pc, last_pc, target_pc, exc_type, var_name;
+        private var first_pc, last_pc, target_pc, exc_type, var_name;
     }
 }

@@ -639,8 +639,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-				printInnerSeq(seq(x), w);
-				w.write(')');
+					printInnerSeq(seq(x), w);
+					w.write(')');
 			}
 			else if(x is String)
 			{
@@ -697,32 +697,32 @@ package com.las3r.runtime{
 					w.write(", ");
 				}
 				w.write('}');
-		}
-		else if(x is IVector)
-		{
-			var a:IVector = IVector(x);
-			w.write('[');
-				for(var i:int = 0; i < a.count(); i++)
+			}
+			else if(x is IVector)
+			{
+				var a:IVector = IVector(x);
+				w.write('[');
+				for(i = 0; i < a.count(); i++)
 				{
 					print(a.nth(i), w);
 					if(i < a.count() - 1)
 					w.write(' ');
 				}
 				w.write(']');
+			}
+			else w.write(x.toString());
 		}
-		else w.write(x.toString());
-	}
 
 
-	private function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
-		for(var sq:ISeq = x; sq != null; sq = sq.rest())
-		{
-			print(sq.first(), w);
-			if(sq.rest() != null)
-			w.write(' ');
+		private function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
+			for(var sq:ISeq = x; sq != null; sq = sq.rest())
+			{
+				print(sq.first(), w);
+				if(sq.rest() != null)
+				w.write(' ');
+			}
 		}
+
+
 	}
-
-
-}
 }

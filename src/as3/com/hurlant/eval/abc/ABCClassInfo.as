@@ -20,6 +20,6 @@ package com.hurlant.eval.abc
                 traits[i].serialize(bs);
         }
 
-        /*private*/ var cinit, traits = [];
+        private var cinit, traits = [];
     }
 }

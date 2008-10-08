@@ -37,11 +37,11 @@ package com.hurlant.eval.abc
             for ( var i=0 ; i < exceptions.length ; i++ )
                 exceptions[i].serialize(bs);
             bs.uint30(traits.length);
-            for ( var i=0 ; i < traits.length ; i++ )
+            for ( i=0 ; i < traits.length ; i++ )
                 traits[i].serialize(bs);
         }
 
-        /*private*/ var init_scope_depth = 0, exceptions = [], traits = [];
-        /*private*/ var method, max_stack, local_count, max_scope_depth, code;
+        private var init_scope_depth = 0, exceptions = [], traits = [];
+        private var method, max_stack, local_count, max_scope_depth, code;
     }
 }

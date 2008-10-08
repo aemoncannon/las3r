@@ -26,7 +26,7 @@ package com.hurlant.eval.abc
         private const classes = [];
         private const scripts = [];
         private const bodies = [];
-        var constants : ABCConstantPool;
+        public var constants : ABCConstantPool;
 
         public function getBytes(): * /* same type as ABCByteStream.getBytes() */ {
             function emitArray(a, len) {

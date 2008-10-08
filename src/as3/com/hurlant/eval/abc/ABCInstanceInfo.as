@@ -43,6 +43,6 @@ package com.hurlant.eval.abc
                 traits[i].serialize(bs);
         }
 
-        /*private*/ var name, super_name, flags, protectedNS, interfaces, iinit, traits;
+        private var name, super_name, flags, protectedNS, interfaces, iinit, traits;
     }
 }

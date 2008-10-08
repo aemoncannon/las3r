@@ -19,6 +19,6 @@ package com.hurlant.eval.abc
             }
         }
 
-        /*private*/ var name, items;
+        private var name, items;
     }
 }

@@ -626,7 +626,7 @@ package com.hurlant.eval.gen
             code.uint8(0x1B);
             relativeOffset(base, default_label);
             code.uint30(case_labels.length-1);
-            for ( var i=0 ; i < case_labels.length ; i++ )
+            for ( i = 0 ; i < case_labels.length ; i++ )
             relativeOffset(base, case_labels[i]);
 
             return default_label;

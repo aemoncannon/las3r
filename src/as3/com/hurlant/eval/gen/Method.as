@@ -6,7 +6,7 @@ package com.hurlant.eval.gen
     public class Method // extends AVM2Assembler
     {
         public var e, formals, name, asm, traits = [], finalized=false, defaults = null, exceptions=[];
-		var initScopeDepth;
+		public var initScopeDepth;
         function Method(e:ABCEmitter, formals:Array, needRest:Boolean, needArguments:Boolean, initScopeDepth:int, name:String, standardPrologue:Boolean) {
             asm = new AVM2Assembler(e.constants, formals.length, needRest, needArguments, initScopeDepth);
             //super(e.constants, formals.length);
@@ -51,7 +51,7 @@ package com.hurlant.eval.gen
             for ( var i=0 ; i < traits.length ; i++ )
                 body.addTrait(traits[i]);
             
-            for ( var i=0 ; i < exceptions.length; i++ )
+            for ( i=0 ; i < exceptions.length; i++ )
                 body.addException(exceptions[i]);
             
             e.file.addMethodBody(body);

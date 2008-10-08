@@ -1849,17 +1849,20 @@ class HostExpr implements Expr{
 		if(RT.length(form) < 3)
 		throw new Error("IllegalArgumentException: Malformed member expression, expecting (. target field) or (. target (method args*))");
 
+		var sym:Symbol;
+		var c:Class;
+		var instance:Expr;
 		if(RT.length(form) == 3 && RT.third(form) is Symbol)    //field
 		{
-			var sym:Symbol = Symbol(RT.third(form));
+			sym = Symbol(RT.third(form));
 
 			//determine static or instance
 			//static target must be symbol, either fully.qualified.Classname or Classname that has been imported
-			var c:Class = maybeClass(compiler, RT.second(form), false);
+			c = maybeClass(compiler, RT.second(form), false);
 			if(c != null)
 			return new StaticFieldExpr(compiler, c, sym.name);
 			
-			var instance:Expr = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form));
+			instance = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form));
 			return new InstanceFieldExpr(compiler, instance, sym.name);
 		}
 		else // method call
@@ -1868,18 +1871,18 @@ class HostExpr implements Expr{
 			if(!(RT.first(call) is Symbol))
 			throw new Error("IllegalArgumentException: Malformed member expression");
 
-			var sym:Symbol = Symbol(RT.first(call));
+			sym = Symbol(RT.first(call));
 
 			var args:IVector = Vector.empty();
 			for(var s:ISeq = RT.rest(call); s != null; s = s.rest()){
 				args = args.cons(compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, s.first()));
 			}
 
-			var c:Class = maybeClass(compiler, RT.second(form), false);
+			c = maybeClass(compiler, RT.second(form), false);
 			if(c != null)
 			return new StaticMethodExpr(compiler, c, sym.name, args);
 
-			var instance:Expr = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form));
+			instance = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form));
 			return new InstanceMethodExpr(compiler, instance, sym.name, args);
 		}
 	}
@@ -2189,9 +2192,9 @@ class TryExpr implements Expr{
 			gen.pushCatchScope(excId); 
 
 			
-			for(var i:int = 0; i < catchExprs.count(); i++)
+			for(i = 0; i < catchExprs.count(); i++)
 			{
-				var clause:CatchClause = CatchClause(catchExprs.nth(i));
+				clause = CatchClause(catchExprs.nth(i));
 				gen.asm.I_label(clause.label);
 
 				

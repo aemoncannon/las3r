@@ -27,7 +27,7 @@ package com.las3r.runtime{
 			return this;
 		}
 
-		static function doEquals(v:IVector, obj:Object):Boolean{
+		public static function doEquals(v:IVector, obj:Object):Boolean{
 			if(obj is IVector){
 				var ma:IVector = IVector(obj);
 				if(ma.count() != v.count()){

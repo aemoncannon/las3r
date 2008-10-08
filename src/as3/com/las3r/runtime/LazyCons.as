@@ -16,7 +16,7 @@ package com.las3r.runtime{
 	public class LazyCons extends ASeq{
 
 		private static var sentinel:ISeq = new Cons(null, null);
-		var f:Function;
+		public var f:Function;
 		private var _first:Object;
 		private var _rest:ISeq;
 

@@ -26,11 +26,9 @@ COMPILE_OPTIONS = [
                    "-compiler.warn-no-type-decl=false",
                    "-compiler.optimize=true",
                    # ABCDump has tons of warnings unless we disable these:
-#                   "-compiler.warn-missing-namespace-decl=false",
-                   "-compiler.warn-internal-error=false",
-                   "-compiler.warn-duplicate-variable-def=false",
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}"
                   ]
+
 
 SHARED_SOURCES = FileList["./src/as3/**/*"]
 LAS3R_STDLIB = FileList["./src/lsr/**/*"]

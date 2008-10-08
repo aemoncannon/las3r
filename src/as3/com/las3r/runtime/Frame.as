@@ -13,9 +13,9 @@
 package com.las3r.runtime{
 	public class Frame{
 		//Var->Box
-		var bindings:IMap;
+		public var bindings:IMap;
 
-		var prev:Frame;
+		public var prev:Frame;
 
 		public function Frame(bindings:IMap = null, prev:Frame = null){
 			this.bindings = bindings || new Map();

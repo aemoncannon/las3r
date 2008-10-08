@@ -25,7 +25,7 @@ package com.hurlant.eval.abc
                 bs.uint8(vkind);
         }
 
-        /*private*/ var slot_id, type_name, vindex, vkind;
+        private var slot_id, type_name, vindex, vkind;
 
         // from ABCTrait
 

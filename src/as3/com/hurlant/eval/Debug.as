@@ -5,14 +5,14 @@ package com.hurlant.eval
 	public class Debug
 	{
 
-		static var nesting = 0;
+		public static var nesting = 0;
 
 		static private var _logger:ILogger = null;
 		static public function set logger(value:ILogger):void {
 			_logger = value;
 		}
 		
-		static function arrows (c)
+		public static function arrows (c)
 		    : String {
 		    var str = "";
 		    for ( var n = nesting; n > 0; n = n - 1 ) {
@@ -25,7 +25,7 @@ package com.hurlant.eval
 		    nesting = nesting + 1;
 		    //print (arrows(">"), s, a);
 		}
-		
+
 		public static function exit (s,a="") {
 		    //print (arrows("<"), s, a);
 		    nesting = nesting - 1;

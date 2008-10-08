@@ -55,6 +55,6 @@ package com.hurlant.eval.abc
             }
         }
 
-        /*private*/ var name, param_types, return_type, flags, options, param_names;
+        private var name, param_types, return_type, flags, options, param_names;
     }
 }
