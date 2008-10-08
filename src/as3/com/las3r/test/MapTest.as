@@ -44,7 +44,7 @@ package com.las3r.test{
 		public function testMapSequencing():void{
 			var m:Map = Map.createFromArray(["a", 1, "b", 2, "c", 3, "d", 4]);
 			var s:ISeq = m.seq();
-			assertTrue("first is ['a', 1]", m.valAt(s.first().nth(0)) == s.first().nth(1));
+			assertTrue("first is ['a', 1]", m.valAt(s.first().key) == s.first().value);
 		}
 
 	}

@@ -53,22 +53,20 @@ package com.las3r.runtime{
 		}
 
 		public function equals(obj:Object):Boolean{
-			if(!(obj is IMap))
-			return false;
-			var m:IMap = IMap(obj);
-
-			if(m.count() != count())
-			return false;
-
-			for(var s:ISeq = seq(); s != null; s = s.rest())
-			{
-				var pair:IVector = IVector(s.first());
-				var e:* = pair.nth(1);
-				var me:* = m.valAt(pair.nth(0));
-				if(me == null || !Util.equal(e, me))
+			if(!(obj is IMap)){
 				return false;
 			}
+			var m:IMap = IMap(obj);
 
+			if(m.count() != count()){
+				return false;
+			}
+			
+			for(var key:* in _dict){
+				if(!Util.equal(m.valAt(key), valAt(key))){
+					return false;
+				}
+			}
 			return true;
 		}
 
@@ -79,19 +77,28 @@ package com.las3r.runtime{
 		}
 
 		public function valAt(key:Object, notFound:Object = null):Object{
-			var e:* = _dict[key];
-			if(e != null)
-			return e;
+			var e:MapEntry = _dict[key];
+			if(e != null){
+				return e.value;
+			}
 			return notFound;
 		}
 
+		public function entryAt(key:Object):Object{
+			return _dict[key];
+		}
+
 		public function containsKey(key:Object):Boolean{
-			var e:* = _dict[key];
-			return e != null;
+			return _dict[key] != null;
 		}
 
 		public function cons(o:Object):IMap{
-			if(o is IVector)
+			if(o is MapEntry)
+			{
+				var e:MapEntry = MapEntry(o);
+				return assoc(e.key, e.value);
+			}
+			else if(o is IVector)
 			{
 				var v:IVector = IVector(o);
 				if(v.count() != 2)
@@ -102,14 +109,14 @@ package com.las3r.runtime{
 			var ret:IMap = this;
 			for(var es:ISeq = RT.seq(o); es != null; es = es.rest())
 			{
-				var pair:IVector = IVector(es.first());
-				ret = ret.assoc(pair.nth(0), pair.nth(1));
+				var entry:MapEntry = MapEntry(es.first());
+				ret = ret.assoc(entry.key, entry.value);
 			}
 			return ret;
 		}
 
 		public function assoc(key:Object, val:Object):IMap{
-			_dict[key] = val;
+			_dict[key] = new MapEntry(key, val);
 			return this;
 		}
 
@@ -120,13 +127,18 @@ package com.las3r.runtime{
 
 		public function seq():ISeq{
 			//TODO This is too slow
-			var keys:Array = [];
-			for(var key:* in _dict){ keys.push(key); }
-			return new MapSeq(this, keys, 0);
+			var entries:Array = [];
+			for each(var e:MapEntry in _dict){ entries.push(e); }
+			if(entries.length > 0){
+				return new MapSeq(entries, 0);
+			}
+			else{
+				return null;
+			}
 		}
 
 		public function each(iterator:Function):void{
-			for(var key:* in _dict){ iterator(key, _dict[key]); }
+			for(var key:* in _dict){ iterator(key, _dict[key].value); }
 		}
 
 		public function reduce(f:Function, start:Object):Object {
@@ -139,23 +151,21 @@ package com.las3r.runtime{
 import com.las3r.runtime.*;
 
 class MapSeq extends ASeq implements ISeq{
-	private var m:IMap;
-	private var keys:Array;
+	private var entries:Array;
 	private var i:int;
 
-	public function MapSeq(m:IMap, keys:Array, i:int){
-		this.m = m;
-		this.keys = keys;
+	public function MapSeq(entries:Array, i:int){
+		this.entries = entries;
 		this.i = i;
 	}
 
 	override public function first():Object{
-		return Vector.createFromArray([keys[i], m.valAt(keys[i])]);
+		return entries[i];
 	}
 
 	override public function rest():ISeq{
-		if(i + 1 < keys.length)
-		return new MapSeq(m, keys, i + 1);
+		if(i + 1 < entries.length)
+		return new MapSeq(entries, i + 1);
 		return null;
 	}
 
@@ -164,13 +174,14 @@ class MapSeq extends ASeq implements ISeq{
 	}
 
 	override public function count():int{
-		return keys.length - i;
+		return entries.length - i;
 	}
 
 	override public function reduce(f:Function, start:Object):Object {
-		var ret:Object = f(start, m.valAt(keys[i]));
-		for(var x:int = i + 1; x < m.count(); x++){
-			ret = f(ret, m.valAt(keys[x]));
+		var ret:Object = f(start, entries[i].value);
+		var len:int = count();
+		for(var x:int = i + 1; x < len; x++){
+			ret = f(ret, entries[x].value);
 		}
 		return ret;
 	}
