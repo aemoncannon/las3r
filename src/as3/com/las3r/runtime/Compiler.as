@@ -90,7 +90,6 @@ package com.las3r.runtime{
 				)
 			);
 
-
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					loadForm(forms.shift(), loadAllForms);
@@ -100,12 +99,13 @@ package com.las3r.runtime{
 					onComplete(result);
 				}
 			}
+
 			loadAllForms(null);
 		}
 
 		protected function loadForm(form:Object, callback:Function):void{
 			// XXX Compiled LAS3R code stores result of expression here..
-			var resultKey:String = "load_result_" + _rt.nextID();
+			var resultKey:String = _rt.createResultCallback(callback);
 
 			_bindingSetStack = RT.vector();
 			_loopLabelStack = RT.vector();
@@ -121,27 +121,14 @@ package com.las3r.runtime{
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
 			expr.emit(C.EXPRESSION, gen);
-			gen.storeResult(resultKey);
-
+			gen.callbackWithResult(resultKey);
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
 			bytes.position = 0;
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
-			ByteLoader.loadBytes(swfBytes, function(e:Event):void{
-					var result:* = _rt.getResult(resultKey);
-					if(result && result is IObj && _rt.SAVE_BYTECODES.get()){
- 						var r:IObj = IObj(result);
- 						var bytecodeDump:String = ABCDump.dump(swfBytes);
- 						var mm:IMap = r.meta || RT.map();
- 						callback(r.withMeta(mm.assoc(_rt.BYTECODES_KEY, bytecodeDump)));
- 					}
- 					else{
-						callback(result);
-					}
-				}
-			);	
+			ByteLoader.loadBytes(swfBytes);
 		}
 
 		public function currentNS():LispNamespace{
@@ -634,11 +621,11 @@ class CodeGen{
 	* Stack:   
 	*   val => ...
 	*/
-	public function storeResult(key:String):void{
+	public function callbackWithResult(key:String):void{
 		getRT();
 		asm.I_swap();
 		asm.I_pushstring( emitter.constants.stringUtf8(key));
-		asm.I_callproperty(emitter.nameFromIdent("storeResult"), 2);
+		asm.I_callproperty(emitter.nameFromIdent("callbackWithResult"), 2);
 	}
 
 

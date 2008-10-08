@@ -73,8 +73,7 @@ package com.hurlant.eval {
 		* current script has finished running. 
 		* 
 		*/
-		public static function loadBytes(bytes:*, onComplete:Function = null, inplace:Boolean=false):Boolean {
-			var callback:Function = onComplete || function(e:Event):void{};
+		public static function loadBytes(bytes:*, inplace:Boolean=false):Boolean {
 			if (bytes is Array || (getType(bytes) == 2)) {
 				if (!(bytes is Array)) {
 					bytes = [ bytes ];
@@ -86,7 +85,6 @@ package com.hurlant.eval {
 				c = new LoaderContext(false, ApplicationDomain.currentDomain, null);
 			}
 			var l:Loader = new Loader();
-			l.contentLoaderInfo.addEventListener(Event.COMPLETE, callback, false, 10000);
 			l.loadBytes(bytes, c);
 			return true;
 		}

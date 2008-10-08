@@ -364,18 +364,25 @@ package com.las3r.runtime{
 
 		
 		/**
-		* As code is loaded asynchronously, we provide a facility for the loaded code to store it's own result at 
-		* a known location.
-		* 
+		* As code is loaded asynchronously, we provide a facility for the loaded code to invoke a callback with its result.
 		* @param val 
 		* @param key 
 		* @return 
 		*/		
-		public function storeResult(val:*, key:String):void{
-			_resultsDict[key] = val;
+		public function callbackWithResult(val:*, key:String):void{
+			var f:Function = _resultsDict[key];
+			if((f == null) || !(f is Function)){
+				throw new Error("IllegalStateException: Compiled form tried to callback to non-existant callback.")
+			}
+			else{
+				f(val);
+			}
 		}
-		public function getResult(key:String):*{
-			return _resultsDict[key];
+
+		public function createResultCallback(callback:Function):String{
+			var key:String = "result_callback_" + nextID();
+			_resultsDict[key] = callback;
+			return key;
 		}
 
 
