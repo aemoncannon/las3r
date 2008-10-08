@@ -46,7 +46,7 @@ package com.las3r.repl{
 				_outputField.appendText(str);
 				_outputField.scrollV = _outputField.maxScrollV;
 			}
-			
+			init();
 		}
 
 		public function init(toEval:String = null):void{

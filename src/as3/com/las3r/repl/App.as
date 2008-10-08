@@ -25,7 +25,6 @@ package com.las3r.repl{
 			_repl.x = stage.stageWidth/2 - _repl.width/2;
 			_repl.y = stage.stageHeight/2 - _repl.height/2;
 			addChild(_repl);
-			_repl.init();
 		}
 
 	}
