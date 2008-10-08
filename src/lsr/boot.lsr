@@ -510,6 +510,22 @@
 
 
 
+
+;;map stuff
+
+(defn contains?
+  "Returns true if key is present, else false."
+  [map key] (. com.las3r.runtime.RT (contains map key)))
+
+(defn get
+  "Returns the value mapped to key, not-found or nil if key not present."
+  ([map key]
+   (. com.las3r.runtime.RT (get map key)))
+  ([map key not-found]
+   (. com.las3r.runtime.RT (get map key not-found))))
+
+
+
 ;;math stuff
 
 (defn +
@@ -674,6 +690,17 @@
   "Returns the number of items in the collection. (count nil) returns
   0.  Also works on strings, arrays and maps"
   [coll] (. com.las3r.runtime.RT (count coll)))
+
+
+;;list stuff
+
+(defn nth
+  "Returns the value at the index. get returns nil if index out of
+  bounds, nth throws an exception unless not-found is supplied.  nth
+  also works for strings, Java arrays, regex Matchers and Lists, and,
+  in O(n) time, for sequences."
+  ([coll index] (. com.las3r.runtime.RT (nth coll index)))
+  ([coll index not-found] (. com.las3r.runtime.RT (nth coll index not-found))))
 
 
 ;;;;;;;;;;;;;;;;; Tracing to console...
@@ -855,10 +882,10 @@
 ;;;;  "Returns a lazy seq of nums from start (inclusive) to end
 ;;;;  (exclusive), by step, where start defaults to 0 and step to 1."
 ;;;;  ([end] (if (and (> end 0) (< end (. Integer MAX_VALUE)))
-;;;;           (new clojure.lang.Range 0 end)
+;;;;           (new com.las3r.runtime.Range 0 end)
 ;;;;           (take end (iterate inc 0))))
 ;;;;  ([start end] (if (and (< start end) (< end (. Integer MAX_VALUE)))
-;;;;                 (new clojure.lang.Range start end)
+;;;;                 (new com.las3r.runtime.Range start end)
 ;;;;                 (take (- end start) (iterate inc start))))
 ;;;;  ([start end step]
 ;;;;   (take-while (partial (if (pos? step) > <) end) (iterate (partial + step) start))))
