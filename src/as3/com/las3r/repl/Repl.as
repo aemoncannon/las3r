@@ -13,6 +13,7 @@ package com.las3r.repl{
 
 	import com.las3r.runtime.*;
 	import com.las3r.repl.ui.*;
+	import com.las3r.io.*;
 	import com.las3r.util.ExecHelper;
 	import flash.ui.Keyboard;
 	import flash.display.*;
@@ -47,15 +48,19 @@ package com.las3r.repl{
 			_inputField.visible = false;
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			_rt.traceFunc = function(str:String):void{
-				_outputField.appendText(str);
-				_outputField.scrollV = _outputField.maxScrollV;
-			}
+			_rt.stdout = new OutputStream(function(str:String):void{
+					_outputField.appendText(str);
+					_outputField.scrollV = _outputField.maxScrollV;
+				});
+			_rt.stderr = new OutputStream(function(str:String):void{
+					_outputField.appendText(str);
+					_outputField.scrollV = _outputField.maxScrollV;
+				});
 			init();
 		}
 
 		public function init(toEval:String = null):void{
-			_rt.traceFunc("Compiling forms:\n");
+			_rt.writeToStdout("Compiling forms:\n");
 			_rt.loadStdLib(function(val:*):void{
 					if(toEval){
 						_rt.evalStr(toEval, function(val:*):void{
@@ -67,8 +72,8 @@ package com.las3r.repl{
 					}
 				},
 				function(i:int, total:int):void{
-					if(i == total){_rt.traceFunc(".\n"); }
-					else{ _rt.traceFunc("."); }
+					if(i == total){_rt.writeToStdout(".\n"); }
+					else{ _rt.writeToStdout("."); }
 				}
 			);
 		}
@@ -211,7 +216,7 @@ package com.las3r.repl{
 
 
 		protected function onGrabButtonMouseUp(e:Event):void{
-			_rt.traceFunc("Click on the stage to select objects..\n");
+			_rt.writeToStdout("Click on the stage to select objects..\n");
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{
 					stage.removeEventListener(MouseEvent.MOUSE_DOWN, arguments.callee, true);
 					var objs:Array = stage.getObjectsUnderPoint(new Point(stage.mouseX, stage.mouseY));
@@ -220,7 +225,7 @@ package com.las3r.repl{
 						var name:String = "$" + _grabbedCounter++;
 						_grabbedObjectVars.push(Var.internWithRoot(_rt.LAS3R_NAMESPACE, _rt.sym1(name), o, true));							
 					}
-					_rt.traceFunc("Grabbed " + newObjs.length + " new objects.\n");
+					_rt.writeToStdout("Grabbed " + newObjs.length + " new objects.\n");
 					refreshGrabbedListField();
 				},
 				true
@@ -262,7 +267,7 @@ package com.las3r.repl{
 			_inputHistoryPos = _inputHistory.length;
 
 			_rt.evalStr(src, function(val:*):void{ 
-					_rt.traceOut(_rt.printToString(val) + "\n"); 
+					_rt.writeToStdout(_rt.printToString(val) + "\n"); 
 				});
 		}
 

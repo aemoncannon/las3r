@@ -12,7 +12,8 @@
 
 package com.las3r.runtime{
 	
-	import com.las3r.io.NaiveStringWriter;
+
+	import com.las3r.io.*;
 	import com.las3r.jdk.io.*;
 	import com.las3r.runtime.LispNamespace;
 	import com.las3r.runtime.Var;
@@ -45,8 +46,9 @@ package com.las3r.runtime{
 		public var keywords:IMap;
 		public var constants:Array;
 
-		public var traceFunc:Function = function(str:String):void{ trace(str); };
-		public var debugFunc:Function = function(str:String):void{};
+		public var stdout:OutputStream = new TraceStream();
+		public var stderr:OutputStream = new TraceStream();
+		public var stdin:InputStream = new InputStream();
 
 		private var id:int = 1;
 		private var _this:RT;
@@ -80,6 +82,7 @@ package com.las3r.runtime{
 		public var BYTECODES_KEY:Keyword;
 		public var PRIVATE_KEY:Keyword;
 		public var NAME_KEY:Keyword;
+		public var LINE_KEY:Keyword;
 		public var NS_KEY:Keyword;
 
 
@@ -146,6 +149,7 @@ package com.las3r.runtime{
 			PRIVATE_KEY = key1(sym1("private"));
 			NS_KEY = key1(sym1("ns"));
 			NAME_KEY = key1(sym1("name"));
+			LINE_KEY = key1(sym1("line"));
 
 			LAS3R_NAMESPACE = LispNamespace.findOrCreate(this, sym1(LispNamespace.LAS3R_NAMESPACE_NAME));
 			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*ns*"), LAS3R_NAMESPACE);
@@ -395,8 +399,12 @@ package com.las3r.runtime{
 			return (getDefinitionByName(name) as Class);
 		}
 
-		public function traceOut(str:String):void{
-			traceFunc(str);
+		public function writeToStdout(str:String):void{
+			stdout.write(str);
+		}
+
+		public function writeToStderr(str:String):void{
+			stderr.write(str);
 		}
 
 		public static function boundedLength(list:ISeq, limit:int):int{
@@ -615,6 +623,12 @@ package com.las3r.runtime{
 			return new Vector(init);
 		}
 
+		public static meta(x:Object):IMap{
+			if(x is IObj)
+			return IObj(x).meta;
+			return null;
+		}
+
 		public function getVar(ns:String, name:String):Var{
 			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
 		}
@@ -639,8 +653,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+				printInnerSeq(seq(x), w);
+				w.write(')');
 			}
 			else if(x is String)
 			{
