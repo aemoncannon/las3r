@@ -18,7 +18,7 @@ package com.las3r.runtime{
 	import com.las3r.runtime.LispNamespace;
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
-	import flash.events.Event;
+	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
 	import flash.utils.ByteArray;
@@ -26,7 +26,7 @@ package com.las3r.runtime{
 	import flash.utils.getQualifiedClassName;
 
 
-	public class RT{
+	public class RT extends EventDispatcher{
 
 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
 		protected const BootLsr:Class;
@@ -623,7 +623,7 @@ package com.las3r.runtime{
 			return new Vector(init);
 		}
 
-		public static meta(x:Object):IMap{
+		public static function meta(x:Object):IMap{
 			if(x is IObj)
 			return IObj(x).meta;
 			return null;

@@ -14,6 +14,7 @@ package com.las3r.repl{
 	import com.las3r.runtime.*;
 	import com.las3r.repl.ui.*;
 	import com.las3r.io.*;
+	import com.las3r.errors.*;
 	import com.las3r.util.ExecHelper;
 	import flash.ui.Keyboard;
 	import flash.display.*;
@@ -55,6 +56,10 @@ package com.las3r.repl{
 			_rt.stderr = new OutputStream(function(str:String):void{
 					_outputField.appendText(str);
 					_outputField.scrollV = _outputField.maxScrollV;
+				});
+			_rt.addEventListener(LispError.type, function(e:LispError):void{
+					_rt.writeToStderr(e.message + "\n");
+					e.stopPropagation();
 				});
 			init();
 		}
@@ -266,9 +271,19 @@ package com.las3r.repl{
 			_inputHistory.push(src);
 			_inputHistoryPos = _inputHistory.length;
 
-			_rt.evalStr(src, function(val:*):void{ 
-					_rt.writeToStdout(_rt.printToString(val) + "\n"); 
-				});
+
+			try{
+
+				_rt.evalStr(src, function(val:*):void{ 
+						_rt.writeToStdout(_rt.printToString(val) + "\n"); 
+					});
+
+			}
+			catch(e:LispError){
+				_rt.writeToStderr(e.message + "\n");
+			}
+
+			
 		}
 
 

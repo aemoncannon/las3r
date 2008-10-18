@@ -29,7 +29,7 @@ package com.las3r.runtime{
 			this.ns = ns;
 			this.sym = sym;
 			this.count = 0;
-			this.root = root || UNBOUND_VAL;  //use dvals as magic not-bound value
+			this.root = root === null ? UNBOUND_VAL : root;
 			setMeta(RT.map());
 		}
 

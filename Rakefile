@@ -10,7 +10,7 @@
 require 'rexml/document'
 include REXML
 
-$debug = false
+$debug = true
 
 MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
 DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
