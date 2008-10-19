@@ -710,10 +710,10 @@ package com.las3r.runtime{
 				w.write('{');
 				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
 				{
-					var v:IVector = IVector(sq.first());
-					print(v.nth(0), w);
+					var v:MapEntry = MapEntry(sq.first());
+					print(v.key, w);
 					w.write(' ');
-					print(v.nth(1), w);
+					print(v.value, w);
 					if(sq.rest() != null)
 					w.write(", ");
 				}

@@ -524,6 +524,63 @@
   ([map key not-found]
      (. com.las3r.runtime.RT (get map key not-found))))
 
+(defn dissoc
+  "dissoc[iate]. Returns a new map of the same (hashed/sorted) type,
+  that does not contain a mapping for key(s)."
+  ([map] map)
+  ([map key]
+     (. com.las3r.runtime.RT (dissoc map key)))
+  ([map key & ks]
+     (let [ret (dissoc map key)]
+       (if ks
+	 (recur ret (first ks) (rest ks))
+	 ret))))
+
+(defn find
+  "Returns the map entry for key, or nil if key not present."
+  [map key] (. com.las3r.runtime.RT (find map key)))
+
+(defn select-keys
+  "Returns a map containing only those entries in map whose key is in keys"
+  [map keyseq]
+  (loop [ret {} keys (seq keyseq)]
+    (if keys
+      (let [entry (. com.las3r.runtime.RT (find map (first keys)))]
+	(recur
+	 (if entry
+	   (conj ret entry)
+	   ret)
+	 (rest keys)))
+      ret)))
+
+(defn keys
+  "Returns a sequence of the map's keys."
+  [map] (. com.las3r.runtime.RT (keys map)))
+
+(defn vals
+  "Returns a sequence of the map's values."
+  [map] (. com.las3r.runtime.RT (vals map)))
+
+(defn key
+  "Returns the key of the map entry."
+  [#^com.las3r.runtime.MapEntry e]
+  (. e key))
+
+(defn val
+  "Returns the value in the map entry."
+  [#^com.las3r.runtime.MapEntry e]
+  (. e value))
+
+
+(defn name
+  "Returns the name String of a symbol or keyword."
+  [x]
+  (. x (getName)))
+
+(defn namespace
+  "Returns the namespace String of a symbol or keyword, or nil if not present."
+  [x]
+  (. x (getNamespace)))
 
 
 ;;math stuff
@@ -983,6 +1040,22 @@
 	 (recur (inc ~i))))))
 
 
+(defn import
+  "import-list => (package-symbol class-name-symbols*)
+
+  For each name in class-name-symbols, adds a mapping from name to the
+  class named by package.name to the current namespace. Use :import in the ns
+  macro in preference to calling this directly."
+  [& import-lists]
+  (when import-lists
+    (let [#^com.las3r.runtime.Namespace ns *ns*
+	  pkg (ffirst import-lists)
+	  classes (rfirst import-lists)]
+      (doseq c classes
+	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
+    (apply import (rest import-lists))))
+
+
 (defn into
   "Returns a new coll consisting of to-coll with all of the items of
   from-coll conjoined."
@@ -1011,32 +1084,111 @@
       (macroexpand ex))))
 
 
+(defn #^{:private true}
+  filter-key [keyfn pred amap]
+  (loop [ret {} es (seq amap)]
+    (if es
+      (if (pred (keyfn (first es)))
+	(recur (assoc ret (key (first es)) (val (first es))) (rest es))
+	(recur ret (rest es)))
+      ret)))
+
+(defn find-ns
+  "Returns the namespace named by the symbol or nil if it doesn't exist."
+  [sym] (. com.las3r.runtime.LispNamespace (find *runtime* sym)))
 
 
-
-(defn grab-objects-at
-  [x y]
-  (let [p (new flash.geom.Point x y)
-	found (into [] (. *stage* (getObjectsUnderPoint p)))]
-    (filter (fn [ea]
-	      (and (not (instance? flash.display.Shape))
-		   (not (instance? flash.display.Bitmap))))
-	    found)))
-		
-(defn grab
-  ([] (grab (fn [found] (println found))))
-  ([func]
-     (. *stage* (addEventListener 
-		 "mouseDown"
-		 (fn self [e] 
-		   (. *stage* (removeEventListener "mouseDown" self true))
-		   (func (grab-objects-at (. *stage* mouseX) (. *stage* mouseY))))
-		 true))
-     (println "Please click an object on the stage.")))
+(defn create-ns
+  "Create a new namespace named by the symbol if one doesn't already
+  exist, returns it or the already-existing namespace of the same
+  name."
+  [sym] (. com.las3r.runtime.LispNamespace (findOrCreate *runtime* sym)))
 
 
+(defn remove-ns
+  "Removes the namespace named by the symbol. Use with caution.
+  Cannot be used to remove the clojure namespace."
+  [sym] (. com.las3r.runtime.LispNamespace (remove *runtime* sym)))
 
 
+(defn all-ns
+  "Returns a sequence of all namespaces."
+  [] (. com.las3r.runtime.LispNamespace (all *runtime*)))
+
+
+(defn ns-name
+  "Returns the name of the namespace, a symbol."
+  [#^com.las3r.runtime.LispNamespace ns]
+  (. ns (getName)))
+
+
+(defn ns-map
+  "Returns a map of all the mappings for the namespace."
+  [#^com.las3r.runtime.LispNamespace ns]
+  (. ns (getMappings)))
+
+
+(defn ns-unmap
+  "Removes the mappings for the symbol from the namespace."
+  [#^com.las3r.runtime.LispNamespace ns sym]
+  (. ns (unmap sym)))
+
+(defn ns-publics
+  "Returns a map of the public intern mappings for the namespace."
+  [#^com.las3r.runtime.LispNamespace ns]
+  (filter-key val (fn [#^com.las3r.runtime.Var v] (and (instance? com.las3r.runtime.Var v)
+						       (= ns (. v ns))
+						       (. v (isPublic))))
+	      (ns-map ns)))
+
+(defn ns-imports
+  "Returns a map of the import mappings for the namespace."
+  [#^com.las3r.runtime.LispNamespace ns]
+  (filter-key val (partial instance? Class) (ns-map ns)))
+
+
+;;(defn refer
+;;  "refers to all public vars of ns, subject to filters.
+;;  filters can include at most one each of:
+;;
+;;  :exclude list-of-symbols
+;;  :only list-of-symbols
+;;  :rename map-of-fromsymbol-tosymbol
+;;
+;;  For each public interned var in the namespace named by the symbol,
+;;  adds a mapping from the name of the var to the var to the current
+;;  namespace.  Throws an exception if name is already mapped to
+;;  something else in the current namespace. Filters can be used to
+;;  select a subset, via inclusion or exclusion, or to provide a mapping
+;;  to a symbol different from the var's name, in order to prevent
+;;  clashes. Use :use in the ns macro in preference to calling this directly."
+;;  [ns-sym & filters]
+;;    (let [ns (or (find-ns ns-sym) (throw (new Exception (str "No namespace: " ns-sym))))
+;;          fs (apply hash-map filters)
+;;          nspublics (ns-publics ns)
+;;          rename (or (:rename fs) {})
+;;          exclude (set (:exclude fs))
+;;          to-do (or (:only fs) (keys nspublics))]
+;;      (doseq sym to-do
+;;        (when-not (exclude sym)
+;;          (let [v (nspublics sym)]
+;;            (when-not v
+;;              (throw (new java.lang.IllegalAccessError (str sym " is not public"))))
+;;            (. *ns* (refer (or (rename sym) sym) v)))))))
+
+(defn ns-refers
+  "Returns a map of the refer mappings for the namespace."
+  [#^com.las3r.runtime.Namespace ns]
+  (filter-key val (fn [#^com.las3r.runtime.Var v] (and (instance? com.las3r.runtime.Var v)
+						       (not= ns (. v ns))))
+	      (ns-map ns)))
+
+(defn ns-interns
+  "Returns a map of the intern mappings for the namespace."
+  [#^com.las3r.runtime.Namespace ns]
+  (filter-key val (fn [#^com.las3r.runtime.Var v] (and (instance? com.las3r.runtime.Var v)
+						       (= ns (. v ns))))
+	      (ns-map ns)))
 
 
 
@@ -1090,5 +1242,15 @@
   (assert-true (= (zipmap '(:a :b :c) '(1 2 3)) { :a 1 :b 2 :c 3}))
 
   (assert-true (= (merge {:a 1 :b 2} {:c 3}) { :a 1 :b 2 :c 3}))
+
+
+  ;;namespace stuff
+
+  (let [sym (gensym)]
+    (assert-false (find-ns sym))
+    (create-ns sym)
+    (assert-true (find-ns sym))
+    (remove-ns sym)
+    (assert-false (find-ns sym)))
 
   )

@@ -63,7 +63,7 @@ package com.las3r.repl{
 		}
 
 		public function init(toEval:String = null):void{
-			outputText("Compiling forms:\n");
+			outputText("Compiling forms");
 			try{
 				_rt.loadStdLib(function(val:*):void{
 						if(toEval){
@@ -76,8 +76,8 @@ package com.las3r.repl{
 						}
 					},
 					function(i:int, total:int):void{
-						if(i == total){outputText(".\n"); }
-						else{ outputText("."); }
+						if(i == total){outputText(" .\n"); }
+						else{ outputText(" ."); }
 					}
 				);
 			}
