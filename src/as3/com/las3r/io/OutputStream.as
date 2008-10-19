@@ -23,6 +23,10 @@ package com.las3r.io{
 			_writerFunc(str);
 		}
 
+		public function writeOne(ch:int):void{
+			write(String.fromCharCode(ch));
+		}
+
 	}
 
 }

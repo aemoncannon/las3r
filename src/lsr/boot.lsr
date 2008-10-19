@@ -520,9 +520,9 @@
 (defn get
   "Returns the value mapped to key, not-found or nil if key not present."
   ([map key]
-   (. com.las3r.runtime.RT (get map key)))
+     (. com.las3r.runtime.RT (get map key)))
   ([map key not-found]
-   (. com.las3r.runtime.RT (get map key not-found))))
+     (. com.las3r.runtime.RT (get map key not-found))))
 
 
 
@@ -710,11 +710,11 @@
   can be read by the reader"
   ([] nil)
   ([x]
-     (. *runtime* (writeToStdout (. *runtime* (printToString x))))
+     (. *runtime* (print x *out*))
      nil)
   ([x & more]
      (pr x)
-     (. *runtime* (writeToStdout \space))
+     (. *out* (write \space))
      (apply pr more)))
 
 
@@ -722,7 +722,7 @@
   "Writes a newline to the output stream that is the current value of
   *out*" 
   []
-  (. *runtime* (writeToStdout \newline))
+  (. *out* (write \newline))
   nil)
 
 
@@ -942,7 +942,7 @@
   `(loop [list# (seq ~list)]
      (when list#
        (let [~item (first list#)]
-         ~@body)
+	 ~@body)
        (recur (rest list#)))))
 
 (defn dorun
@@ -952,11 +952,11 @@
   be used to force any effects. Walks through the successive rests of
   the seq, does not retain the head and returns nil."
   ([coll]
-   (when (and (seq coll) (or (first coll) true))
-     (recur (rest coll))))
+     (when (and (seq coll) (or (first coll) true))
+       (recur (rest coll))))
   ([n coll]
-   (when (and (seq coll) (pos? n) (or (first coll) true))
-     (recur (dec n) (rest coll)))))
+     (when (and (seq coll) (pos? n) (or (first coll) true))
+       (recur (dec n) (rest coll)))))
 
 (defn doall
   "When lazy sequences are produced via functions that have side
@@ -966,11 +966,11 @@
   the seq, retains the head and returns it, thus causing the entire
   seq to reside in memory at one time."
   ([coll]
-   (dorun coll)
-   coll)
+     (dorun coll)
+     coll)
   ([n coll]
-   (dorun n coll)
-   coll))
+     (dorun n coll)
+     coll))
 
 (defmacro dotimes
   "Repeatedly executes body (presumably for side-effects) with name
@@ -979,8 +979,8 @@
   `(let [n# ~n]
      (loop [~i 0]
        (when (< ~i n#)
-         ~@body
-         (recur (inc ~i))))))
+	 ~@body
+	 (recur (inc ~i))))))
 
 
 (defn into

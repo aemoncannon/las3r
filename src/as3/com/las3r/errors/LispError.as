@@ -4,12 +4,12 @@ package com.las3r.errors{
 
 	public class LispError extends ErrorEvent{
 		
-		public static const type:String = "lispError"
+		public var cause:*;
 
-		public var cause:Error;
+		public static const LISP_ERROR:String = "lispError";
 
-		public function LispError(message:String, cause:Error){
-			super(type, false, true, message);
+		public function LispError(message:String, cause:*){
+			super(LISP_ERROR, false, true, message);
 			this.cause = cause;
 		}
 

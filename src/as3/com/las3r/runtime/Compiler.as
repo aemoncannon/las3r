@@ -12,6 +12,7 @@
 package com.las3r.runtime{
 	import com.las3r.util.*;
 	import com.las3r.jdk.io.PushbackReader;
+	import com.las3r.errors.LispError;
 	import com.las3r.errors.CompilerError;
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.ByteArray;
@@ -92,6 +93,8 @@ package com.las3r.runtime{
 					rt.CURRENT_NS, rt.CURRENT_NS.get(),
 					rt.RUNTIME, rt.RUNTIME.get(),
 					rt.STAGE, rt.STAGE.get(),
+					rt.OUT, rt.OUT.get(),
+					rt.IN, rt.IN.get(),
 					rt.PRINT_READABLY, rt.PRINT_READABLY.get(),
 					rt.SAVE_BYTECODES, rt.SAVE_BYTECODES.get()
 				)
@@ -101,7 +104,14 @@ package com.las3r.runtime{
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					progress(totalLength - forms.length + 1, totalLength);
-					loadForm(forms.shift(), loadAllForms);
+
+					try{
+						loadForm(forms.shift(), loadAllForms);
+					}
+					catch(e:LispError){
+						// Suppress exceptions. We can't handle them for async code anyhow.
+					}
+
 				}
 				else{
 					Var.popBindings(rt);
@@ -289,12 +299,11 @@ package com.las3r.runtime{
 				return new ConstantExpr(this, form);
 
 			}
-			catch(e:*)
+			catch(e:Error)
 			{
-				if(!(e is CompilerError))
-				throw new CompilerError(SOURCE.get() + ":" + int(LINE.get()) + ": " + e.message, e);
-				else
-				throw e;
+				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()) + ": " + e.message, e)
+				_rt.dispatchEvent(lispError);
+				throw lispError;
 			}
 			finally
 			{

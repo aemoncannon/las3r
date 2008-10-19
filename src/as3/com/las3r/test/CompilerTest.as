@@ -15,6 +15,7 @@ package com.las3r.test{
 	import flash.utils.*;
 	import flash.events.*;
 	import com.las3r.runtime.*;
+	import com.las3r.errors.*;
 	import com.las3r.util.*;
 
 	public class CompilerTest extends LAS3RTest {
@@ -644,7 +645,16 @@ package com.las3r.test{
 		}
 
 
-
+		public function testCompilerDispatchingErrorEvent():void{
+			var rt:RT = new RT();
+			assertDispatches(rt, LispError.LISP_ERROR, "should signal an error", function():void{
+					readAndLoad("(def *bird* (let* (a 1) a))",
+						function(rt:RT, val:*):void{
+							var v:Var = rt.getVar("las3r", "*bird*");
+							assertTrue("*bird* should be bound to 1.", v.get() == 1);
+						}, rt, false);
+				});
+		}
 
 	}
 

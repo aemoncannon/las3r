@@ -46,9 +46,9 @@ package com.las3r.runtime{
 		public var keywords:IMap;
 		public var constants:Array;
 
-		public var stdout:OutputStream = new TraceStream();
-		public var stderr:OutputStream = new TraceStream();
-		public var stdin:InputStream = new InputStream();
+		public var stdout:OutputStream;
+		public var stderr:OutputStream;
+		public var stdin:InputStream;
 
 		private var id:int = 1;
 		private var _this:RT;
@@ -75,6 +75,8 @@ package com.las3r.runtime{
 		public var CURRENT_NS:Var;
 		public var RUNTIME:Var;
 		public var STAGE:Var;
+		public var OUT:Var;
+		public var IN:Var;
 		public var SAVE_BYTECODES:Var;
 		public var PRINT_READABLY:Var;
 		public var TAG_KEY:Keyword;
@@ -133,9 +135,12 @@ package com.las3r.runtime{
 			);
 		}
 
-		public function RT(stage:Stage = null):void{
+		public function RT(stage:Stage = null, out:OutputStream = null, err:OutputStream = null, inn:InputStream = null):void{
 			_this = this;
 			_stage = stage;
+			stdout = out || new TraceStream();
+			stderr = err || new TraceStream();
+			stdin = inn || new InputStream();
 			var forceImport:Array = [Numbers, LazyCons];
 			instances.push(this);
 			instanceId = instances.length - 1;
@@ -155,6 +160,8 @@ package com.las3r.runtime{
 			CURRENT_NS = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*ns*"), LAS3R_NAMESPACE);
 			RUNTIME = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*runtime*"), this);
 			STAGE = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*stage*"), _stage);
+			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*out*"), stdout);
+			IN = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*in*"), stdin);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
 
@@ -645,7 +652,7 @@ package com.las3r.runtime{
 			return w.toString();
 		}
 
-		public function print(x:Object, w:NaiveStringWriter):void {
+		public function print(x:Object, w:OutputStream):void {
 			//TODO - make extensible
 			var readably:Boolean = Boolean(PRINT_READABLY.get());
 			if(x == null)
@@ -728,7 +735,7 @@ package com.las3r.runtime{
 		}
 
 
-		private function printInnerSeq(x:ISeq, w:NaiveStringWriter):void{
+		private function printInnerSeq(x:ISeq, w:OutputStream):void{
 			for(var sq:ISeq = x; sq != null; sq = sq.rest())
 			{
 				print(sq.first(), w);

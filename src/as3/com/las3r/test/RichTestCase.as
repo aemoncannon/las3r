@@ -19,7 +19,7 @@ package com.las3r.test{
 	public class RichTestCase extends TestCase {
 
 		protected function assertThrows(msg:String, func:Function, pred:Function = null):void{
-			var errorPred = pred || function(e:Error):Boolean{ return true; }
+			var errorPred = pred || function(e:*):Boolean{ return true; }
 			var thrown:Boolean = false;
 			try{
 				func();
@@ -28,6 +28,13 @@ package com.las3r.test{
 				if(errorPred(e)){ thrown = true;}
 			}
 			if(!thrown){ fail(msg); }
+		}
+
+
+		protected function assertDispatches(dispatcher:EventDispatcher, type:String, msg:String, func:Function):void{
+			var listener:Function = willCall(function(e:*):void{ dispatcher.removeEventListener(type, listener); }, 5000);
+			dispatcher.addEventListener(type, listener);
+			func();
 		}
 
 

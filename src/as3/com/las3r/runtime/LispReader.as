@@ -14,6 +14,7 @@ package com.las3r.runtime{
     import com.las3r.jdk.io.PushbackReader;
     import com.las3r.jdk.io.Reader;
     import com.las3r.util.*;
+    import com.las3r.errors.ReaderError;
 
     public class LispReader{
 
@@ -132,10 +133,13 @@ package com.las3r.runtime{
 			}
 			catch(e:Error)
 			{
-				// 				if(isRecursive || !(r instanceof LineNumberingPushbackReader))
-				throw e;
+				// if(isRecursive || !(r instanceof LineNumberingPushbackReader))
+				//throw e;
 				// 				LineNumberingPushbackReader rdr = (LineNumberingPushbackReader) r;
-				// 				throw new Exception(String.format("ReaderError:(%d,1) %s", rdr.getLineNumber(), e.getMessage()), e);
+				var lineNumber:int = 0; //TODO: Aemon, get this from the reader..
+				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber + ": " + e.message, e);
+				_rt.dispatchEvent(lispError);
+				throw lispError;
 			}
 			return null;
 		}

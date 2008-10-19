@@ -14,18 +14,16 @@ package com.las3r.io{
 	/* A temporary class to use as a substitute for a real, java-style
     *  writer/StringWriter implementation
     */
-	public class NaiveStringWriter{
+	public class NaiveStringWriter extends OutputStream{
 
 		private var _buf:Array = [];
 		
-		public function StringWriter() {}
-
-		public function write(str:String):void{
-			_buf.push(str);
+		public function NaiveStringWriter() {
+			super(null)
 		}
 
-		public function writeOne(ch:int):void{
-			_buf.push(String.fromCharCode(ch));
+		override public function write(str:String):void{
+			_buf.push(str);
 		}
 
 		public function toString():String{

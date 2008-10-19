@@ -14,6 +14,7 @@ package com.las3r.test{
  	import flexunit.framework.TestSuite;
 	import flash.utils.*;
 	import com.las3r.runtime.*;
+	import com.las3r.errors.*;
 	import com.las3r.util.Util;
 	import com.las3r.jdk.io.StringReader;
 	import com.las3r.jdk.io.PushbackReader;
@@ -149,16 +150,22 @@ package com.las3r.test{
 		public function testUnterminated():void{
 			var rt:RT = new RT();
 
-			assertThrows("should throw exception", function(){
-					readStr(rt, "(hello out ther (dude)");	
+			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
+					assertThrows("should throw exception", function(){
+							readStr(rt, "(hello out ther (dude)");	
+						});
 				});
 
-			assertThrows("should throw exception", function(){
-					readStr(rt, "(hello out ther {dude");
+			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
+					assertThrows("should throw exception", function(){
+							readStr(rt, "(hello out ther {dude");
+						});
 				});
 
-			assertThrows("should throw exception", function(){
-					readStr(rt, "[hello out ther");
+			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
+					assertThrows("should throw exception", function(){
+							readStr(rt, "[hello out ther");
+						});
 				});
 
 		}

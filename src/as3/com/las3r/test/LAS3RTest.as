@@ -39,7 +39,7 @@ package com.las3r.test{
 			return rt.sym2(ns, name);
 		}
 
-		protected function readAndLoad(str:String, callback:Function, runtime:RT = null):void{
+		protected function readAndLoad(str:String, callback:Function, runtime:RT = null, wait:Boolean = true):void{
 			var rt:RT;
 			if(runtime){
 				rt = runtime;
@@ -47,7 +47,12 @@ package com.las3r.test{
 			else{
 				rt = new RT();
 			}
-			rt.evalStr(str, willCall(function(val:*):void{ callback(rt, val); }, 5000));
+			if(wait){
+				rt.evalStr(str, willCall(function(val:*):void{ callback(rt, val); }, 5000));
+			}
+			else{
+				rt.evalStr(str, function(val:*):void{ callback(rt, val); });
+			}
 		}
 
 

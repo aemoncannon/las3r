@@ -43,44 +43,48 @@ package com.las3r.repl{
 		public function Repl(w:int, h:int, stage:Stage = null){
 			_width = w;
 			_height = h;
-			_rt = new RT(stage);
+			var stdout:OutputStream = new OutputStream(function(str:String):void{
+					outputText(str);
+				});
+			var stderr:OutputStream = new OutputStream(function(str:String):void{
+					outputError(str);
+				});
+			_rt = new RT(stage, stdout, stderr);
 			createUI();
 			refreshUI();
 			_inputField.visible = false;
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			_rt.stdout = new OutputStream(function(str:String):void{
-					_outputField.appendText(str);
-					_outputField.scrollV = _outputField.maxScrollV;
-				});
-			_rt.stderr = new OutputStream(function(str:String):void{
-					_outputField.appendText(str);
-					_outputField.scrollV = _outputField.maxScrollV;
-				});
-			_rt.addEventListener(LispError.type, function(e:LispError):void{
-					_rt.writeToStderr(e.message + "\n");
+			_rt.addEventListener(LispError.LISP_ERROR, function(e:LispError):void{
+					outputError(e.message + "\n");
 					e.stopPropagation();
 				});
 			init();
 		}
 
 		public function init(toEval:String = null):void{
-			_rt.writeToStdout("Compiling forms:\n");
-			_rt.loadStdLib(function(val:*):void{
-					if(toEval){
-						_rt.evalStr(toEval, function(val:*):void{
-								showInput();
-							});
+			outputText("Compiling forms:\n");
+			try{
+				_rt.loadStdLib(function(val:*):void{
+						if(toEval){
+							_rt.evalStr(toEval, function(val:*):void{
+									showInput();
+								});
+						}
+						else{
+							showInput();
+						}
+					},
+					function(i:int, total:int):void{
+						if(i == total){outputText(".\n"); }
+						else{ outputText("."); }
 					}
-					else{
-						showInput();
-					}
-				},
-				function(i:int, total:int):void{
-					if(i == total){_rt.writeToStdout(".\n"); }
-					else{ _rt.writeToStdout("."); }
-				}
-			);
+				);
+			}
+			catch(e:LispError){
+				// Suppress these.. we're already listening for error events.
+			}
+
 		}
 
 		protected function showInput():void{
@@ -113,6 +117,7 @@ package com.las3r.repl{
 			tf.font = "Arial";
 			tf.size = 14;
 			tf.indent = 3;
+
 			_inputField = new TextField();
 			_inputField.defaultTextFormat = tf;
             _inputField.border = true;
@@ -163,6 +168,15 @@ package com.las3r.repl{
 			_grabButton.addEventListener(MouseEvent.MOUSE_UP, onGrabButtonMouseUp);
 			_grabButton.visible = false;
 
+		}
+
+		protected function setOutputTextColor(color:uint):void{
+			var tf:TextFormat = new TextFormat();
+			tf.color = color;
+			tf.font = "Arial";
+			tf.size = 14;
+			tf.indent = 3;
+			_outputField.defaultTextFormat = tf;
 		}
 
 		protected function onResizeGripDragged(e:Event):void{
@@ -221,7 +235,7 @@ package com.las3r.repl{
 
 
 		protected function onGrabButtonMouseUp(e:Event):void{
-			_rt.writeToStdout("Click on the stage to select objects..\n");
+			outputText("Click on the stage to select objects..\n");
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{
 					stage.removeEventListener(MouseEvent.MOUSE_DOWN, arguments.callee, true);
 					var objs:Array = stage.getObjectsUnderPoint(new Point(stage.mouseX, stage.mouseY));
@@ -230,7 +244,7 @@ package com.las3r.repl{
 						var name:String = "$" + _grabbedCounter++;
 						_grabbedObjectVars.push(Var.internWithRoot(_rt.LAS3R_NAMESPACE, _rt.sym1(name), o, true));							
 					}
-					_rt.writeToStdout("Grabbed " + newObjs.length + " new objects.\n");
+					outputText("Grabbed " + newObjs.length + " new objects.\n");
 					refreshGrabbedListField();
 				},
 				true
@@ -271,19 +285,27 @@ package com.las3r.repl{
 			_inputHistory.push(src);
 			_inputHistoryPos = _inputHistory.length;
 
-
 			try{
-
 				_rt.evalStr(src, function(val:*):void{ 
-						_rt.writeToStdout(_rt.printToString(val) + "\n"); 
+						outputText(_rt.printToString(val) + "\n"); 
 					});
-
 			}
 			catch(e:LispError){
-				_rt.writeToStderr(e.message + "\n");
+				// Suppress these.. we're already listening for error events.
 			}
 
-			
+		}
+
+		protected function outputError(str:String):void{
+			setOutputTextColor(0xFF3333);
+			_outputField.appendText(str);
+			_outputField.scrollV = _outputField.maxScrollV;
+			setOutputTextColor(0xFFFFFF);
+		}
+
+		protected function outputText(str:String):void{
+			_outputField.appendText(str);
+			_outputField.scrollV = _outputField.maxScrollV;
 		}
 
 
