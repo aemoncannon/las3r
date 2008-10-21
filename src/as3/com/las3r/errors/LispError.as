@@ -17,5 +17,9 @@ package com.las3r.errors{
 			return text;
 		}
 
+		override public function toString():String{
+			return message + (cause is Error ? cause.getStackTrace() : "");
+		}
+
 	}
 }

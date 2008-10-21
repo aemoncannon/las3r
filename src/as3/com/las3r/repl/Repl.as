@@ -56,7 +56,7 @@ package com.las3r.repl{
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			_rt.addEventListener(LispError.LISP_ERROR, function(e:LispError):void{
-					outputError(e.message + "\n");
+					outputError(e.toString() + "\n");
 					e.stopPropagation();
 				});
 			init();
