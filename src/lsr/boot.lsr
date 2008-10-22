@@ -1040,20 +1040,20 @@
 	 (recur (inc ~i))))))
 
 
-(defn import
-  "import-list => (package-symbol class-name-symbols*)
-
-  For each name in class-name-symbols, adds a mapping from name to the
-  class named by package.name to the current namespace. Use :import in the ns
-  macro in preference to calling this directly."
-  [& import-lists]
-  (when import-lists
-    (let [#^com.las3r.runtime.Namespace ns *ns*
-	  pkg (ffirst import-lists)
-	  classes (rfirst import-lists)]
-      (doseq c classes
-	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
-    (apply import (rest import-lists))))
+;;(defn import
+;;  "import-list => (package-symbol class-name-symbols*)
+;;
+;;  For each name in class-name-symbols, adds a mapping from name to the
+;;  class named by package.name to the current namespace. Use :import in the ns
+;;  macro in preference to calling this directly."
+;;  [& import-lists]
+;;  (when import-lists
+;;    (let [#^com.las3r.runtime.Namespace ns *ns*
+;;	  pkg (ffirst import-lists)
+;;	  classes (rfirst import-lists)]
+;;      (doseq c classes
+;;	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
+;;    (apply import (rest import-lists))))
 
 
 (defn into

@@ -354,7 +354,7 @@ package com.las3r.runtime{
 			return analyze(context, me, name);
 
 			var op:Object = RT.first(form);
-			if(op.equals(_rt.FN)){
+			if(Util.equal(_rt.FN, op)){
 				return FnExpr.parse(this, context, form);
 			}
 			else if(specialParsers.valAt(op) != null){

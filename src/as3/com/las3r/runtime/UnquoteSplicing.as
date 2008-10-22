@@ -21,6 +21,10 @@ package com.las3r.runtime{
 		public function UnquoteSplicing(o:Object){
 			this.o = o;
 		}
+
+		public function equals(obj:Object):Boolean{
+			return obj is UnquoteSplicing && o.equals(obj.o);
+		}
 	}
 
 

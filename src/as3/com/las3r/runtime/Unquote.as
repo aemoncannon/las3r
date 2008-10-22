@@ -21,6 +21,10 @@ package com.las3r.runtime{
 		public function Unquote(o:Object){
 			this.o = o;
 		}
+
+		public function equals(obj:Object):Boolean{
+			return obj is Unquote && o.equals(obj.o);
+		}
 	}
 
 
