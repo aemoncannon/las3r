@@ -165,6 +165,14 @@ package com.las3r.runtime{
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
 
+
+
+			/* 
+			The following symbols will be spliced into macro-generated code, 
+			so we want to make sure that they will resolve to the correct namespaced
+			value. Hence the redefinition as a namespaced symbol. 
+			*/
+
 			IN_NAMESPACE = sym1("in-ns");
 			Var.internWithRoot(LAS3R_NAMESPACE, IN_NAMESPACE, 
 				function(nsname:Symbol):LispNamespace{
@@ -172,6 +180,7 @@ package com.las3r.runtime{
 					CURRENT_NS.set(ns);
 					return ns;
 				});
+			IN_NAMESPACE = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "in-ns");
 
 			LOAD_FILE = sym1("load-file");
 			Var.internWithRoot(LAS3R_NAMESPACE, LOAD_FILE,
@@ -179,18 +188,21 @@ package com.las3r.runtime{
 					//return Compiler.loadFile(String(arg1));
 					return null;
 				});
+			LOAD_FILE = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "load-file");
 
 			IDENTICAL = sym1("identical?");
 			Var.internWithRoot(LAS3R_NAMESPACE, IDENTICAL,
 				function(arg1:Object, arg2:Object):Object{
 					return arg1 == arg2 ? RT.T : RT.F;
 				});
+			IDENTICAL = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "identical?");
 
 			CONCAT = sym1("concat");
 			Var.internWithRoot(LAS3R_NAMESPACE, CONCAT,
 				function(...args:Array):Object{
 					return RT.concat.apply(null, args);
 				});
+			CONCAT = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "concat");
 
 			APPLY = sym1("apply*");
 			Var.internWithRoot(LAS3R_NAMESPACE, APPLY,
@@ -199,29 +211,36 @@ package com.las3r.runtime{
 					for(var c:ISeq = args; c != null; c = c.rest()){ ar.push(c.first()); }
 					return func.apply(null, ar);
 				});
+			APPLY = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "apply*");
 
 			VECTOR = sym1("vector");
 			Var.internWithRoot(LAS3R_NAMESPACE, VECTOR,
 				function(...args:Array):Object{
 					return Vector.createFromArray(args);
 				});
+			VECTOR = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
 
 			HASHMAP = sym1("hash-map");
 			Var.internWithRoot(LAS3R_NAMESPACE, HASHMAP,
 				function(...args:Array):Object{
 					return Map.createFromArray(args);
 				});
+			HASHMAP = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
 
 			LIST = sym1("list");
 			Var.internWithRoot(LAS3R_NAMESPACE, LIST,
 				function(...args:Array):Object{
 					return List.createFromArray(args);
 				});
+			LIST = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "list");
 
 
 			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
+
 			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
+
 			DEREF = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
+
 			SLASH = sym2(null, "/"); // Don't want namespace.
 
 
@@ -243,8 +262,6 @@ package com.las3r.runtime{
 			MONITOR_ENTER = sym1("monitor-enter");
 			MONITOR_EXIT = sym1("monitor-exit");
 			NEW = sym1("new");
-			HASHMAP = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
-			VECTOR = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
 			_AMP_ = sym1("&");
 			ISEQ = sym1("com.las3r.runtime.ISeq");
 

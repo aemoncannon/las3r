@@ -1048,9 +1048,10 @@
   macro in preference to calling this directly."
   [& import-lists]
   (when import-lists
-    (let [#^com.las3r.runtime.Namespace ns *ns*
+    (let [#^com.las3r.runtime.LispNamespace ns *ns*
 	  pkg (ffirst import-lists)
 	  classes (rfirst import-lists)]
+      
       (doseq c classes
 	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
     (apply import (rest import-lists))))

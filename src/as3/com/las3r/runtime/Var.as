@@ -55,8 +55,9 @@ package com.las3r.runtime{
 
 		public static function internWithRoot(ns:LispNamespace, sym:Symbol, root:Object, replaceRoot:Boolean = true):Var{
 			var dvout:Var = ns.intern(sym);
-			if(!dvout.hasRoot() || replaceRoot)
-			dvout.bindRoot(root);
+			if(!dvout.hasRoot() || replaceRoot){
+				dvout.bindRoot(root);
+			}
 			return dvout;
 		}
 
@@ -169,7 +170,7 @@ package com.las3r.runtime{
 
 		public function apply(args:Vector):Object{
 			var f:Function = fn();
-			return f.apply(this, args);
+			return f.apply(null, args);
 		}
 
 		public function setMeta(m:IMap):void{
