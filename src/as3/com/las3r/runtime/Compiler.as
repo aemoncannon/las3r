@@ -111,7 +111,6 @@ package com.las3r.runtime{
 					catch(e:LispError){
 						// Suppress exceptions. We can't handle them for async code anyhow.
 					}
-
 				}
 				else{
 					Var.popBindings(rt);
@@ -121,6 +120,7 @@ package com.las3r.runtime{
 
 			loadAllForms(null);
 		}
+
 
 
 		protected function loadForm(form:Object, callback:Function):void{
@@ -148,7 +148,7 @@ package com.las3r.runtime{
 			bytes.position = 0;
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
 
-			ByteLoader.loadBytes(swfBytes);
+			ByteLoader.loadBytes(swfBytes, null, true);
 		}
 
 		public function currentNS():LispNamespace{

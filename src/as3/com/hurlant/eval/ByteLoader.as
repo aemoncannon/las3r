@@ -7,6 +7,8 @@ package com.hurlant.eval {
 	import flash.events.*;
 	
 	public class ByteLoader {
+
+		private static var loaders:Array = [];
 		
 		private static var swf_start:Array = 
 		[
@@ -73,7 +75,8 @@ package com.hurlant.eval {
 		* current script has finished running. 
 		* 
 		*/
-		public static function loadBytes(bytes:*, inplace:Boolean=false):Boolean {
+		public static function loadBytes(bytes:*, _callback:Function = null, inplace:Boolean=false):Boolean {
+			var callback:Function = _callback || function():void{};
 			if (bytes is Array || (getType(bytes) == 2)) {
 				if (!(bytes is Array)) {
 					bytes = [ bytes ];
@@ -88,7 +91,13 @@ package com.hurlant.eval {
 				}
 			}
 			var l:Loader = new Loader();
+			l.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e:Event):void{
+					l.contentLoaderInfo.removeEventListener(Event.COMPLETE, arguments.callee);
+					loaders.splice(loaders.indexOf(l), 1);
+					callback(); 
+				});
 			l.loadBytes(bytes, c);
+			loaders.push(l);
 			return true;
 		}
 		public static function isSWF(data:ByteArray):Boolean {

@@ -393,6 +393,7 @@ package com.las3r.runtime{
 			_compiler.load(new PushbackReader(new StringReader(src)), onComplete);
 		}
 
+
 		
 		/**
 		* As code is loaded asynchronously, we provide a facility for the loaded code to invoke a callback with its result.
