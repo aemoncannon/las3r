@@ -198,6 +198,13 @@ package com.las3r.test{
 				});
 		}
 
+//		public function testIfExpressionAsStatement():void{
+//			readAndLoad("(try (throw \"Caw!\") (catch String e 10) (catch String e 1) (catch Error e 5))",
+//				function(rt:RT, val:*):void{
+//					assertTrue("val should be 10", val == 10);
+//				});
+//		}
+//
 
 		public function testBindingBirdToSimpleFn():void{
 			readAndLoad("(def *bird* (fn* [a b c] 1))",

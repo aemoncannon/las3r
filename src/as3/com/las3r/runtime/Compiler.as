@@ -1049,15 +1049,25 @@ class IfExpr implements Expr{
 		Getting a verification error without the coersion, if return types are different.
 		*/
 
-		thenExpr.emit(context, gen);
-		gen.asm.I_coerce_a();
+		thenExpr.emit(C.EXPRESSION, gen);
+		if(context == C.STATEMENT){ 
+			gen.asm.I_pop(); 
+		}
+		else{
+			gen.asm.I_coerce_a();
+		}
 		var endLabel:Object = gen.asm.newLabel();
 		gen.asm.I_jump(endLabel);
 		gen.asm.I_label(nullLabel);
 		gen.asm.I_pop();
 		gen.asm.I_label(falseLabel);
-		elseExpr.emit(context, gen);
-		gen.asm.I_coerce_a();
+		elseExpr.emit(C.EXPRESSION, gen);
+		if(context == C.STATEMENT){ 
+			gen.asm.I_pop(); 
+		}
+		else{
+			gen.asm.I_coerce_a();
+		}
 		gen.asm.I_label(endLabel);
 	}
 

@@ -26,6 +26,8 @@ package com.las3r.repl{
 
 	public class Repl extends Sprite{
 
+		public static const INITED:String = "inited";
+
 		protected var _width:int;
 		protected var _height:int;
 		protected var _rt:RT;
@@ -62,29 +64,39 @@ package com.las3r.repl{
 			init();
 		}
 
-		public function init(toEval:String = null):void{
+		public function init():void{
 			outputText("Compiling forms");
 			try{
 				_rt.loadStdLib(function(val:*):void{
-						if(toEval){
-							_rt.evalStr(toEval, function(val:*):void{
-									showInput();
-								});
-						}
-						else{
-							showInput();
-						}
+						outputText(" .\n");
+						dispatchEvent(new Event(INITED));
+						showInput();
 					},
 					function(i:int, total:int):void{
-						if(i == total){outputText(" .\n"); }
-						else{ outputText(" ."); }
+						outputText(" .");
 					}
 				);
 			}
 			catch(e:LispError){
 				// Suppress these.. we're already listening for error events.
 			}
+		}
 
+		public function loadLibFromStr(str:String, callback:Function = null):void{
+			outputText("Compiling forms");
+			try{
+				_rt.loadStdLib(function(val:*):void{
+						outputText(" .\n");
+						if(callback != null){ callback(); }
+					},
+					function(i:int, total:int):void{
+						outputText(" .");
+					}
+				);
+			}
+			catch(e:LispError){
+				// Suppress these.. we're already listening for error events.
+			}
 		}
 
 		protected function showInput():void{
