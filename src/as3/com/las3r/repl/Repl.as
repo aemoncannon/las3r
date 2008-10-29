@@ -251,7 +251,10 @@ package com.las3r.repl{
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{
 					stage.removeEventListener(MouseEvent.MOUSE_DOWN, arguments.callee, true);
 					var objs:Array = stage.getObjectsUnderPoint(new Point(stage.mouseX, stage.mouseY));
-					var newObjs:Array = objs.filter(function(ea:*, i:int, a:Array):Boolean{ return !haveGrabbed(ea); });
+					objs = objs.concat(objs.map(function(ea:*, a, i):*{ return ea.parent; }));
+					var newObjs:Array = objs.filter(function(ea:*, i:int, a:Array):Boolean{ 
+							return (!(ea is Bitmap) && !(ea is Shape) && !haveGrabbed(ea)); 
+						});
 					for each(var o:Object in newObjs){
 						var name:String = "$" + _grabbedCounter++;
 						_grabbedObjectVars.push(Var.internWithRoot(_rt.LAS3R_NAMESPACE, _rt.sym1(name), o, true));							
