@@ -13,6 +13,7 @@ include REXML
 $debug = true
 
 MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
+COMPC = PLATFORM =~ /win/ ? "compc.exe" : "~/lib/flex3/bin/compc"
 DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
 
 SHARED_CLASS_PATH = [
@@ -28,6 +29,15 @@ COMPILE_OPTIONS = [
                    # ABCDump has tons of warnings unless we disable these:
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}"
                   ]
+
+SWC_OPTIONS = [
+               "-include-classes com.las3r.repl.App",
+               "-directory=false",
+               "-debug=false",
+               "-compiler.warn-no-type-decl=false",
+               "-compiler.optimize=true",
+               "-source-path #{SHARED_CLASS_PATH.join(" ")}"
+              ]
 
 
 SHARED_SOURCES = FileList["./src/as3/**/*"]
@@ -46,6 +56,11 @@ REPL_TARGET = "./bin/repl.swf"
 file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
+end
+
+SWC_TARGET = "./bin/las3r.swc"
+file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+  sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
 end
 
 LISP_UNITS_TARGET = "./bin/lisp_units.swf"
@@ -71,6 +86,9 @@ DEMO_SWF_ENTRY_POINTS.zip(DEMO_SWF_TARGETS).each do |pair|
     options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
     sh "#{MXMLC} #{options.join(" ")} -file-specs #{main} -output=#{target}"
   end
+end
+
+task :swc => [SWC_TARGET] do
 end
 
 task :repl => [REPL_TARGET] do

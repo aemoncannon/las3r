@@ -1,3 +1,4 @@
 deploy
 *.swf
+*.swc
 upload_swfs.sh
