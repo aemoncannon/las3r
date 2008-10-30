@@ -33,6 +33,7 @@ package com.las3r.repl{
 		protected var _rt:RT;
 		protected var _ui:Sprite;
 		protected var _grabButton:Sprite;
+		protected var _closeButton:Sprite;
 		protected var _resizeGrip:DragGrip;
 		protected var _inputField:TextField;
 		protected var _outputField:TextField;
@@ -173,7 +174,7 @@ package com.las3r.repl{
             _ui.addChild(_grabbedListField);
 
 			_grabButton = new Sprite();
-			_grabButton.graphics.beginFill(0xff0000);
+			_grabButton.graphics.beginFill(0x00ff00);
 			_grabButton.graphics.drawRect(0, 0, 10, 10);
 			_grabButton.graphics.endFill();
 			_grabButton.buttonMode = true;
@@ -181,6 +182,13 @@ package com.las3r.repl{
 			_grabButton.addEventListener(MouseEvent.MOUSE_UP, onGrabButtonMouseUp);
 			_grabButton.visible = false;
 
+			_closeButton = new Sprite();
+			_closeButton.graphics.beginFill(0xff0000);
+			_closeButton.graphics.drawRect(0, 0, 10, 10);
+			_closeButton.graphics.endFill();
+			_closeButton.buttonMode = true;
+			_ui.addChild(_closeButton);
+			_closeButton.addEventListener(MouseEvent.MOUSE_UP, onCloseButtonMouseUp);
 		}
 
 		protected function setOutputTextColor(color:uint):void{
@@ -229,8 +237,11 @@ package com.las3r.repl{
 			_outputField.x = pad;
 			_outputField.y = pad;
 
-			_grabButton.x = _grabbedListField.x + targetsListWidth - _grabButton.width;
-			_grabButton.y = _grabbedListField.y;
+			_grabButton.x = _grabbedListField.x;
+			_grabButton.y = _grabbedListField.y + _grabbedListField.height - _grabButton.height;
+
+			_closeButton.x = _width - _closeButton.width;
+			_closeButton.y = 0;
 
 
 		}
@@ -265,6 +276,12 @@ package com.las3r.repl{
 				},
 				true
 			);
+		}
+
+		protected function onCloseButtonMouseUp(e:Event):void{
+			if(parent){
+				parent.removeChild(this);
+			}
 		}
 
 		protected function onInputTextInput(e:TextEvent):void{
