@@ -307,13 +307,30 @@ package com.las3r.runtime{
 		public function evalStr(src:String, _onComplete:Function = null, progress:Function = null):void{
 			var workUnit:Object = {};
 			workUnit.reader = new PushbackReader(new StringReader(src));
+			workUnit.start = function():void{
+				Var.pushBindings(_this, 
+					RT.map(
+						_this.RUNTIME, _this.RUNTIME.get(),
+						_this.STAGE, _this.STAGE.get(),
+						_this.OUT, _this.OUT.get(),
+						_this.IN, _this.IN.get(),
+						_this.PRINT_READABLY, _this.PRINT_READABLY.get(),
+						_this.SAVE_BYTECODES, _this.SAVE_BYTECODES.get()
+					)
+				);
+			}
 			workUnit.progress = progress || function(a:int, b:int):void{}
 			workUnit.complete = function(val:*):void{ 
+				Var.popBindings(_this);
 				if(_onComplete != null) _onComplete(val);
-				var i:int = _evalQ.indexOf(workUnit);
-				if(i > -1) _evalQ.splice(i, 1);
+				removeFromEvalQ(workUnit);
 				if(_evalQ.count() > 0) evalNextInQ();
 			};
+			workUnit.failure = function(error:*):void{
+				Var.popBindings(_this);
+				removeFromEvalQ(workUnit);
+				if(_evalQ.count() > 0) evalNextInQ();
+			}
 			_evalQ.push(workUnit);
 			if(_evalQ.count() == 1) evalNextInQ();
 		}
@@ -321,8 +338,14 @@ package com.las3r.runtime{
 		protected function evalNextInQ():void{
 			if(_evalQ.count() > 0){
 				var next:Object = _evalQ.peek();
-				_compiler.load(next.reader, next.complete, next.progress);
+				next.start();
+				_compiler.load(next.reader, next.complete, next.failure, next.progress);
 			}
+		}
+		
+		protected function removeFromEvalQ(obj:Object):void{
+			var i:int = _evalQ.indexOf(obj);
+			if(i > -1) _evalQ.splice(i, 1);
 		}
 
 		
@@ -537,6 +560,13 @@ package com.las3r.runtime{
 			return notFound;
 		}
 
+		public static function keys(map:IMap):ISeq{
+			return map.keys();
+		}
+
+		public static function vals(map:IMap):ISeq{
+			return map.keys();
+		}
 
 		public static function nth(coll:Object, n:int, notFound:Object = null):Object{
 			if(coll == null){
@@ -705,8 +735,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+				printInnerSeq(seq(x), w);
+				w.write(')');
 			}
 			else if(x is String)
 			{
@@ -753,28 +783,28 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:MapEntry = MapEntry(sq.first());
-						print(v.key, w);
-						w.write(' ');
-						print(v.value, w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+				{
+					var v:MapEntry = MapEntry(sq.first());
+					print(v.key, w);
+					w.write(' ');
+					print(v.value, w);
+					if(sq.rest() != null)
+					w.write(", ");
+				}
+				w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-					for(i = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+				for(i = 0; i < a.count(); i++)
+				{
+					print(a.nth(i), w);
+					if(i < a.count() - 1)
+					w.write(' ');
+				}
+				w.write(']');
 			}
 			else w.write(x.toString());
 		}

@@ -26,6 +26,10 @@ package com.las3r.runtime{
 
 		function seq():ISeq;
 
+		function keys():ISeq;
+
+		function vals():ISeq;
+
 		function each(iterator:Function):void;
 
 		function containsKey(key:Object):Boolean;

@@ -137,6 +137,30 @@ package com.las3r.runtime{
 			}
 		}
 
+		public function keys():ISeq{
+			//TODO This is too slow
+			var keys:Array = [];
+			for each(var e:MapEntry in _dict){ keys.push(e.key); }
+			if(keys.length > 0){
+				return List.createFromArray(keys);
+			}
+			else{
+				return null;
+			}
+		}
+
+		public function vals():ISeq{
+			//TODO This is too slow
+			var values:Array = [];
+			for each(var e:MapEntry in _dict){ values.push(e.value); }
+			if(values.length > 0){
+				return List.createFromArray(values);
+			}
+			else{
+				return null;
+			}
+		}
+
 		public function each(iterator:Function):void{
 			for(var key:* in _dict){ iterator(key, _dict[key].value); }
 		}

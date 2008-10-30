@@ -62,11 +62,17 @@ package com.las3r.repl{
 					outputError(e.toString() + "\n");
 					e.stopPropagation();
 				});
-			init();
-		}
 
-		public function init():void{
-			outputText("Compiling forms");
+
+			// *ns* must be bound for (in-ns ...) to work..
+			Var.pushBindings(_rt, 
+				RT.map(
+					_rt.CURRENT_NS, _rt.CURRENT_NS.get(),
+					_rt.SAVE_BYTECODES, _rt.SAVE_BYTECODES.get()
+				)
+			);
+
+			outputText("Initing");
 			try{
 				_rt.loadStdLib(function(val:*):void{
 						outputText(" .\n");
@@ -81,10 +87,12 @@ package com.las3r.repl{
 			catch(e:LispError){
 				// Suppress these.. we're already listening for error events.
 			}
+
+
 		}
 
+
 		public function evalLibrary(str:String, callback:Function = null):void{
-			outputText("Compiling forms");
 			try{
 				_rt.evalStr(str, 
 					function(val:*):void{
@@ -282,6 +290,7 @@ package com.las3r.repl{
 			if(parent){
 				parent.removeChild(this);
 			}
+			Var.popBindings(_rt);
 		}
 
 		protected function onInputTextInput(e:TextEvent):void{
