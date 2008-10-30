@@ -82,10 +82,11 @@ package com.las3r.repl{
 			}
 		}
 
-		public function loadLibFromStr(str:String, callback:Function = null):void{
+		public function evalLibrary(str:String, callback:Function = null):void{
 			outputText("Compiling forms");
 			try{
-				_rt.loadStdLib(function(val:*):void{
+				_rt.evalStr(str, 
+					function(val:*):void{
 						outputText(" .\n");
 						if(callback != null){ callback(); }
 					},

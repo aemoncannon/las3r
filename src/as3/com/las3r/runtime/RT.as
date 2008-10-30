@@ -53,6 +53,7 @@ package com.las3r.runtime{
 		private var id:int = 1;
 		private var _this:RT;
 		private var _resultsDict:Dictionary = new Dictionary();
+		private var _evalQ:Vector = new Vector([]);
 
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
@@ -289,6 +290,69 @@ package com.las3r.runtime{
 			_lispReader = new LispReader(this);
 		}
 
+
+		public function loadStdLib(onComplete:Function = null, progress:Function = null):void{
+			evalStr(BOOT_LSR, onComplete, progress);
+		}
+
+
+		/**
+		* Add the task of evaluating src to the work queue.
+		* 
+		* @param src 
+		* @param _onComplete 
+		* @param progress 
+		* @return 
+		*/		
+		public function evalStr(src:String, _onComplete:Function = null, progress:Function = null):void{
+			var workUnit:Object = {};
+			workUnit.reader = new PushbackReader(new StringReader(src));
+			workUnit.progress = progress || function(a:int, b:int):void{}
+			workUnit.complete = function(val:*):void{ 
+				if(_onComplete != null) _onComplete(val);
+				var i:int = _evalQ.indexOf(workUnit);
+				if(i > -1) _evalQ.splice(i, 1);
+				if(_evalQ.count() > 0) evalNextInQ();
+			};
+			_evalQ.push(workUnit);
+			if(_evalQ.count() == 1) evalNextInQ();
+		}
+
+		protected function evalNextInQ():void{
+			if(_evalQ.count() > 0){
+				var next:Object = _evalQ.peek();
+				_compiler.load(next.reader, next.complete, next.progress);
+			}
+		}
+
+		
+		/**
+		* As code is loaded asynchronously, we provide a facility for the loaded code to invoke a callback with its result.
+		*
+		* @param val 
+		* @param key 
+		* @return 
+		*/		
+		public function callbackWithResult(val:*, key:String):void{
+			var f:Function = _resultsDict[key];
+			if((f == null) || !(f is Function)){
+				throw new Error("IllegalStateException: Compiled form tried to callback to non-existant callback.")
+			}
+			else{
+				f(val);
+			}
+		}
+
+		public function createResultCallback(callback:Function):String{
+			var key:String = "result_callback_" + nextID();
+			_resultsDict[key] = callback;
+			return key;
+		}
+
+
+
+
+
 		public function isSpecial(sym:Object):Boolean{
 			return specials.includes(sym);
 		}
@@ -377,45 +441,6 @@ package com.las3r.runtime{
 			}
 		}
 
-
-		public function loadStdLib(onComplete:Function = null, prog:Function = null):void{
-			loadLibFromStr(BOOT_LSR, onComplete, prog);
-		}
-
-		public function loadLibFromStr(str:String, onComplete:Function = null, prog:Function = null):void{
-			var comp:Function = onComplete || function(val:*):void{};
-			_compiler.load(new PushbackReader(new StringReader(str)), onComplete || function(val:*):void{}, prog);
-		}
-
-
-		public function evalStr(src:String, _onComplete:Function = null):void{
-			var onComplete:Function = _onComplete || function(val:*):void{};
-			_compiler.load(new PushbackReader(new StringReader(src)), onComplete);
-		}
-
-
-		
-		/**
-		* As code is loaded asynchronously, we provide a facility for the loaded code to invoke a callback with its result.
-		* @param val 
-		* @param key 
-		* @return 
-		*/		
-		public function callbackWithResult(val:*, key:String):void{
-			var f:Function = _resultsDict[key];
-			if((f == null) || !(f is Function)){
-				throw new Error("IllegalStateException: Compiled form tried to callback to non-existant callback.")
-			}
-			else{
-				f(val);
-			}
-		}
-
-		public function createResultCallback(callback:Function):String{
-			var key:String = "result_callback_" + nextID();
-			_resultsDict[key] = callback;
-			return key;
-		}
 
 
 		public function currentNS():LispNamespace{
@@ -680,8 +705,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-				printInnerSeq(seq(x), w);
-				w.write(')');
+					printInnerSeq(seq(x), w);
+					w.write(')');
 			}
 			else if(x is String)
 			{
@@ -728,28 +753,28 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-				{
-					var v:MapEntry = MapEntry(sq.first());
-					print(v.key, w);
-					w.write(' ');
-					print(v.value, w);
-					if(sq.rest() != null)
-					w.write(", ");
-				}
-				w.write('}');
+					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+					{
+						var v:MapEntry = MapEntry(sq.first());
+						print(v.key, w);
+						w.write(' ');
+						print(v.value, w);
+						if(sq.rest() != null)
+						w.write(", ");
+					}
+					w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-				for(i = 0; i < a.count(); i++)
-				{
-					print(a.nth(i), w);
-					if(i < a.count() - 1)
-					w.write(' ');
-				}
-				w.write(']');
+					for(i = 0; i < a.count(); i++)
+					{
+						print(a.nth(i), w);
+						if(i < a.count() - 1)
+						w.write(' ');
+					}
+					w.write(']');
 			}
 			else w.write(x.toString());
 		}
