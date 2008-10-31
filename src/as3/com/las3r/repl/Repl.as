@@ -269,6 +269,7 @@ package com.las3r.repl{
 		protected function onGrabButtonMouseUp(e:Event):void{
 			outputText("Click on the stage to select objects..\n");
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{
+					e.stopPropagation();
 					stage.removeEventListener(MouseEvent.MOUSE_DOWN, arguments.callee, true);
 					var objs:Array = stage.getObjectsUnderPoint(new Point(stage.mouseX, stage.mouseY));
 					objs = objs.concat(objs.map(function(ea:*, a, i):*{ return ea.parent; }));
@@ -277,7 +278,7 @@ package com.las3r.repl{
 						});
 					for each(var o:Object in newObjs){
 						var name:String = "$" + _grabbedCounter++;
-						_grabbedObjectVars.push(Var.internWithRoot(_rt.LAS3R_NAMESPACE, _rt.sym1(name), o, true));							
+						_grabbedObjectVars.push(Var.internWithRoot(LispNamespace(_rt.CURRENT_NS.get()), _rt.sym1(name), o, true)); 
 					}
 					outputText("Grabbed " + newObjs.length + " new objects.\n");
 					refreshGrabbedListField();
