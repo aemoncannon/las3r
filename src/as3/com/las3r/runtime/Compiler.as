@@ -549,18 +549,35 @@ class CodeGen{
 
 
 	/*
-	* For the current method, push 'this', stored by default in register 0, onto the scope stack.
+	* For the current method, push 'this' onto the scope stack. 'this' is initially found
+	* at register 0, so we just leave it there and remember the location in scopeToLocalMap.
 	*
 	* Stack:   
 	*   ... => ...
 	*/
 	public function pushThisScope():void{
 		asm.I_getlocal_0();
+		asm.I_pushscope();
+		asm.useTemp(0)
+		this.scopeToLocalMap.cons(0);
+	}
+
+
+	/*
+	* Replace current activation object with a fresh one.
+	*
+	* NOTE! This assumes current activation is on top of scope stack.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function refreshCurrentActivationScope():void{
+		asm.I_popscope();
+		asm.I_newactivation();
 		asm.I_dup();
 		asm.I_pushscope();
-		var i:int = asm.getTemp()
+		var i:int = int(this.scopeToLocalMap.nth(this.scopeToLocalMap.length - 1));
 		asm.I_setlocal(i);
-		this.scopeToLocalMap.cons(i);
 	}
 
 
@@ -1611,20 +1628,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-			// 			PersistentVector restArgs = PersistentVector.EMPTY;
-			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-			// 			{
-				// 				restArgs = restArgs.cons(args.nth(i));
-				// 			}
-			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-			// 		}
+		// 			PersistentVector restArgs = PersistentVector.EMPTY;
+		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+		// 			{
+		// 				restArgs = restArgs.cons(args.nth(i));
+		// 			}
+		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+		// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-			// 			FnMethod method = (FnMethod) METHOD.get();
-			// 			method.emitClearLocals(gen);
-			// 		}
+		// 			FnMethod method = (FnMethod) METHOD.get();
+		// 			method.emitClearLocals(gen);
+		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1847,8 +1864,10 @@ class RecurExpr implements Expr{
 
 	public function emit(context:C, gen:CodeGen):void{
 		var loopLabel:Object = _compiler.currentLoopLabel;
-		if(loopLabel == null)
-		throw new Error("IllegalStateException: No loop label found for recur.");
+		if(loopLabel == null){
+			throw new Error("IllegalStateException: No loop label found for recur.");
+		}
+//		gen.refreshCurrentActivationScope();
 		this.loopLocals.eachWithIndex(function(sym:Symbol, lb:LocalBinding, i:int){
 				gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
 				var arg:Expr = Expr(args.nth(i));
