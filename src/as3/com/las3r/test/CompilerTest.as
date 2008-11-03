@@ -198,13 +198,6 @@ package com.las3r.test{
 				});
 		}
 
-//		public function testIfExpressionAsStatement():void{
-//			readAndLoad("(try (throw \"Caw!\") (catch String e 10) (catch String e 1) (catch Error e 5))",
-//				function(rt:RT, val:*):void{
-//					assertTrue("val should be 10", val == 10);
-//				});
-//		}
-//
 
 		public function testBindingBirdToSimpleFn():void{
 			readAndLoad("(def *bird* (fn* [a b c] 1))",
@@ -452,6 +445,18 @@ package com.las3r.test{
 			readAndLoad("(def *bird* (loop* [a true] (if a (recur false) :hello)))", function(rt:RT, val:*):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("*bird* should be bound to :hello.", v.get() == key1(rt, "hello"));
+				});
+		}
+
+		public function testRecurReferencingNamedAnonymousFunction():void{
+			readAndLoad("((fn* hello [bool] (if bool (recur false) hello)) true)", function(rt:RT, val:*):void{
+					assertTrue("val should be a function", val is Function);
+				});
+		}
+
+		public function testRecursivelyCallingNamedAnonymousFunction():void{
+			readAndLoad("((fn* hello [bool] (if bool (hello false) :pig)) true)", function(rt:RT, val:*):void{
+					assertTrue("val should be :pig", val == key1(rt, "pig"));
 				});
 		}
 
