@@ -1369,7 +1369,7 @@ class FnMethod{
 		var loopLabel:Object = methGen.asm.I_label(undefined);
 		/* Note: Any instructions after this point will be executed on every recur loop.. */
 
-		if(nameLb){
+		if(nameLb){/* We need to re-set name reference on each recur cycle (into fresh activation..)*/
 			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 			methGen.asm.I_getlocal(i); // get current function object
 			methGen.asm.I_setslot(nameSlot);
@@ -1634,20 +1634,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-			// 			PersistentVector restArgs = PersistentVector.EMPTY;
-			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-			// 			{
-				// 				restArgs = restArgs.cons(args.nth(i));
-				// 			}
-			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-			// 		}
+		// 			PersistentVector restArgs = PersistentVector.EMPTY;
+		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+		// 			{
+		// 				restArgs = restArgs.cons(args.nth(i));
+		// 			}
+		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+		// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-			// 			FnMethod method = (FnMethod) METHOD.get();
-			// 			method.emitClearLocals(gen);
-			// 		}
+		// 			FnMethod method = (FnMethod) METHOD.get();
+		// 			method.emitClearLocals(gen);
+		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1707,6 +1707,13 @@ class LocalBindingSet{
 				iterator(lb.sym, lb, i);
 				i += 1;
 			});
+	}
+
+	public function eachReversedWithIndex(iterator:Function):void{
+		for(var i:int = _lbs.length - 1; i > -1; i--){
+			var lb:LocalBinding = _lbs[i];
+			iterator(lb.sym, lb, i);
+		}
 	}
 	
 }
@@ -1873,11 +1880,20 @@ class RecurExpr implements Expr{
 		if(loopLabel == null){
 			throw new Error("IllegalStateException: No loop label found for recur.");
 		}
-		//		gen.refreshCurrentActivationScope();
+
+		// First push all the evaluated recur args onto the stack
 		this.loopLocals.eachWithIndex(function(sym:Symbol, lb:LocalBinding, i:int){
-				gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
 				var arg:Expr = Expr(args.nth(i));
 				arg.emit(C.EXPRESSION, gen);
+			});
+
+		// then replace the current activation with a fresh one
+		gen.refreshCurrentActivationScope();
+
+		// then fill it up with the recur args.
+		this.loopLocals.eachReversedWithIndex(function(sym:Symbol, lb:LocalBinding, i:int){
+				gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
+				gen.asm.I_swap();
 				gen.asm.I_setslot(lb.slotIndex);
 			});
 		gen.asm.I_jump(loopLabel);
