@@ -1504,21 +1504,17 @@ class FnExpr implements Expr{
 class LetExpr implements Expr{
 	public var bindingInits:LocalBindingSet;
 	public var body:Expr;
-	public var isLoop:Boolean;
 	private var _compiler:Compiler;
 
-	public function LetExpr(c:Compiler, bindingInits:LocalBindingSet, body:Expr, isLoop:Boolean){
+	public function LetExpr(c:Compiler, bindingInits:LocalBindingSet, body:Expr){
 		_compiler = c;
 		this.bindingInits = bindingInits;
 		this.body = body;
-		this.isLoop = isLoop;
 	}
 
 	public static function parse(c:Compiler, context:C, frm:Object):Expr{
 		var form:ISeq = ISeq(frm);
 		//(let [var val var2 val2 ...] body...)
-
-		var isLoop:Boolean = RT.first(form).equals(c.rt.LOOP);
 
 		if(!(RT.second(form) is IVector))
 		throw new Error("IllegalArgumentException: Bad binding form, expected vector");
@@ -1544,19 +1540,11 @@ class LetExpr implements Expr{
 			c.registerLocal(c.rt.nextID(), sym, init);
 		}
 
-		if(isLoop){
-		Var.pushBindings(c.rt, RT.map(
-				c.RECUR_ARGS, lbs
-			));
-		}
-		var bodyExpr:BodyExpr = BodyExpr(BodyExpr.parse(c, isLoop ? C.RETURN : context, body));
-		if(isLoop){
-			Var.popBindings(c.rt);
-		}
+		var bodyExpr:BodyExpr = BodyExpr(BodyExpr.parse(c, context, body));
 
 		c.popLocalBindingSet();
 
-		return new LetExpr(c, lbs, bodyExpr, isLoop);
+		return new LetExpr(c, lbs, bodyExpr);
 	}
 
 
@@ -1573,21 +1561,14 @@ class LetExpr implements Expr{
 					gen.asm.I_setslot(activationSlot);
 				}
 			});
-
-		if(isLoop){
-			var loopLabel:Object = gen.asm.I_label(undefined);
-			Var.pushBindings(_compiler.rt, RT.map(
-					_compiler.RECURING_BINDER, this,
-					_compiler.RECUR_LABEL, loopLabel
-				));
-		}
 		body.emit(context, gen);
-		if(isLoop){
-			Var.popBindings(_compiler.rt);
-		}
 	}
 
 }
+
+
+
+
 
 
 

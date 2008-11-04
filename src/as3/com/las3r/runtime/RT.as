@@ -606,6 +606,22 @@ package com.las3r.runtime{
 			return y.cons(x);
 		}
 
+		public static function unzip(seq:ISeq):ISeq{
+			var a:Array = [];
+			var b:Array = [];
+
+			if((seq.count() % 2) != 0)
+			throw new Error("IllegalArgumentException: Bad argument to unzip, expected even number of args.");
+
+			for(var sq:ISeq = seq; sq != null; sq = sq.rest().rest())
+			{
+				a.push(sq.first());
+				b.push(sq.rest().first());
+			}
+
+			return RT.list(List.createFromArray(a), List.createFromArray(b));
+		}
+
 		public static function concat(...all:Array):ISeq{
 			var len:int = all.length;
 			var x:Object = all[0];

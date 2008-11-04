@@ -441,12 +441,6 @@ package com.las3r.test{
 				});
 		}
 
-		public function testRecurCallToTopOfLoop():void{
-			readAndLoad("(def *bird* (loop* [a true] (if a (recur false) :hello)))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be bound to :hello.", v.get() == key1(rt, "hello"));
-				});
-		}
 
 		public function testRecurReferencingNamedAnonymousFunction():void{
 			readAndLoad("((fn* hello [bool] (if bool (recur false) hello)) true)", function(rt:RT, val:*):void{
