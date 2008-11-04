@@ -29,16 +29,16 @@ package com.las3r.runtime{
 		public static var CONST_PREFIX:String = "const__";
 		public static var MAX_POSITIONAL_ARITY:int = 8;
 
-		private var _bindingSetStack:IVector;
-		private var _loopLocalsStack:IVector;
-		private var _loopLabelStack:IVector;
-		private var _inCatchFinally:Boolean = false;
 		private var _rt:RT;
 		public var specialParsers:IMap;
 
 		public var LINE:Var;
 		public var SOURCE:Var;
-		public var INNER_LOOP:Var;
+		public var BINDING_SET_STACK:Var;
+		public var RECURING_BINDER:Var;
+		public var RECUR_ARGS:Var;
+		public var RECUR_LABEL:Var;
+		public var IN_CATCH_FINALLY:Var;
 
 		public function get rt():RT{ return _rt; }
 		public function get constants():Array{ return _rt.constants; }
@@ -66,7 +66,11 @@ package com.las3r.runtime{
 
 			SOURCE = new Var(_rt, null, null, "Evaluated Source");
 			LINE = new Var(_rt, null, null, 0);
-			INNER_LOOP = new Var(_rt, null, null, null);
+			BINDING_SET_STACK = new Var(_rt, null, null, RT.vector());
+			RECURING_BINDER = new Var(_rt, null, null, null);
+			RECUR_ARGS = new Var(_rt, null, null, null);
+			RECUR_LABEL = new Var(_rt, null, null, null);
+			IN_CATCH_FINALLY = new Var(_rt, null, null, false);
 		}
 
 		public function interpret(form:Object):Object{
@@ -135,11 +139,6 @@ package com.las3r.runtime{
 		protected function loadForm(form:Object, callback:Function):void{
 			// XXX Compiled LAS3R code stores result of expression here..
 			var resultKey:String = _rt.createResultCallback(callback);
-
-			_bindingSetStack = RT.vector();
-			_loopLabelStack = RT.vector();
-			_loopLocalsStack = RT.vector();
-
 			var emitter = new ABCEmitter();
 			var scr = emitter.newScript();
 			var gen:CodeGen = new CodeGen(this, emitter, scr);
@@ -213,7 +212,7 @@ package com.las3r.runtime{
 		}
 
 		public function registerLocal(num:int, sym:Symbol, init:Expr = null, _lbs:LocalBindingSet = null):LocalBinding{
-			var lbs:LocalBindingSet = _lbs || LocalBindingSet(_bindingSetStack.peek());
+			var lbs:LocalBindingSet = _lbs || currentLocalBindingSet()
 			if(!lbs) throw new Error("IllegalStateException: cannot register local without LocalBindingSet.")
 			return lbs.registerLocal(num, sym, init);
 		}
@@ -413,9 +412,10 @@ package com.las3r.runtime{
 
 
 		public function referenceLocal(sym:Symbol):LocalBinding{
-			var len:int = _bindingSetStack.count();
+			var bindingSetStack:Vector = Vector(BINDING_SET_STACK.get());
+			var len:int = bindingSetStack.count();
 			for(var i:int = len - 1; i >= 0; i--){
-				var lbs:LocalBindingSet = LocalBindingSet(_bindingSetStack.nth(i));
+				var lbs:LocalBindingSet = LocalBindingSet(bindingSetStack.nth(i));
 				var b:LocalBinding = LocalBinding(lbs.bindingFor(sym));
 				if(b){
 					return b;
@@ -424,45 +424,18 @@ package com.las3r.runtime{
 			return null;
 		}
 
-
 		public function pushLocalBindingSet(set:LocalBindingSet):void{
-			_bindingSetStack.cons(set);
+			var prevStack:Vector = Vector(BINDING_SET_STACK.get());
+			var newStack:IVector = (new Vector(prevStack)).cons(set); // We do a full copy here :(
+			Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
 		}
+
 		public function popLocalBindingSet():void{
-			_bindingSetStack.popEnd();
+			Var.popBindings(rt);
 		}
 
-
-
-		public function pushLoopLabel(label:Object):void{
-			_loopLabelStack.cons(label);
-		}
-		public function popLoopLabel():void{
-			_loopLabelStack.popEnd();
-		}
-		public function get currentLoopLabel():Object{
-			return _loopLabelStack.peek();
-		}
-
-
-
-		public function pushLoopLocals(lbs:LocalBindingSet):void{
-			_loopLocalsStack.cons(lbs);
-		}
-		public function popLoopLocals():void{
-			LocalBindingSet(_loopLocalsStack.popEnd());
-		}
-		public function get currentLoopLocals():LocalBindingSet{
-			return LocalBindingSet(_loopLocalsStack.peek());
-		}
-
-
-
-		public function get inCatchFinally():Boolean{
-			return _inCatchFinally;
-		}
-		public function set inCatchFinally(val:Boolean):void{
-			_inCatchFinally = val;
+		public function currentLocalBindingSet():LocalBindingSet{
+			return LocalBindingSet(Vector(BINDING_SET_STACK.get()).peek());
 		}
 
 
@@ -1330,9 +1303,9 @@ class FnMethod{
 		var bodyForms:ISeq = ISeq(RT.rest(form));
 		c.pushLocalBindingSet(meth.paramBindings);
 		c.pushLocalBindingSet(extraBindings);
-		c.pushLoopLocals(meth.paramBindings);
+		Var.pushBindings(c.rt, RT.map(c.RECUR_ARGS, meth.paramBindings));
 		meth.body = BodyExpr(BodyExpr.parse(c, C.RETURN, bodyForms));
-		c.popLoopLocals();
+		Var.popBindings(c.rt);
 		c.popLocalBindingSet();
 		c.popLocalBindingSet();
 
@@ -1384,11 +1357,12 @@ class FnMethod{
 			methGen.asm.I_setslot(nameSlot);
 		}
 
-		_compiler.pushLoopLabel(loopLabel);
-		Var.pushBindings(_compiler.rt, RT.map(_compiler.INNER_LOOP, this));
+		Var.pushBindings(_compiler.rt, RT.map(
+				_compiler.RECURING_BINDER, this,
+				_compiler.RECUR_LABEL, loopLabel
+			));
 		body.emit(C.RETURN, methGen);
 		Var.popBindings(_compiler.rt);
-		_compiler.popLoopLabel();
 
 		methGen.asm.I_returnvalue();
 
@@ -1571,11 +1545,13 @@ class LetExpr implements Expr{
 		}
 
 		if(isLoop){
-			c.pushLoopLocals(lbs);
+		Var.pushBindings(c.rt, RT.map(
+				c.RECUR_ARGS, lbs
+			));
 		}
 		var bodyExpr:BodyExpr = BodyExpr(BodyExpr.parse(c, isLoop ? C.RETURN : context, body));
 		if(isLoop){
-			c.popLoopLocals();
+			Var.popBindings(c.rt);
 		}
 
 		c.popLocalBindingSet();
@@ -1600,13 +1576,14 @@ class LetExpr implements Expr{
 
 		if(isLoop){
 			var loopLabel:Object = gen.asm.I_label(undefined);
-			_compiler.pushLoopLabel(loopLabel);
-			Var.pushBindings(_compiler.rt, RT.map(_compiler.INNER_LOOP, this));
+			Var.pushBindings(_compiler.rt, RT.map(
+					_compiler.RECURING_BINDER, this,
+					_compiler.RECUR_LABEL, loopLabel
+				));
 		}
 		body.emit(context, gen);
 		if(isLoop){
 			Var.popBindings(_compiler.rt);
-			_compiler.popLoopLabel();
 		}
 	}
 
@@ -1889,7 +1866,7 @@ class RecurExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		var loopLabel:Object = _compiler.currentLoopLabel;
+		var loopLabel:Object = _compiler.RECUR_LABEL.get();
 		if(loopLabel == null){
 			throw new Error("IllegalStateException: No loop label found for recur.");
 		}
@@ -1902,7 +1879,7 @@ class RecurExpr implements Expr{
 
 		
 		// if binding form is a function, replace the current activation with a fresh one
-		if(_compiler.INNER_LOOP.get() is FnMethod){
+		if(_compiler.RECURING_BINDER.get() is FnMethod){
 			gen.refreshCurrentActivationScope();
 		}
 
@@ -1918,10 +1895,10 @@ class RecurExpr implements Expr{
 
 	public static function parse(c:Compiler, context:C, frm:Object):Expr{
 		var form:ISeq = ISeq(frm);
-		var loopLocals:LocalBindingSet = c.currentLoopLocals;
+		var loopLocals:LocalBindingSet = LocalBindingSet(c.RECUR_ARGS.get());
 		if(context != C.RETURN || loopLocals == null)
 		throw new Error("UnsupportedOperationException: Can only recur from tail position. Found in context: " + context);
-		if(c.inCatchFinally)
+		if(c.IN_CATCH_FINALLY.get())
 		throw new Error("UnsupportedOperationException: Cannot recur from catch/finally");
 		var args:IVector = Vector.empty();
 		for(var s:ISeq = RT.seq(form.rest()); s != null; s = s.rest())
@@ -2391,10 +2368,11 @@ class HostExpr implements Expr{
 
 						c.pushLocalBindingSet(new LocalBindingSet());
 						var lb:LocalBinding = c.registerLocal(c.rt.nextID(), sym);
-						c.inCatchFinally = true;
+						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
 						var handler:Expr = BodyExpr.parse(c, context, RT.rest(RT.rest(RT.rest(f))));
-						c.inCatchFinally = false;
+						Var.popBindings(c.rt);
 						c.popLocalBindingSet();
+
 						catches = catches.cons(new CatchClause(klass, className.toString(), lb, handler));
 						caught = true;
 					}
@@ -2402,10 +2380,9 @@ class HostExpr implements Expr{
 					{
 						if(fs.rest() != null)
 						throw new Error("Finally clause must be last in try expression");
-						
-						c.inCatchFinally = true;
+						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
 						finallyExpr = BodyExpr.parse(c, C.STATEMENT, RT.rest(f));
-						c.inCatchFinally = false;
+						Var.popBindings(c.rt);
 					}
 				}
 			}
