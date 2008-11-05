@@ -125,13 +125,13 @@
 
 (def
  #^{:macro true
-    :doc "Loop macro that expands into the application of an anonymous function 
-          to series of arguments."}
+    :doc "Loop macro that expands into a let expression with a body that
+          applies a function to the bound locals."}
  loop (fn* loop [bindings & body] 
 	   (let [names-vals (. com.las3r.runtime.RT (unzip (seq bindings)))
 		 names (. com.las3r.runtime.Vector (createFromSeq (first names-vals)))
 		 vals (second names-vals)]
-	     (concat (list (concat (list 'fn* names) body)) vals)))
+	     (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
  )
 
 ;;;;;;;;;;;;;;;;; metadata ;;;;;;;;;;;;;;;;;;;;;;;;;;;
