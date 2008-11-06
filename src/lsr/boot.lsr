@@ -1222,7 +1222,6 @@
 	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
 
 
-
 (defn run-tests []
   (assert-true (= (reduce + '(1 2 3)) 6))
   (assert-true (= (reduce + 0 '(1 2 3)) 6))
@@ -1257,9 +1256,19 @@
   ;; This was failing verification because the 'do' was being emitted as a statement..
   (assert-true (= 1 (if true (do (doseq a (quote (1 2)) a) 1))))
 
+  (assert-true (let [obj (new Object)]
+		 (set! (. obj nums) [])
+		 (set! (. obj funcs) [])
+		 (doseq ea '[1 2 3 4 5]
+		   (set! (. obj funcs) (conj
+					(. obj funcs)
+					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
+					)))
+		 (doseq ea (. obj funcs) (ea))
+		 (= [1 2 3 4 5] (. obj nums))
+		 ))
 
   ;;namespace stuff
-
   (let [sym (gensym)]
     (assert-false (find-ns sym))
     (create-ns sym)
