@@ -236,6 +236,11 @@
   [& keyvals]
   (. com.las3r.runtime.Map (createFromSeq keyvals)))
 
+(defn hash-set
+  "Returns a new hash set with supplied values."
+  [& vals]
+  (. com.las3r.runtime.Set (createFromSeq vals)))
+
 (def
 
  #^{:doc "Like defn, but the resulting function name is declared as a
@@ -1177,11 +1182,10 @@
 	fs (apply hash-map filters)
 	nspublics (ns-publics ns)
 	rename (or (get fs :rename) {})
-	exclude (reduce (fn [all ea] 
-			  (assoc all ea true)) {} (or (get fs :exclude) [])) ;; <--------- Need sets to do this correctly
+	exclude (hash-set (get fs :exclude))
 	to-do (or (get fs :only) (keys nspublics))]
     (doseq sym to-do
-      (when-not (get exclude sym) ;; <--------- Need sets to do this correctly
+      (when-not (contains? exclude sym)
 	(let [v (get nspublics sym)]
 	  (when-not v
 	    (throw (new Error (str sym " is not public"))))
@@ -1200,6 +1204,37 @@
   (filter-key val (fn [#^com.las3r.runtime.Var v] (and (instance? com.las3r.runtime.Var v)
 						       (= ns (. v ns))))
 	      (ns-map ns)))
+
+(defn take-nth
+  "Returns a lazy seq of every nth item in coll."
+  [n coll]
+  (when (seq coll)
+    (lazy-cons (first coll) (take-nth n (drop n coll)))))
+
+(defn interleave
+  "Returns a lazy seq of the first item in each coll, then the second
+  etc."
+  [& colls]
+  (apply concat (apply map list colls)))
+
+
+(defn nthrest
+  "Returns the nth rest of coll, (seq coll) when n is 0."
+  [coll n]
+  (loop [n n xs (seq coll)]
+    (if (and xs (pos? n))
+      (recur (dec n) (rest xs))
+      xs)))
+
+
+(defn symbol?
+  "Return true if x is a Symbol"
+  [x] (instance? com.las3r.runtime.Symbol x))
+
+
+(defn keyword?
+  "Return true if x is a Keyword"
+  [x] (instance? com.las3r.runtime.Keyword x))
 
 
 

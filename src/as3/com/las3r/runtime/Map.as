@@ -49,7 +49,7 @@ package com.las3r.runtime{
 		}
 
 		public function toString():String {
-			return "<map: - " + count() + " items>";
+			return "<map: " + count() + " items>";
 		}
 
 		public function equals(obj:Object):Boolean{

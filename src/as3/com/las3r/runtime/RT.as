@@ -697,6 +697,9 @@ package com.las3r.runtime{
 			else if(coll is IMap){
 				return IMap(coll).seq();
 			}
+			else if(coll is ISet){
+				return ISet(coll).seq();
+			}
 			else if(coll is String){
 				return new StringSeq(String(coll), 0);
 			}
@@ -705,6 +708,29 @@ package com.las3r.runtime{
 			}
 			else{
 				throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
+			}
+		}
+
+		public static function contains(coll:Object, key:Object):Boolean{
+			if(coll == null){
+				return F;
+			}
+			else if(coll is IMap){
+				return (IMap(coll).containsKey(key)) ? T : F;
+			}
+			else if(coll is ISet){
+				return (ISet(coll).contains(key)) ? T : F;
+			}
+			else if(key is String && (coll is String))
+			{
+				return (String(coll).indexOf(String(key)) != -1) ? T : F;
+			}
+			else if((coll is Array))
+			{
+				return (((coll as Array).indexOf(key)) != -1) ? T : F;
+			}
+			else{
+				return F;
 			}
 		}
 
@@ -821,6 +847,17 @@ package com.las3r.runtime{
 					w.write(' ');
 				}
 				w.write(']');
+			}
+			else if(x is ISet)
+			{
+				w.write("#{");
+				for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+				{
+					print(setSq.first(), w);
+					if(setSq.rest() != null)
+					w.write(" ");
+				}
+				w.write('}');
 			}
 			else w.write(x.toString());
 		}

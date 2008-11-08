@@ -56,7 +56,8 @@ package com.las3r.runtime{
 
 			dispatchMacros = RT.map(
 				CharUtil.DOUBLE_QUOTE, new RegexReader(this),
-				CharUtil.CARROT, new MetaReader(this)
+				CharUtil.CARROT, new MetaReader(this),
+				CharUtil.LBRACE, new SetReader(this)
 			);
 
 			_gensymEnvStack = RT.vector();
@@ -536,6 +537,21 @@ class MapReader implements IReaderMacro{
 	public function invoke(reader:Object, leftparen:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		return Map.createFromArray(_reader.readDelimitedList(CharUtil.RBRACE, r));
+	}
+}
+
+
+class SetReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+
+	public function SetReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, leftparen:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+		return Set.createFromArray(_reader.readDelimitedList(CharUtil.RBRACE, r));
 	}
 }
 
