@@ -14,6 +14,9 @@ package com.las3r.repl{
 	import flash.display.*;
 	import flash.events.*;
 
+	/**
+	* A simple wrapper application to demonstrate usage of the repl.
+	*/	
 	public class App extends Sprite{
 
 		protected var _repl:Repl;

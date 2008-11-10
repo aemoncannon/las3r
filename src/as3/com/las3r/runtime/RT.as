@@ -142,7 +142,7 @@ package com.las3r.runtime{
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
-			var forceImport:Array = [Numbers, LazyCons];
+			var forceImport:Array = [Numbers, LazyCons, Range];
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
@@ -288,6 +288,20 @@ package com.las3r.runtime{
 
 			_compiler = new Compiler(this);
 			_lispReader = new LispReader(this);
+
+
+			// *ns* must be bound for (in-ns ...) to work..
+			Var.pushBindings(this, 
+				RT.map(
+					CURRENT_NS, CURRENT_NS.get(),
+					SAVE_BYTECODES, SAVE_BYTECODES.get()
+				)
+			);
+		}
+
+		/* Cleanup function for an RT instance */
+		public function dispose():void{
+			Var.popBindings(this);
 		}
 
 
@@ -526,6 +540,14 @@ package com.las3r.runtime{
 
 		public static function cast(c:Class, x:Object):*{
 			return c(x);
+		}
+
+		public static function numCast(x:Object):Number{
+			return Number(x);
+		}
+
+		public static function intCast(x:Object):int{
+			return int(x);
 		}
 
 		public static function conj(coll:Object, x:Object):Object{

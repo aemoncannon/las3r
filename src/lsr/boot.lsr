@@ -949,18 +949,17 @@
   "Returns a lazy seq of x, (f x), (f (f x)) etc. f must be free of side-effects"
   [f x] (lazy-cons x (iterate f (f x))))
 
-;;;;(defn range
-;;;;  "Returns a lazy seq of nums from start (inclusive) to end
-;;;;  (exclusive), by step, where start defaults to 0 and step to 1."
-;;;;  ([end] (if (and (> end 0) (< end (. Integer MAX_VALUE)))
-;;;;           (new com.las3r.runtime.Range 0 end)
-;;;;           (take end (iterate inc 0))))
-;;;;  ([start end] (if (and (< start end) (< end (. Integer MAX_VALUE)))
-;;;;                 (new com.las3r.runtime.Range start end)
-;;;;                 (take (- end start) (iterate inc start))))
-;;;;  ([start end step]
-;;;;   (take-while (partial (if (pos? step) > <) end) (iterate (partial + step) start))))
-;;
+(defn range
+  "Returns a lazy seq of nums from start (inclusive) to end
+  (exclusive), by step, where start defaults to 0 and step to 1."
+  ([end] (if (> end 0)
+           (new com.las3r.runtime.Range 0 end)
+           (take end (iterate inc 0))))
+  ([start end] (if (< start end)
+                 (new com.las3r.runtime.Range start end)
+                 (take (- end start) (iterate inc start))))
+  ([start end step]
+     (take-while (partial (if (pos? step) > <) end) (iterate (partial + step) start))))
 
 
 (defn merge
@@ -1228,6 +1227,18 @@
       (recur (dec n) (rest xs))
       xs)))
 
+(defmacro doto
+  "Evaluates x then calls all of the methods with the supplied
+  arguments in succession on the resulting object, returning it.
+
+  (doto (new java.util.HashMap) (put \"a\" 1) (put \"b\" 2))"
+  [x & members]
+  (let [gx (gensym)]
+    `(let [~gx ~x]
+       (do
+	 ~@(map (fn [m] (list '. gx m))
+		members))
+       ~gx)))
 
 (defn symbol?
   "Return true if x is a Symbol"
@@ -1237,6 +1248,33 @@
 (defn keyword?
   "Return true if x is a Keyword"
   [x] (instance? com.las3r.runtime.Keyword x))
+
+
+(defn num
+  "Coerce to Number"
+  {:tag Number}
+  [x] (. com.las3r.runtime.RT (numCast x)))
+
+
+(defn int
+  "Coerce to int"
+  [x] (. com.las3r.runtime.RT (intCast x)))
+
+
+(defn rand
+  "Returns a random floating point number between 0 (inclusive) and
+  1 (exclusive)."
+  ([] (. Math (random)))
+  ([n] (* n (rand))))
+
+(defn rand-int
+  "Returns a random integer between 0 (inclusive) and n (exclusive)."
+  [n] (int (rand n)))
+
+(defmacro defn-
+  "same as defn, yielding non-public def"
+  [name & decls]
+  (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
 
 
 

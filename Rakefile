@@ -43,13 +43,19 @@ SWC_OPTIONS = [
 SHARED_SOURCES = FileList["./src/as3/**/*"]
 LAS3R_STDLIB = FileList["./src/lsr/**/*"]
 THIS_RAKEFILE = FileList["./Rakefile"]
-DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
-DEMO_SWF_TARGETS = DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
+TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
+TEST_DEMO_SWF_TARGETS = TEST_DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
 file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
+end
+
+DEMO_GARDEN_TARGET = "./bin/garden.swf"
+file DEMO_GARDEN_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 700 600"]
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
 end
 
 REPL_TARGET = "./bin/repl.swf"
@@ -80,9 +86,9 @@ file TRACE_SWF => SHARED_SOURCES do
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/util/TraceSwf.as -output=#{TRACE_SWF}"
 end
 
-DEMO_SWF_ENTRY_POINTS.zip(DEMO_SWF_TARGETS).each do |pair|
+TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   main, target = pair
-  file target => SHARED_SOURCES - DEMO_SWF_ENTRY_POINTS + [main] do
+  file target => SHARED_SOURCES - TEST_DEMO_SWF_ENTRY_POINTS + [main] do
     options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
     sh "#{MXMLC} #{options.join(" ")} -file-specs #{main} -output=#{target}"
   end
@@ -95,11 +101,16 @@ task :repl => [REPL_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{REPL_TARGET}"
 end
 
+task :garden => [DEMO_GARDEN_TARGET] do
+  sh "#{DEBUG_PROJECTOR} #{DEMO_GARDEN_TARGET}"
+end
+
 task :lisp_units => [LISP_UNITS_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{LISP_UNITS_TARGET}"
 end
 
-task :demos => DEMO_SWF_TARGETS do end
+task :test_demos => TEST_DEMO_SWF_TARGETS do end
+
 
 task :trace_swf => [TRACE_SWF] do end
 

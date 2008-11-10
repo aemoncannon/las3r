@@ -64,14 +64,6 @@ package com.las3r.repl{
 				});
 
 
-			// *ns* must be bound for (in-ns ...) to work..
-			Var.pushBindings(_rt, 
-				RT.map(
-					_rt.CURRENT_NS, _rt.CURRENT_NS.get(),
-					_rt.SAVE_BYTECODES, _rt.SAVE_BYTECODES.get()
-				)
-			);
-
 			outputText("Initing");
 			try{
 				_rt.loadStdLib(function(val:*):void{
@@ -291,7 +283,6 @@ package com.las3r.repl{
 			if(parent){
 				parent.removeChild(this);
 			}
-			Var.popBindings(_rt);
 		}
 
 		protected function onInputTextInput(e:TextEvent):void{
