@@ -24,7 +24,6 @@
 (def *ticker* (new Timer 1000))
 
 
-
 (defn update-plants [])
 
 
