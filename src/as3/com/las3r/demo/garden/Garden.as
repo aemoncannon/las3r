@@ -29,16 +29,14 @@ package com.las3r.demo.garden{
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 
 			var stdout:OutputStream = new OutputStream(function(str:String):void{
-					trace("stdout: " + str);
+					trace(str);
 				});
 			var stderr:OutputStream = new OutputStream(function(str:String):void{
 					trace("stderr: " + str);
 				});
 			_rt = new RT(stage, stdout, stderr);
 			
-			_rt.loadStdLib(function(val:*):void{
-					stdout.write(" .\n");
-				});
+			_rt.loadStdLib(function(val:*):void{},function(a:int, b:int):void{});
 			_rt.evalStr(GARDEN_LSR);
 		}
 

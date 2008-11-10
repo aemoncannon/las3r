@@ -241,6 +241,7 @@
   [& vals]
   (. com.las3r.runtime.Set (createFromSeq vals)))
 
+
 (def
 
  #^{:doc "Like defn, but the resulting function name is declared as a
@@ -1109,6 +1110,20 @@
 	(recur ret (rest es)))
       ret)))
 
+
+(defmacro time
+  "Evaluates expr and prints the time it took.  Returns the value of
+   expr."  
+  [expr]
+  `(let [start# (. com.las3r.runtime.RT (sysTime))
+         ret# ~expr]
+     (prn (str "Elapsed time: " (/ (- (. com.las3r.runtime.RT (sysTime)) start#) 1000000.0) " msecs"))
+     ret#))
+
+(defn set 
+  "Returns a set of the distinct elements of coll."
+  [coll] (apply hash-set coll))
+
 (defn find-ns
   "Returns the namespace named by the symbol or nil if it doesn't exist."
   [sym] (. com.las3r.runtime.LispNamespace (find *runtime* sym)))
@@ -1227,6 +1242,30 @@
       (recur (dec n) (rest xs))
       xs)))
 
+(defn var-get
+  "Gets the value in the var object"
+  [#^com.las3r.runtime.Var x] (. x (get)))
+
+(defn var-set
+  "Sets the value in the var object to val. The var must be
+ thread-locally bound."  
+  [#^com.las3r.runtime.Var x val] (. x (set val)))
+
+(defmacro with-local-vars
+  "varbinding=> symbol init-expr
+
+  Executes the exprs in a context in which the symbols are bound to
+  vars with per-thread bindings to the init-exprs.  The symbols refer
+  to the var objects themselves, and must be accessed with var-get and
+  var-set"
+  [name-vals-vec & body]
+  `(let [~@(interleave (take-nth 2 name-vals-vec)
+                       (repeat '(. com.las3r.runtime.Var (create *runtime*))))]
+     (. com.las3r.runtime.Var (pushThreadBindings *runtime* (hash-map ~@name-vals-vec)))
+     (try
+      ~@body
+      (finally (. com.las3r.runtime.Var (popThreadBindings *runtime*))))))
+
 (defmacro doto
   "Evaluates x then calls all of the methods with the supplied
   arguments in succession on the resulting object, returning it.
@@ -1239,6 +1278,33 @@
 	 ~@(map (fn [m] (list '. gx m))
 		members))
        ~gx)))
+
+(defmacro ..
+  "form => fieldName-symbol or (instanceMethodName-symbol args*)
+
+  Expands into a member access (.) of the first member on the first
+  argument, followed by the next member on the result, etc. For
+  instance:
+
+  (.. System (getProperties) (get \"os.name\"))
+
+  expands to:
+
+  (. (. System (getProperties)) (get \"os.name\"))
+
+  but is easier to write, read, and understand."
+  ([x form] `(. ~x ~form))
+  ([x form & more] `(.. (. ~x ~form) ~@more)))
+
+(defmacro ->
+  "Macro. Threads the expr through the forms. Inserts x as the
+  second item in the first form, making a list of it if it is not a
+  list already. If there are more forms, inserts the first form as the
+  second item in second form, etc."
+  ([x form] (if (seq? form)
+              `(~(first form) ~x ~@(rest form))
+              (list form x)))
+  ([x form & more] `(-> (-> ~x ~form) ~@more)))
 
 (defn symbol?
   "Return true if x is a Symbol"

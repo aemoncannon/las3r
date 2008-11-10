@@ -24,6 +24,7 @@ package com.las3r.runtime{
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
+	import flash.utils.getTimer;
 
 
 	public class RT extends EventDispatcher{
@@ -544,6 +545,10 @@ package com.las3r.runtime{
 
 		public static function numCast(x:Object):Number{
 			return Number(x);
+		}
+
+		public static function sysTime():int { 
+			return getTimer();
 		}
 
 		public static function intCast(x:Object):int{
