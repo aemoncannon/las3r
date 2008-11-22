@@ -73,6 +73,9 @@ package com.las3r.repl{
 					},
 					function(i:int, total:int):void{
 						outputText(" .");
+					},
+					function(error:*):void{
+						outputError(error);
 					}
 				);
 			}
@@ -93,6 +96,9 @@ package com.las3r.repl{
 					},
 					function(i:int, total:int):void{
 						outputText(" .");
+					},
+					function(error:*):void{
+						outputError(error);
 					}
 				);
 			}
@@ -322,7 +328,12 @@ package com.las3r.repl{
 			try{
 				_rt.evalStr(src, function(val:*):void{ 
 						outputText(_rt.printToString(val) + "\n"); 
-					});
+					}, 
+					null,
+					function(error:*):void{
+						outputError(error + "\n");
+					}
+				);
 			}
 			catch(e:LispError){
 				// Suppress these.. we're already listening for error events.

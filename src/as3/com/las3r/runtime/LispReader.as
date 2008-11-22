@@ -139,7 +139,6 @@ package com.las3r.runtime{
 				// 				LineNumberingPushbackReader rdr = (LineNumberingPushbackReader) r;
 				var lineNumber:int = 0; //TODO: Aemon, get this from the reader..
 				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber + ": " + e.message, e);
-				_rt.dispatchEvent(lispError);
 				throw lispError;
 			}
 			return null;

@@ -306,8 +306,8 @@ package com.las3r.runtime{
 		}
 
 
-		public function loadStdLib(onComplete:Function = null, progress:Function = null):void{
-			evalStr(BOOT_LSR, onComplete, progress);
+		public function loadStdLib(onComplete:Function = null, progress:Function = null, failure:Function = null):void{
+			evalStr(BOOT_LSR, onComplete, progress, failure);
 		}
 
 
@@ -319,7 +319,7 @@ package com.las3r.runtime{
 		* @param progress 
 		* @return 
 		*/		
-		public function evalStr(src:String, _onComplete:Function = null, progress:Function = null):void{
+		public function evalStr(src:String, onComplete:Function = null, progress:Function = null, onFailure:Function = null):void{
 			var workUnit:Object = {};
 			workUnit.reader = new PushbackReader(new StringReader(src));
 			workUnit.start = function():void{
@@ -337,12 +337,13 @@ package com.las3r.runtime{
 			workUnit.progress = progress || function(a:int, b:int):void{}
 			workUnit.complete = function(val:*):void{ 
 				Var.popBindings(_this);
-				if(_onComplete != null) _onComplete(val);
+				if(onComplete != null) onComplete(val);
 				removeFromEvalQ(workUnit);
 				if(_evalQ.count() > 0) evalNextInQ();
 			};
 			workUnit.failure = function(error:*):void{
 				Var.popBindings(_this);
+				if(onFailure != null) onFailure(error);
 				removeFromEvalQ(workUnit);
 				if(_evalQ.count() > 0) evalNextInQ();
 			}

@@ -23,9 +23,7 @@
 
 (def *ticker* (new Timer 1000))
 
-
 (defn update-plants [])
-
 
 (defn update-view []
   (let [g (. *earth* graphics)]

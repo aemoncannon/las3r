@@ -150,22 +150,16 @@ package com.las3r.test{
 		public function testUnterminated():void{
 			var rt:RT = new RT();
 
-			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
-					assertThrows("should throw exception", function(){
-							readStr(rt, "(hello out ther (dude)");	
-						});
+			assertThrows("should throw exception", function(){
+					readStr(rt, "(hello out ther (dude)");	
 				});
 
-			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
-					assertThrows("should throw exception", function(){
-							readStr(rt, "(hello out ther {dude");
-						});
+			assertThrows("should throw exception", function(){
+					readStr(rt, "(hello out ther {dude");
 				});
 
-			assertDispatches(rt, LispError.LISP_ERROR, "should throw exception", function(){
-					assertThrows("should throw exception", function(){
-							readStr(rt, "[hello out ther");
-						});
+			assertThrows("should throw exception", function(){
+					readStr(rt, "[hello out ther");
 				});
 
 		}

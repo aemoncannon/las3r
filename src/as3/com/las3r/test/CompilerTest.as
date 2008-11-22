@@ -651,15 +651,39 @@ package com.las3r.test{
 		}
 
 
-		public function testCompilerDispatchingErrorEvent():void{
+		public function testErrorInAnalyzePhaseThrowingError():void{
 			var rt:RT = new RT();
-			assertDispatches(rt, LispError.LISP_ERROR, "should signal an error", function():void{
-					readAndLoad("(def *bird* (let* (a 1) a))",
-						function(rt:RT, val:*):void{
-							var v:Var = rt.getVar("las3r", "*bird*");
-							assertTrue("*bird* should be bound to 1.", v.get() == 1);
-						}, rt, false);
-				});
+			rt.evalStr("(def *bird* (let* (a 1) a))", // <---- Will fail in analyze phase (bad let syntax)
+				null, null, 
+				willCall(function(e){}, 5000));
+		}
+
+
+
+		public function testCompiledLispThrowingErrorToTopLevel():void{
+			var rt:RT = new RT();
+			rt.evalStr("(throw \"birdy\")", null, null, 
+				willCall(function(e){ 
+						assertTrue("e should be birdy", e === "birdy"); 
+					}, 5000));
+		}
+
+
+		public function testCompiledLispRethrowingErrorToTryCatchToTopLevel():void{
+			var rt:RT = new RT();
+			rt.evalStr("(try (throw \"birdy\") (catch String e (throw e)))", null, null, 
+				willCall(function(e){ 
+						assertTrue("e should be birdy", e === "birdy"); 
+					}, 5000));
+		}
+
+
+		public function testCompiledLispRethrowingErrorToTryCatchToTopLevelAfterBypassingOneClause():void{
+			var rt:RT = new RT();
+			rt.evalStr("(try (throw \"birdy\") (catch Number e (throw 1)) (catch String e (throw 2)))", null, null, 
+				willCall(function(e){
+						assertTrue("e should be 2", e === 2);
+					}, 5000));
 		}
 
 	}

@@ -93,8 +93,8 @@ package com.las3r.runtime{
 		* @param _progress 
 		* @param sourcePath 
 		* @param sourceName 
-		* @return 
-		*/		
+		* @return
+		*/
 		public function load(rdr:PushbackReader, _onComplete:Function = null, _onFailure:Function = null, _progress:Function = null, sourcePath:String = null, sourceName:String = null):void{
 			var onComplete:Function = _onComplete || function(val:*):void{};
 			var onFailure:Function = _onFailure || function(error:*):void{};
@@ -117,12 +117,11 @@ package com.las3r.runtime{
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
 					progress(totalLength - forms.length + 1, totalLength);
-
 					try{
-						loadForm(forms.shift(), loadAllForms);
+						loadForm(forms.shift(), loadAllForms, onFailure);
 					}
 					catch(e:LispError){
-						// Suppress exceptions. We can't handle them for async code anyhow.
+						// Suppress exceptions. We can't handle them for async code anyhow. Just pass back to the toplevel.
 						onFailure(e);
 					}
 				}
@@ -136,26 +135,48 @@ package com.las3r.runtime{
 
 
 
-		protected function loadForm(form:Object, callback:Function):void{
+		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
 			// XXX Compiled LAS3R code stores result of expression here..
 			var resultKey:String = _rt.createResultCallback(callback);
+			var errorKey:String = _rt.createResultCallback(errorCallback);
+
 			var emitter = new ABCEmitter();
 			var scr = emitter.newScript();
 			var gen:CodeGen = new CodeGen(this, emitter, scr);
 
-			var expr:Expr = analyze(C.STATEMENT, form);
+			var expr:Expr = analyze(C.EXPRESSION, form);
 
-			// Emit the bytecode..
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
+
+			var tryStart:Object = gen.asm.I_label(undefined);
 			expr.emit(C.EXPRESSION, gen);
 			gen.callbackWithResult(resultKey);
+ 			var tryEnd:Object = gen.asm.I_label(undefined);
+
+ 			var catchEnd:Object = gen.asm.newLabel();
+ 			gen.asm.I_jump(catchEnd);
+
+ 			var catchStart:Object = gen.asm.I_label(undefined);
+ 			var excId:int = gen.meth.addException(new ABCException(
+ 					tryStart.address, 
+ 					tryEnd.address, 
+ 					catchStart.address,
+ 					0, // *
+ 					gen.emitter.nameFromIdent("toplevelExceptionHandler")
+ 				));
+ 			gen.asm.startCatch(); // Increment max stack by 1, for exception object
+ 			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
+ 			gen.pushCatchScope(excId);
+ 			gen.callbackWithResult(errorKey);
+			gen.popScope(); 
+			gen.asm.I_returnvoid();
+ 			gen.asm.I_label(catchEnd);
 
 			var file:ABCFile = emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
 			bytes.position = 0;
 			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
-
 			ByteLoader.loadBytes(swfBytes, null, true);
 		}
 
@@ -269,9 +290,7 @@ package com.las3r.runtime{
 			}
 			Var.pushBindings(_rt, RT.map(LINE, line));
 
-
 			try{
-
 				//todo symbol macro expansion?
 				if(form === null)
 				return NilExpr.instance;
@@ -310,7 +329,6 @@ package com.las3r.runtime{
 			catch(e:Error)
 			{
 				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()) + ": " + e.message, e)
-				_rt.dispatchEvent(lispError);
 				throw lispError;
 			}
 			finally
@@ -427,980 +445,980 @@ package com.las3r.runtime{
 		public function pushLocalBindingSet(set:LocalBindingSet):void{
 			var prevStack:Vector = Vector(BINDING_SET_STACK.get());
 			var newStack:IVector = (new Vector(prevStack)).cons(set); // We do a full copy here :(
-				Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
-			}
-
-			public function popLocalBindingSet():void{
-				Var.popBindings(rt);
-			}
-
-			public function currentLocalBindingSet():LocalBindingSet{
-				return LocalBindingSet(Vector(BINDING_SET_STACK.get()).peek());
-			}
-
-
+			Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
 		}
+
+		public function popLocalBindingSet():void{
+			Var.popBindings(rt);
+		}
+
+		public function currentLocalBindingSet():LocalBindingSet{
+			return LocalBindingSet(Vector(BINDING_SET_STACK.get()).peek());
+		}
+
+
+	}
+}
+
+
+import com.las3r.runtime.*;
+import com.las3r.util.*;
+import com.hurlant.eval.gen.Script;
+import com.hurlant.eval.gen.Method;
+import com.hurlant.eval.gen.ABCEmitter;
+import com.hurlant.eval.gen.AVM2Assembler;
+import com.hurlant.eval.abc.ABCSlotTrait;
+import com.hurlant.eval.abc.ABCException;
+import org.pranaframework.reflection.Type;
+import org.pranaframework.reflection.Field;
+
+
+
+class C{
+	private var _val:String;
+	public static const STATEMENT:C = new C("statement");
+	public static const EXPRESSION:C = new C("expression");
+	public static const RETURN:C = new C("return");
+	public static const INTERPRET:C = new C("interpret");
+
+	public function C(str:String){
+		_val = str;
+	}
+	public function toString():String{
+		return _val;
+	}
+}
+
+
+class CodeGen{
+	public var emitter:ABCEmitter;
+	public var asm:AVM2Assembler;
+	public var scr:Script;
+	public var meth:Method;
+	public var currentActivation:Object;
+	public var scopeToLocalMap:Vector;
+	protected var _compiler:Compiler;
+
+	public function CodeGen(c:Compiler, emitter:ABCEmitter, scr:Script, meth:Method = null){
+		_compiler = c;
+		this.emitter = emitter;
+		this.scr = scr;
+		this.asm = meth ? meth.asm : scr.init.asm;
+		this.meth = meth ? meth : scr.init;
+		this.scopeToLocalMap = Vector.empty();
 	}
 
 
-	import com.las3r.runtime.*;
-	import com.las3r.util.*;
-	import com.hurlant.eval.gen.Script;
-	import com.hurlant.eval.gen.Method;
-	import com.hurlant.eval.gen.ABCEmitter;
-	import com.hurlant.eval.gen.AVM2Assembler;
-	import com.hurlant.eval.abc.ABCSlotTrait;
-	import com.hurlant.eval.abc.ABCException;
-	import org.pranaframework.reflection.Type;
-	import org.pranaframework.reflection.Field;
 
-
-
-	class C{
-		private var _val:String;
-		public static const STATEMENT:C = new C("statement");
-		public static const EXPRESSION:C = new C("expression");
-		public static const RETURN:C = new C("return");
-		public static const INTERPRET:C = new C("interpret");
-
-		public function C(str:String){
-			_val = str;
-		}
-		public function toString():String{
-			return _val;
-		}
+	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int):CodeGen{
+		return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth));
 	}
 
 
-	class CodeGen{
-		public var emitter:ABCEmitter;
-		public var asm:AVM2Assembler;
-		public var scr:Script;
-		public var meth:Method;
-		public var currentActivation:Object;
-		public var scopeToLocalMap:Vector;
-		protected var _compiler:Compiler;
 
-		public function CodeGen(c:Compiler, emitter:ABCEmitter, scr:Script, meth:Method = null){
-			_compiler = c;
-			this.emitter = emitter;
-			this.scr = scr;
-			this.asm = meth ? meth.asm : scr.init.asm;
-			this.meth = meth ? meth : scr.init;
-			this.scopeToLocalMap = Vector.empty();
+	public function nextActivationSlot():int{
+		if(!currentActivation){ throw new Error("IllegalStateException: No activation is current."); }
+		var i:int = currentActivation.nextSlot;
+		currentActivation.nextSlot += 1;
+		return i;
+	}
+
+	public function createActivationSlotForLocalBinding(b:LocalBinding):int{
+		var activationSlot:int = nextActivationSlot();
+		b.slotIndex = activationSlot;
+		meth.addTrait(new ABCSlotTrait(emitter.nameFromIdent(b.runtimeName), 0, false, activationSlot, 0, 0, 0));
+		return activationSlot;
+	}
+
+	/*
+	* Create a new function activation, push it onto the scope stack, and keep track of it for later,
+	* for when we need to store or get local vars into the current activation.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function pushNewActivationScope():void{
+		asm.I_newactivation();
+		asm.I_dup();
+		asm.I_pushscope();
+		currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
+		var i:int = asm.getTemp();
+		asm.I_setlocal(i);
+		this.scopeToLocalMap.cons(i);
+	}
+
+
+	/*
+	* For the current method, push 'this' onto the scope stack. 'this' is initially found
+	* at register 0, so we just leave it there and remember the location in scopeToLocalMap.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function pushThisScope():void{
+		asm.I_getlocal_0();
+		asm.I_pushscope();
+		asm.useTemp(0)
+		this.scopeToLocalMap.cons(0);
+	}
+
+
+	/*
+	* Replace current activation object with a fresh one.
+	*
+	* NOTE! This assumes current activation is on top of scope stack.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function refreshCurrentActivationScope():void{
+		if(currentActivation.scopeIndex != (asm.currentLocalScopeDepth - 1)){
+			throw new Error("IllegalStateException: 'refreshCurrentActivationScope' expects current activation to be on top of scope stack.");
 		}
+		asm.I_popscope();
+		asm.I_newactivation();
+		asm.I_dup();
+		asm.I_pushscope();
+		var i:int = int(this.scopeToLocalMap.nth(this.scopeToLocalMap.length - 1));
+		asm.I_setlocal(i);
+	}
 
 
-
-		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int):CodeGen{
-			return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth));
-		}
-
-
-
-		public function nextActivationSlot():int{
-			if(!currentActivation){ throw new Error("IllegalStateException: No activation is current."); }
-			var i:int = currentActivation.nextSlot;
-			currentActivation.nextSlot += 1;
-			return i;
-		}
-
-		public function createActivationSlotForLocalBinding(b:LocalBinding):int{
-			var activationSlot:int = nextActivationSlot();
-			b.slotIndex = activationSlot;
-			meth.addTrait(new ABCSlotTrait(emitter.nameFromIdent(b.runtimeName), 0, false, activationSlot, 0, 0, 0));
-			return activationSlot;
-		}
-
-		/*
-		* Create a new function activation, push it onto the scope stack, and keep track of it for later,
-		* for when we need to store or get local vars into the current activation.
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function pushNewActivationScope():void{
-			asm.I_newactivation();
-			asm.I_dup();
+	/*
+	* Used when restoring scope stack in exception handler. Takes scope object stored in local registers
+	* and adds them back onto the scope stack.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function restoreScopeStack():void{
+		for each(var i:int in this.scopeToLocalMap){
+			asm.I_getlocal(i);
 			asm.I_pushscope();
-			currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
-			var i:int = asm.getTemp();
-			asm.I_setlocal(i);
-			this.scopeToLocalMap.cons(i);
-		}
-
-
-		/*
-		* For the current method, push 'this' onto the scope stack. 'this' is initially found
-		* at register 0, so we just leave it there and remember the location in scopeToLocalMap.
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function pushThisScope():void{
-			asm.I_getlocal_0();
-			asm.I_pushscope();
-			asm.useTemp(0)
-			this.scopeToLocalMap.cons(0);
-		}
-
-
-		/*
-		* Replace current activation object with a fresh one.
-		*
-		* NOTE! This assumes current activation is on top of scope stack.
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function refreshCurrentActivationScope():void{
-			if(currentActivation.scopeIndex != (asm.currentLocalScopeDepth - 1)){
-				throw new Error("IllegalStateException: 'refreshCurrentActivationScope' expects current activation to be on top of scope stack.");
-			}
-			asm.I_popscope();
-			asm.I_newactivation();
-			asm.I_dup();
-			asm.I_pushscope();
-			var i:int = int(this.scopeToLocalMap.nth(this.scopeToLocalMap.length - 1));
-			asm.I_setlocal(i);
-		}
-
-
-		/*
-		* Used when restoring scope stack in exception handler. Takes scope object stored in local registers
-		* and adds them back onto the scope stack.
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function restoreScopeStack():void{
-			for each(var i:int in this.scopeToLocalMap){
-				asm.I_getlocal(i);
-				asm.I_pushscope();
-			}
-		}
-
-
-		/*
-		* Push a new catch clause scope onto the scope stack.
-		*
-		* Stack:   
-		*   thrown, catchTypeName => thrown
-		*/
-		public function pushCatchScope(i:int):void{
-			asm.I_newcatch(i);
-			asm.I_dup();
-			asm.I_pushscope();
-			var i:int = asm.getTemp()
-			asm.I_setlocal(i);
-			scopeToLocalMap.cons(i);
-		}
-
-		/*
-		* Pop the scope stack.
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function popScope():void{
-			asm.I_popscope();
-			asm.freeTemp(scopeToLocalMap.popEnd());
-		}
-
-
-		/*
-		* Stack:   
-		*   ... => anRTClass
-		*/
-		public function getRTClass():void{
-			asm.I_getlex(emitter.qname({ns: "com.las3r.runtime", id:"RT"}, false));
-		}
-
-
-
-		/*
-		* Get the active instance of RT.
-		*
-		* Stack:   
-		*   ... => anRT
-		*/
-		protected function getRT():void{
-			getRTClass();
-			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_pushint(emitter.constants.int32(_compiler.rt.instanceId + 1));
-			asm.I_nextvalue();
-		}
-
-
-
-		/*
-		* Stack:   
-		*   ... => const
-		*/
-		public function getConstant(id:int, name:String, type:Class):void{
-			getRT();
- 			asm.I_getproperty(emitter.nameFromIdent("constants"));
-			asm.I_pushint(emitter.constants.int32(id + 1));
-			asm.I_nextvalue();
-		}
-
-
-		/*
-		* A debug helper... not meant for long-term usage.
-		* Stack:   
-		*   val => ...
-		*/
-		public function print():void{
-			getRTClass();
-			asm.I_swap();
-			asm.I_callproperty(emitter.nameFromIdent("printToString"), 1);
-			getRT();
-			asm.I_swap();
-			asm.I_callproperty(emitter.nameFromIdent("writeToStdout"), 1);
-		}
-
-
-		/*
-		* Store the value at TOS at key in RT.
-		* Stack:   
-		*   val => ...
-		*/
-		public function callbackWithResult(key:String):void{
-			getRT();
-			asm.I_swap();
-			asm.I_pushstring( emitter.constants.stringUtf8(key));
-			asm.I_callproperty(emitter.nameFromIdent("callbackWithResult"), 2);
-		}
-
-
-		/*
-		* Stack:   
-		*   aVar,init => ...
-		*/
-		public function bindVarRoot():void{
-			asm.I_callpropvoid(emitter.nameFromIdent("bindRoot"), 1);
-		}
-
-
-		/*
-		* Stack:   
-		*   aVar,meta => ...
-		*/
-		public function setMeta():void{
-			asm.I_callpropvoid(emitter.nameFromIdent("setMeta"), 1);
-		}
-
-
-		/*
-		* Stack:   
-		*   aVar => val
-		*/
-		public function getVar():void{
-			asm.I_callproperty(emitter.nameFromIdent("get"), 0);
-		}
-
-
-		/*
-		* Stack:   
-		*   anArray => aVector
-		*/
-		public function arrayToVector():void{
-			asm.I_getlex(emitter.qname({ns: "com.las3r.runtime", id:"Vector"}, false))
-			asm.I_swap();
-			asm.I_construct(1);
-		}
-
-		/*
-		* Stack:   
-		*   anArray => aList
-		*/
-		public function restFromArguments(i:int):void{
-			getRTClass();
-			asm.I_swap();
-			asm.I_pushint(emitter.constants.int32(i));
-			asm.I_callproperty(emitter.nameFromIdent("restFromArguments"), 2);
-		}
-
-
-		/*
-		* Stack:   
-		*   anRTClass, val0, val1, val2, valn => aVector
-		*/
-		public function newVector(n:int):void{
-			asm.I_callproperty(emitter.nameFromIdent("vector"), n);
-		}
-
-		/*
-		* Stack:   
-		*   anRTClass, key0, val0, key1, val1, keyn, valn => aMap
-		*/
-		public function newMap(n:int):void{
-			asm.I_callproperty(emitter.nameFromIdent("map"), n);
-		}
-
-
-		/*
-		* Stack:   
-		*   aVar,val => val
-		*/
-		public function setVar():void{
-			asm.I_callproperty(emitter.nameFromIdent("set"), 1);
-		}
-
-	}
-
-
-
-
-
-	interface Expr{
-
-		function interpret():Object;
-
-		function emit(context:C, gen:CodeGen):void;
-
-	}
-
-
-	interface AssignableExpr{
-
-		function interpretAssign(val:Expr):Object;
-
-		function emitAssign(context:C, gen:CodeGen, val:Expr):void;
-
-	}
-
-
-	class LiteralExpr implements Expr{
-
-		public function val():Object{ return null }
-
-		public function interpret():Object{
-			return val();
-		}
-
-		public function emit(context:C, gen:CodeGen):void{}
-
-	}
-
-
-
-
-	class UntypedExpr implements Expr{
-
-		public function interpret():Object{ throw "SubclassResponsibility";}
-
-		public function emit(context:C, gen:CodeGen):void{ throw "SubclassResponsibility";}
-
-	}
-
-
-
-	class BooleanExpr extends LiteralExpr{
-		public static var true_instance:BooleanExpr = new BooleanExpr(true);
-		public static var false_instance:BooleanExpr = new BooleanExpr(false);	
-		private var _val:Boolean;
-
-		public function BooleanExpr(val:Boolean){
-			_val = val;
-		}
-
-		override public function val():Object{
-			return _val ? RT.T : RT.F;
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			if(_val){
-				gen.asm.I_pushtrue();
-			}
-			else{
-				gen.asm.I_pushfalse();
-			}
-			if(context == C.STATEMENT){ gen.asm.I_pop();}
-		}
-
-	}
-
-
-
-
-	class StringExpr extends LiteralExpr{
-		public var str:String;
-		private var _compiler:Compiler;
-
-		public function StringExpr(c:Compiler, str:String){
-			this.str = str;
-			_compiler = c;
-		}
-
-		override public function val():Object{
-			return str;
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			if(context != C.STATEMENT){ gen.asm.I_pushstring( gen.emitter.constants.stringUtf8(str) ); }
-		}
-
-	}
-
-
-
-
-	class NumExpr extends LiteralExpr{
-		public var num:Number;
-
-		public function NumExpr(num:Number){
-			this.num = num;
-		}
-
-		override public function val():Object{
-			return this.num;
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			if(context != C.STATEMENT){ 
-				if(this.num is uint){
-					gen.asm.I_pushuint(gen.emitter.constants.uint32(this.num));
-				}
-				else if(this.num is int){
-					gen.asm.I_pushint(gen.emitter.constants.int32(this.num));
-				}
-				else {
-					gen.asm.I_pushdouble(gen.emitter.constants.float64(this.num));
-				}
-			}
-		}
-
-	}
-
-
-
-
-	class ConstantExpr extends LiteralExpr{
-		public var v:Object;
-		public var id:int;
-		private var _compiler:Compiler;
-
-		public function ConstantExpr(c:Compiler, v:Object){
-			this.v = v;
-			_compiler = c;
-			this.id = _compiler.registerConstant(v);
-		}
-
-		override public function val():Object{
-			return v;
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitConstant(gen, id);
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-		public static function parse(c:Compiler, context:C, form:Object):Expr{
-			var v:Object = RT.second(form);
-			if(v == null){
-				return NilExpr.instance;
-			}
-			else{
-				return new ConstantExpr(c, v);
-			}
-
 		}
 	}
 
 
+	/*
+	* Push a new catch clause scope onto the scope stack.
+	*
+	* Stack:   
+	*   thrown, catchTypeName => thrown
+	*/
+	public function pushCatchScope(i:int):void{
+		asm.I_newcatch(i);
+		asm.I_dup();
+		asm.I_pushscope();
+		var i:int = asm.getTemp()
+		asm.I_setlocal(i);
+		scopeToLocalMap.cons(i);
+	}
 
-	class NilExpr extends LiteralExpr{
+	/*
+	* Pop the scope stack.
+	*
+	* Stack:   
+	*   ... => ...
+	*/
+	public function popScope():void{
+		asm.I_popscope();
+		asm.freeTemp(scopeToLocalMap.popEnd());
+	}
 
-		public static var instance:NilExpr = new NilExpr();
 
-		override public function val():Object{
-			return null;
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			gen.asm.I_pushnull();
-			if(context == C.STATEMENT){ gen.asm.I_pop();}
-		}
-
+	/*
+	* Stack:   
+	*   ... => anRTClass
+	*/
+	public function getRTClass():void{
+		asm.I_getlex(emitter.qname({ns: "com.las3r.runtime", id:"RT"}, false));
 	}
 
 
 
-	class KeywordExpr implements Expr{
-		public var k:Keyword;
-		private var _compiler:Compiler;
-
-		public function KeywordExpr(compiler:Compiler, k:Keyword){
-			_compiler = compiler;
-			this.k = k;
-		}
-
-		public function interpret():Object {
-			return k;
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitKeyword(gen, k);
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	/*
+	* Get the active instance of RT.
+	*
+	* Stack:   
+	*   ... => anRT
+	*/
+	protected function getRT():void{
+		getRTClass();
+		asm.I_getproperty(emitter.nameFromIdent("instances"));
+		asm.I_pushint(emitter.constants.int32(_compiler.rt.instanceId + 1));
+		asm.I_nextvalue();
 	}
 
 
 
-	class VarExpr implements Expr, AssignableExpr{
-		public var aVar:Var;
-		private var _compiler:Compiler;
-
-		public function VarExpr(c:Compiler, v:Var){
-			this.aVar = v;
-			_compiler = c;
-		}
-
-		public function interpret():Object{
-			return aVar.get();
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitVar(gen, aVar);
-			gen.getVar();
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-		public function interpretAssign(val:Expr):Object{
-			return aVar.set(val.interpret());
-		}
-
-		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			_compiler.emitVar(gen, aVar);
-			val.emit(C.EXPRESSION, gen);
-			gen.setVar();
-			if(context == C.STATEMENT) { gen.asm.I_pop(); }
-		}
-	}
-
-	class TheVarExpr implements Expr{
-		public var aVar:Var;
-		private var _compiler:Compiler;
-
-		public function TheVarExpr(c:Compiler, v:Var){
-			this.aVar = v;
-			_compiler = c;
-		}
-
-		public function interpret():Object{
-			return aVar;
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitVar(gen, aVar);
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-		public static function parse(c:Compiler, context:C, form:Object):Expr{
-			var sym:Symbol = Symbol(RT.second(form));
-			var v:Var = c.lookupVar(sym, false);
-			if(v != null)
-			return new TheVarExpr(c, v);
-			throw new Error("Unable to resolve var: " + sym + " in this context");
-		}
-
+	/*
+	* Stack:   
+	*   ... => const
+	*/
+	public function getConstant(id:int, name:String, type:Class):void{
+		getRT();
+ 		asm.I_getproperty(emitter.nameFromIdent("constants"));
+		asm.I_pushint(emitter.constants.int32(id + 1));
+		asm.I_nextvalue();
 	}
 
 
-	class IfExpr implements Expr{
-		public var testExpr:Expr;
-		public var thenExpr:Expr;
-		public var elseExpr:Expr;
-		private var _compiler:Compiler;
+	/*
+	* A debug helper... not meant for long-term usage.
+	* Stack:   
+	*   val => ...
+	*/
+	public function print():void{
+		getRTClass();
+		asm.I_swap();
+		asm.I_callproperty(emitter.nameFromIdent("printToString"), 1);
+		getRT();
+		asm.I_swap();
+		asm.I_callpropvoid(emitter.nameFromIdent("writeToStdout"), 1);
+	}
 
-		public function IfExpr(c:Compiler, testExpr:Expr, thenExpr:Expr, elseExpr:Expr ){
-			_compiler = c;
-			this.testExpr = testExpr;
-			this.thenExpr = thenExpr;
-			this.elseExpr = elseExpr;
+
+	/*
+	* Store the value at TOS at key in RT.
+	* Stack:   
+	*   val => ...
+	*/
+	public function callbackWithResult(key:String):void{
+		getRT();
+		asm.I_swap();
+		asm.I_pushstring( emitter.constants.stringUtf8(key));
+		asm.I_callpropvoid(emitter.nameFromIdent("callbackWithResult"), 2);
+	}
+
+
+	/*
+	* Stack:   
+	*   aVar,init => ...
+	*/
+	public function bindVarRoot():void{
+		asm.I_callpropvoid(emitter.nameFromIdent("bindRoot"), 1);
+	}
+
+
+	/*
+	* Stack:   
+	*   aVar,meta => ...
+	*/
+	public function setMeta():void{
+		asm.I_callpropvoid(emitter.nameFromIdent("setMeta"), 1);
+	}
+
+
+	/*
+	* Stack:   
+	*   aVar => val
+	*/
+	public function getVar():void{
+		asm.I_callproperty(emitter.nameFromIdent("get"), 0);
+	}
+
+
+	/*
+	* Stack:   
+	*   anArray => aVector
+	*/
+	public function arrayToVector():void{
+		asm.I_getlex(emitter.qname({ns: "com.las3r.runtime", id:"Vector"}, false))
+		asm.I_swap();
+		asm.I_construct(1);
+	}
+
+	/*
+	* Stack:   
+	*   anArray => aList
+	*/
+	public function restFromArguments(i:int):void{
+		getRTClass();
+		asm.I_swap();
+		asm.I_pushint(emitter.constants.int32(i));
+		asm.I_callproperty(emitter.nameFromIdent("restFromArguments"), 2);
+	}
+
+
+	/*
+	* Stack:   
+	*   anRTClass, val0, val1, val2, valn => aVector
+	*/
+	public function newVector(n:int):void{
+		asm.I_callproperty(emitter.nameFromIdent("vector"), n);
+	}
+
+	/*
+	* Stack:   
+	*   anRTClass, key0, val0, key1, val1, keyn, valn => aMap
+	*/
+	public function newMap(n:int):void{
+		asm.I_callproperty(emitter.nameFromIdent("map"), n);
+	}
+
+
+	/*
+	* Stack:   
+	*   aVar,val => val
+	*/
+	public function setVar():void{
+		asm.I_callproperty(emitter.nameFromIdent("set"), 1);
+	}
+
+}
+
+
+
+
+
+interface Expr{
+
+	function interpret():Object;
+
+	function emit(context:C, gen:CodeGen):void;
+
+}
+
+
+interface AssignableExpr{
+
+	function interpretAssign(val:Expr):Object;
+
+	function emitAssign(context:C, gen:CodeGen, val:Expr):void;
+
+}
+
+
+class LiteralExpr implements Expr{
+
+	public function val():Object{ return null }
+
+	public function interpret():Object{
+		return val();
+	}
+
+	public function emit(context:C, gen:CodeGen):void{}
+
+}
+
+
+
+
+class UntypedExpr implements Expr{
+
+	public function interpret():Object{ throw "SubclassResponsibility";}
+
+	public function emit(context:C, gen:CodeGen):void{ throw "SubclassResponsibility";}
+
+}
+
+
+
+class BooleanExpr extends LiteralExpr{
+	public static var true_instance:BooleanExpr = new BooleanExpr(true);
+	public static var false_instance:BooleanExpr = new BooleanExpr(false);	
+	private var _val:Boolean;
+
+	public function BooleanExpr(val:Boolean){
+		_val = val;
+	}
+
+	override public function val():Object{
+		return _val ? RT.T : RT.F;
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		if(_val){
+			gen.asm.I_pushtrue();
 		}
-
-		public function interpret():Object{
-			var t:Object = testExpr.interpret();
-			if(t != null && t != RT.F){
-				return thenExpr.interpret();
-			}
-			else{
-				return elseExpr.interpret();
-			}
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			testExpr.emit(C.EXPRESSION, gen);
-
-			/* NOTE: newLabel() will remember the stack depth at the location
-			where it is called. So call it when you know the stack depth
-			will be the same as that at the corresponding called to I_label()
-			*/
-
-			var nullLabel:Object = gen.asm.newLabel();
-			var falseLabel:Object = gen.asm.newLabel();
-			gen.asm.I_dup();
-			gen.asm.I_pushnull();
-			gen.asm.I_ifstricteq(nullLabel);
+		else{
 			gen.asm.I_pushfalse();
-			gen.asm.I_ifstricteq(falseLabel);
+		}
+		if(context == C.STATEMENT){ gen.asm.I_pop();}
+	}
 
-			/* TODO: Is it necessary to coerce_a the return values of the then and else?
-			Getting a verification error without the coersion, if return types are different.
-			*/
+}
 
-			thenExpr.emit(C.EXPRESSION, gen);
-			if(context == C.STATEMENT){ 
-				gen.asm.I_pop(); 
+
+
+
+class StringExpr extends LiteralExpr{
+	public var str:String;
+	private var _compiler:Compiler;
+
+	public function StringExpr(c:Compiler, str:String){
+		this.str = str;
+		_compiler = c;
+	}
+
+	override public function val():Object{
+		return str;
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		if(context != C.STATEMENT){ gen.asm.I_pushstring( gen.emitter.constants.stringUtf8(str) ); }
+	}
+
+}
+
+
+
+
+class NumExpr extends LiteralExpr{
+	public var num:Number;
+
+	public function NumExpr(num:Number){
+		this.num = num;
+	}
+
+	override public function val():Object{
+		return this.num;
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		if(context != C.STATEMENT){ 
+			if(this.num is uint){
+				gen.asm.I_pushuint(gen.emitter.constants.uint32(this.num));
+			}
+			else if(this.num is int){
+				gen.asm.I_pushint(gen.emitter.constants.int32(this.num));
+			}
+			else {
+				gen.asm.I_pushdouble(gen.emitter.constants.float64(this.num));
+			}
+		}
+	}
+
+}
+
+
+
+
+class ConstantExpr extends LiteralExpr{
+	public var v:Object;
+	public var id:int;
+	private var _compiler:Compiler;
+
+	public function ConstantExpr(c:Compiler, v:Object){
+		this.v = v;
+		_compiler = c;
+		this.id = _compiler.registerConstant(v);
+	}
+
+	override public function val():Object{
+		return v;
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitConstant(gen, id);
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+	public static function parse(c:Compiler, context:C, form:Object):Expr{
+		var v:Object = RT.second(form);
+		if(v == null){
+			return NilExpr.instance;
+		}
+		else{
+			return new ConstantExpr(c, v);
+		}
+
+	}
+}
+
+
+
+class NilExpr extends LiteralExpr{
+
+	public static var instance:NilExpr = new NilExpr();
+
+	override public function val():Object{
+		return null;
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		gen.asm.I_pushnull();
+		if(context == C.STATEMENT){ gen.asm.I_pop();}
+	}
+
+}
+
+
+
+class KeywordExpr implements Expr{
+	public var k:Keyword;
+	private var _compiler:Compiler;
+
+	public function KeywordExpr(compiler:Compiler, k:Keyword){
+		_compiler = compiler;
+		this.k = k;
+	}
+
+	public function interpret():Object {
+		return k;
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitKeyword(gen, k);
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+}
+
+
+
+class VarExpr implements Expr, AssignableExpr{
+	public var aVar:Var;
+	private var _compiler:Compiler;
+
+	public function VarExpr(c:Compiler, v:Var){
+		this.aVar = v;
+		_compiler = c;
+	}
+
+	public function interpret():Object{
+		return aVar.get();
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitVar(gen, aVar);
+		gen.getVar();
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+	public function interpretAssign(val:Expr):Object{
+		return aVar.set(val.interpret());
+	}
+
+	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
+		_compiler.emitVar(gen, aVar);
+		val.emit(C.EXPRESSION, gen);
+		gen.setVar();
+		if(context == C.STATEMENT) { gen.asm.I_pop(); }
+	}
+}
+
+class TheVarExpr implements Expr{
+	public var aVar:Var;
+	private var _compiler:Compiler;
+
+	public function TheVarExpr(c:Compiler, v:Var){
+		this.aVar = v;
+		_compiler = c;
+	}
+
+	public function interpret():Object{
+		return aVar;
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitVar(gen, aVar);
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+	public static function parse(c:Compiler, context:C, form:Object):Expr{
+		var sym:Symbol = Symbol(RT.second(form));
+		var v:Var = c.lookupVar(sym, false);
+		if(v != null)
+		return new TheVarExpr(c, v);
+		throw new Error("Unable to resolve var: " + sym + " in this context");
+	}
+
+}
+
+
+class IfExpr implements Expr{
+	public var testExpr:Expr;
+	public var thenExpr:Expr;
+	public var elseExpr:Expr;
+	private var _compiler:Compiler;
+
+	public function IfExpr(c:Compiler, testExpr:Expr, thenExpr:Expr, elseExpr:Expr ){
+		_compiler = c;
+		this.testExpr = testExpr;
+		this.thenExpr = thenExpr;
+		this.elseExpr = elseExpr;
+	}
+
+	public function interpret():Object{
+		var t:Object = testExpr.interpret();
+		if(t != null && t != RT.F){
+			return thenExpr.interpret();
+		}
+		else{
+			return elseExpr.interpret();
+		}
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		testExpr.emit(C.EXPRESSION, gen);
+
+		/* NOTE: newLabel() will remember the stack depth at the location
+		where it is called. So call it when you know the stack depth
+		will be the same as that at the corresponding called to I_label()
+		*/
+
+		var nullLabel:Object = gen.asm.newLabel();
+		var falseLabel:Object = gen.asm.newLabel();
+		gen.asm.I_dup();
+		gen.asm.I_pushnull();
+		gen.asm.I_ifstricteq(nullLabel);
+		gen.asm.I_pushfalse();
+		gen.asm.I_ifstricteq(falseLabel);
+
+		/* TODO: Is it necessary to coerce_a the return values of the then and else?
+		Getting a verification error without the coersion, if return types are different.
+		*/
+
+		thenExpr.emit(C.EXPRESSION, gen);
+		if(context == C.STATEMENT){ 
+			gen.asm.I_pop(); 
+		}
+		else{
+			gen.asm.I_coerce_a();
+		}
+		var endLabel:Object = gen.asm.newLabel();
+		gen.asm.I_jump(endLabel);
+		gen.asm.I_label(nullLabel);
+		gen.asm.I_pop();
+		gen.asm.I_label(falseLabel);
+		elseExpr.emit(C.EXPRESSION, gen);
+		if(context == C.STATEMENT){ 
+			gen.asm.I_pop(); 
+		}
+		else{
+			gen.asm.I_coerce_a();
+		}
+		gen.asm.I_label(endLabel);
+	}
+
+	public static function parse(c:Compiler, context:C, frm:Object):Expr{
+		var form:ISeq = ISeq(frm);
+		//(if test then) or (if test then else)
+		if(form.count() > 4)
+		throw new Error("Too many arguments to if");
+		else if(form.count() < 3)
+		throw new Error("Too few arguments to if");
+		return new IfExpr(
+			c,
+			c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form)),
+			c.analyze(context, RT.third(form)),
+			c.analyze(context, RT.fourth(form)) // Will result in NilExpr if fourth form is missing.
+		);
+	}
+}
+
+
+
+class BodyExpr implements Expr{
+	public var exprs:IVector;
+	private var _compiler:Compiler;
+
+	public function BodyExpr(c:Compiler, exprs:IVector){
+		this.exprs = exprs;
+		_compiler = c;
+	}
+
+	public static function parse(c:Compiler, context:C, frms:Object):Expr{
+		var forms:ISeq = ISeq(frms);
+		if(Util.equal(RT.first(forms), c.rt.DO)){
+			forms = RT.rest(forms);
+		}
+		var exprs:IVector = Vector.empty();
+		for(; forms != null; forms = forms.rest())
+		{
+			if(context != C.INTERPRET && (context == C.STATEMENT || forms.rest() != null)){
+				exprs = exprs.cons(c.analyze(C.STATEMENT, forms.first()));
 			}
 			else{
-				gen.asm.I_coerce_a();
+				exprs = exprs.cons(c.analyze(context, forms.first()));
 			}
-			var endLabel:Object = gen.asm.newLabel();
-			gen.asm.I_jump(endLabel);
-			gen.asm.I_label(nullLabel);
-			gen.asm.I_pop();
-			gen.asm.I_label(falseLabel);
-			elseExpr.emit(C.EXPRESSION, gen);
-			if(context == C.STATEMENT){ 
-				gen.asm.I_pop(); 
+		}
+		if(exprs.count() == 0){
+			exprs = exprs.cons(NilExpr.instance);
+		}
+		return new BodyExpr(c, exprs);
+	}
+
+	public function interpret():Object{
+		var ret:Object = null;
+		exprs.each(function(e:Expr):void{
+				ret = e.interpret();
+			});
+		return ret;
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		var len:int = exprs.count();
+		for(var i:int = 0; i < len - 1; i++)
+		{
+			var e:Expr = Expr(exprs.nth(i));
+			e.emit(C.STATEMENT, gen);
+		}
+		var last:Expr = Expr(exprs.nth(len - 1));
+		last.emit(context, gen);
+	}
+
+}
+
+
+
+class DefExpr implements Expr{
+	public var aVar:Var;
+	public var init:Expr;
+	public var initProvided:Boolean;
+	public var meta:Expr;
+	private var _compiler:Compiler;
+
+	public function DefExpr(compiler:Compiler, inVar:Var, init:Expr, meta:Expr, initProvided:Boolean){
+		aVar = inVar;
+		this.init = init;
+		this.initProvided = initProvided;
+		this.meta = meta;
+		_compiler = compiler;
+	}
+
+	public function interpret():Object{
+		if(initProvided){
+			aVar.bindRoot(init.interpret());
+		}
+		return aVar;
+	}
+
+	public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitVar(gen, aVar);
+		if(initProvided)
+		{
+			gen.asm.I_dup();
+			init.emit(C.EXPRESSION, gen);
+			gen.bindVarRoot();
+		}
+		if(meta != null)
+		{
+			gen.asm.I_dup();
+			meta.emit(C.EXPRESSION, gen);
+			gen.setMeta();
+		}
+		if(context == C.STATEMENT){gen.asm.I_pop();}
+	}
+
+
+	public static function parse(compiler:Compiler, context:C, form:Object):Expr{
+		//(def x) or (def x initexpr)
+		if(RT.count(form) > 3)
+		throw new Error("Too many arguments to def");
+		else if(RT.count(form) < 2)
+		throw new Error("Too few arguments to def");
+		else if(!(RT.second(form) is Symbol))
+		throw new Error("Second argument to def must be a Symbol");
+		var sym:Symbol = Symbol(RT.second(form));
+
+		var v:Var = compiler.lookupVar(sym, true);
+		if(v == null){
+			throw new Error("Can't refer to qualified var that doesn't exist");
+		}
+
+		if(!v.ns.equals(compiler.currentNS())){
+			if(sym.ns == null){
+				throw new Error("Name conflict, can't def " + sym + " because namespace: " + compiler.currentNS().name + " refers to:" + v);
 			}
 			else{
-				gen.asm.I_coerce_a();
+				throw new Error("Can't create defs outside of current ns");
 			}
-			gen.asm.I_label(endLabel);
 		}
 
-		public static function parse(c:Compiler, context:C, frm:Object):Expr{
-			var form:ISeq = ISeq(frm);
-			//(if test then) or (if test then else)
-			if(form.count() > 4)
-			throw new Error("Too many arguments to if");
-			else if(form.count() < 3)
-			throw new Error("Too few arguments to if");
-			return new IfExpr(
-				c,
-				c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.second(form)),
-				c.analyze(context, RT.third(form)),
-				c.analyze(context, RT.fourth(form)) // Will result in NilExpr if fourth form is missing.
-			);
-		}
+		var mm:IMap = sym.meta || RT.map();
+		// TODO: Aemon add line info here..
+		// mm = IMap(RT.assoc(mm, RT.LINE_KEY, LINE.get()).assoc(RT.FILE_KEY, SOURCE.get()));
+		var meta:Expr = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, mm);
+		return new DefExpr(compiler, v, compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.third(form), v.sym.name), meta, RT.count(form) == 3);
 	}
 
+}
 
 
-	class BodyExpr implements Expr{
-		public var exprs:IVector;
-		private var _compiler:Compiler;
+class FnMethod{
+	public var nameLb:LocalBinding;
+	public var params:Vector;
+	public var reqParams:Vector;
+	public var optionalParams:Vector;
+	public var restParam:LocalBinding;
+	public var body:BodyExpr;
+	public var paramBindings:LocalBindingSet;
+	public var startLabel:Object
+	private var _compiler:Compiler;
+	private var _func:FnExpr;
 
-		public function BodyExpr(c:Compiler, exprs:IVector){
-			this.exprs = exprs;
-			_compiler = c;
-		}
-
-		public static function parse(c:Compiler, context:C, frms:Object):Expr{
-			var forms:ISeq = ISeq(frms);
-			if(Util.equal(RT.first(forms), c.rt.DO)){
-				forms = RT.rest(forms);
-			}
-			var exprs:IVector = Vector.empty();
-			for(; forms != null; forms = forms.rest())
-			{
-				if(context != C.INTERPRET && (context == C.STATEMENT || forms.rest() != null)){
-					exprs = exprs.cons(c.analyze(C.STATEMENT, forms.first()));
-				}
-				else{
-					exprs = exprs.cons(c.analyze(context, forms.first()));
-				}
-			}
-			if(exprs.count() == 0){
-				exprs = exprs.cons(NilExpr.instance);
-			}
-			return new BodyExpr(c, exprs);
-		}
-
-		public function interpret():Object{
-			var ret:Object = null;
-			exprs.each(function(e:Expr):void{
-					ret = e.interpret();
-				});
-			return ret;
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			var len:int = exprs.count();
-			for(var i:int = 0; i < len - 1; i++)
-			{
-				var e:Expr = Expr(exprs.nth(i));
-				e.emit(C.STATEMENT, gen);
-			}
-			var last:Expr = Expr(exprs.nth(len - 1));
-			last.emit(context, gen);
-		}
-
+	public function FnMethod(c:Compiler, f:FnExpr){
+		_compiler = c;
+		_func = f;
 	}
 
-
-
-	class DefExpr implements Expr{
-		public var aVar:Var;
-		public var init:Expr;
-		public var initProvided:Boolean;
-		public var meta:Expr;
-		private var _compiler:Compiler;
-
-		public function DefExpr(compiler:Compiler, inVar:Var, init:Expr, meta:Expr, initProvided:Boolean){
-			aVar = inVar;
-			this.init = init;
-			this.initProvided = initProvided;
-			this.meta = meta;
-			_compiler = compiler;
+	public static function parse(c:Compiler, context:C, form:ISeq, f:FnExpr):FnMethod{
+		var meth:FnMethod = new FnMethod(c, f);
+		meth.params = Vector(RT.first(form));
+		if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
+			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		}
-
-		public function interpret():Object{
-			if(initProvided){
-				aVar.bindRoot(init.interpret());
+		meth.reqParams = Vector.empty();
+		meth.optionalParams = Vector.empty();
+		meth.paramBindings = new LocalBindingSet();
+		var state:PSTATE = PSTATE.REQ;
+		for(var i:int = 0; i < meth.params.count(); i++)
+		{
+			var param:Object = meth.params.nth(i);
+			var paramSym:Symbol;
+			if(param is List) {
+				paramSym = Symbol(param.first());
 			}
-			return aVar;
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitVar(gen, aVar);
-			if(initProvided)
+			else if(param is Symbol){
+				paramSym = Symbol(param);
+			}
+			else{			
+				throw new Error("IllegalArgumentException: fn params must be Symbols or (Symbol val) pair.");
+			}
+			if(paramSym.getNamespace() != null)
+			throw new Error("Can't use qualified name as parameter: " + paramSym);
+			if(param.equals(c.rt._AMP_))
 			{
-				gen.asm.I_dup();
-				init.emit(C.EXPRESSION, gen);
-				gen.bindVarRoot();
+				if(state == PSTATE.REQ || state == PSTATE.OPT)
+				state = PSTATE.REST;
+				else
+				throw new Error("Exception: Invalid parameter list.");
 			}
-			if(meta != null)
+			else
 			{
-				gen.asm.I_dup();
-				meta.emit(C.EXPRESSION, gen);
-				gen.setMeta();
-			}
-			if(context == C.STATEMENT){gen.asm.I_pop();}
-		}
-
-
-		public static function parse(compiler:Compiler, context:C, form:Object):Expr{
-			//(def x) or (def x initexpr)
-			if(RT.count(form) > 3)
-			throw new Error("Too many arguments to def");
-			else if(RT.count(form) < 2)
-			throw new Error("Too few arguments to def");
-			else if(!(RT.second(form) is Symbol))
-			throw new Error("Second argument to def must be a Symbol");
-			var sym:Symbol = Symbol(RT.second(form));
-
-			var v:Var = compiler.lookupVar(sym, true);
-			if(v == null){
-				throw new Error("Can't refer to qualified var that doesn't exist");
-			}
-
-			if(!v.ns.equals(compiler.currentNS())){
-				if(sym.ns == null){
-					throw new Error("Name conflict, can't def " + sym + " because namespace: " + compiler.currentNS().name + " refers to:" + v);
-				}
-				else{
-					throw new Error("Can't create defs outside of current ns");
-				}
-			}
-
-			var mm:IMap = sym.meta || RT.map();
-			// TODO: Aemon add line info here..
-			// mm = IMap(RT.assoc(mm, RT.LINE_KEY, LINE.get()).assoc(RT.FILE_KEY, SOURCE.get()));
-			var meta:Expr = compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, mm);
-			return new DefExpr(compiler, v, compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, RT.third(form), v.sym.name), meta, RT.count(form) == 3);
-		}
-
-	}
-
-
-	class FnMethod{
-		public var nameLb:LocalBinding;
-		public var params:Vector;
-		public var reqParams:Vector;
-		public var optionalParams:Vector;
-		public var restParam:LocalBinding;
-		public var body:BodyExpr;
-		public var paramBindings:LocalBindingSet;
-		public var startLabel:Object
-		private var _compiler:Compiler;
-		private var _func:FnExpr;
-
-		public function FnMethod(c:Compiler, f:FnExpr){
-			_compiler = c;
-			_func = f;
-		}
-
-		public static function parse(c:Compiler, context:C, form:ISeq, f:FnExpr):FnMethod{
-			var meth:FnMethod = new FnMethod(c, f);
-			meth.params = Vector(RT.first(form));
-			if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
-				throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
-			}
-			meth.reqParams = Vector.empty();
-			meth.optionalParams = Vector.empty();
-			meth.paramBindings = new LocalBindingSet();
-			var state:PSTATE = PSTATE.REQ;
-			for(var i:int = 0; i < meth.params.count(); i++)
-			{
-				var param:Object = meth.params.nth(i);
-				var paramSym:Symbol;
-				if(param is List) {
-					paramSym = Symbol(param.first());
-				}
-				else if(param is Symbol){
-					paramSym = Symbol(param);
-				}
-				else{			
-					throw new Error("IllegalArgumentException: fn params must be Symbols or (Symbol val) pair.");
-				}
-				if(paramSym.getNamespace() != null)
-				throw new Error("Can't use qualified name as parameter: " + paramSym);
-				if(param.equals(c.rt._AMP_))
-				{
+				if(param is List){
 					if(state == PSTATE.REQ || state == PSTATE.OPT)
-					state = PSTATE.REST;
+					state = PSTATE.OPT;
 					else
 					throw new Error("Exception: Invalid parameter list.");
+					if(RT.count(param) != 2)
+					throw new Error("Exception: Invalid optional parameter pair.");
 				}
-				else
+				switch(state)
 				{
-					if(param is List){
-						if(state == PSTATE.REQ || state == PSTATE.OPT)
-						state = PSTATE.OPT;
-						else
-						throw new Error("Exception: Invalid parameter list.");
-						if(RT.count(param) != 2)
-						throw new Error("Exception: Invalid optional parameter pair.");
-					}
-					switch(state)
-					{
-						case PSTATE.REQ:
-						meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym));
-						break;
+					case PSTATE.REQ:
+					meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym));
+					break;
 
-						case PSTATE.OPT:
-						meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
-						break;
+					case PSTATE.OPT:
+					meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
+					break;
 
-						case PSTATE.REST:
-						meth.restParam = meth.paramBindings.registerLocal(c.rt.nextID(), paramSym);
-						state = PSTATE.DONE;
-						break;
+					case PSTATE.REST:
+					meth.restParam = meth.paramBindings.registerLocal(c.rt.nextID(), paramSym);
+					state = PSTATE.DONE;
+					break;
 
-						default:
-						throw new Error("Unexpected parameter");
-					}
+					default:
+					throw new Error("Unexpected parameter");
 				}
 			}
-
-			var extraBindings:LocalBindingSet = new LocalBindingSet();
-			if(f.nameSym){
-				// Make this function available to itself..
-				meth.nameLb = extraBindings.registerLocal(c.rt.nextID(), f.nameSym);
-			}
-			var bodyForms:ISeq = ISeq(RT.rest(form));
-			c.pushLocalBindingSet(meth.paramBindings);
-			c.pushLocalBindingSet(extraBindings);
-			Var.pushBindings(c.rt, RT.map(c.RECUR_ARGS, meth.paramBindings));
-			meth.body = BodyExpr(BodyExpr.parse(c, C.RETURN, bodyForms));
-			Var.popBindings(c.rt);
-			c.popLocalBindingSet();
-			c.popLocalBindingSet();
-
-			return meth;
 		}
 
-		public function emit(context:C, methGen:CodeGen):void{
-			// push 'this' onto the scope stack..
-			methGen.pushThisScope();
-			// create a scope object for this function invocation..
-			methGen.pushNewActivationScope();
-			var i:int = 1;
-			reqParams.each(function(b:LocalBinding):void{
-					var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
-					methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-					methGen.asm.I_getlocal(i);
-					methGen.asm.I_setslot(activationSlot);
-					i++;
-				});
-			optionalParams.each(function(b:LocalBinding):void{
-					var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
-					methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-					methGen.asm.I_getlocal(i);
-					methGen.asm.I_setslot(activationSlot);
-					i++;
-				});
-			if(restParam){
-				var restSlot:int = methGen.createActivationSlotForLocalBinding(restParam);
-				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-				methGen.asm.I_getlocal(i); // get arguments object
-				methGen.restFromArguments(i - 1);
-				methGen.asm.I_setslot(restSlot);
-			}
-
-			var nameSlot:int;
-			if(nameLb){
-				nameSlot = methGen.createActivationSlotForLocalBinding(nameLb);
-				methGen.asm.I_getlocal(i); // get arguments object
- 				methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("callee"));
-				methGen.asm.I_setlocal(i); // store current function in place of arguments
-			}
-			
-			var loopLabel:Object = methGen.asm.I_label(undefined);
-			/* Note: Any instructions after this point will be executed on every recur loop.. */
-
-			if(nameLb){/* We need to re-set name reference on each recur cycle (into fresh activation..)*/
-				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-				methGen.asm.I_getlocal(i); // get current function object
-				methGen.asm.I_setslot(nameSlot);
-			}
-
-			Var.pushBindings(_compiler.rt, RT.map(
-					_compiler.RECURING_BINDER, this,
-					_compiler.RECUR_LABEL, loopLabel
-				));
-			body.emit(C.RETURN, methGen);
-			Var.popBindings(_compiler.rt);
-
-			methGen.asm.I_returnvalue();
-
+		var extraBindings:LocalBindingSet = new LocalBindingSet();
+		if(f.nameSym){
+			// Make this function available to itself..
+			meth.nameLb = extraBindings.registerLocal(c.rt.nextID(), f.nameSym);
 		}
-		
-		
+		var bodyForms:ISeq = ISeq(RT.rest(form));
+		c.pushLocalBindingSet(meth.paramBindings);
+		c.pushLocalBindingSet(extraBindings);
+		Var.pushBindings(c.rt, RT.map(c.RECUR_ARGS, meth.paramBindings));
+		meth.body = BodyExpr(BodyExpr.parse(c, C.RETURN, bodyForms));
+		Var.popBindings(c.rt);
+		c.popLocalBindingSet();
+		c.popLocalBindingSet();
+
+		return meth;
 	}
 
-	class PSTATE{
-		public static var REQ:PSTATE = new PSTATE();
-		public static var OPT:PSTATE = new PSTATE();
-		public static var REST:PSTATE = new PSTATE();
-		public static var DONE:PSTATE = new PSTATE();
+	public function emit(context:C, methGen:CodeGen):void{
+		// push 'this' onto the scope stack..
+		methGen.pushThisScope();
+		// create a scope object for this function invocation..
+		methGen.pushNewActivationScope();
+		var i:int = 1;
+		reqParams.each(function(b:LocalBinding):void{
+				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
+				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+				methGen.asm.I_getlocal(i);
+				methGen.asm.I_setslot(activationSlot);
+				i++;
+			});
+		optionalParams.each(function(b:LocalBinding):void{
+				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
+				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+				methGen.asm.I_getlocal(i);
+				methGen.asm.I_setslot(activationSlot);
+				i++;
+			});
+		if(restParam){
+			var restSlot:int = methGen.createActivationSlotForLocalBinding(restParam);
+			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+			methGen.asm.I_getlocal(i); // get arguments object
+			methGen.restFromArguments(i - 1);
+			methGen.asm.I_setslot(restSlot);
+		}
+
+		var nameSlot:int;
+		if(nameLb){
+			nameSlot = methGen.createActivationSlotForLocalBinding(nameLb);
+			methGen.asm.I_getlocal(i); // get arguments object
+ 			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("callee"));
+			methGen.asm.I_setlocal(i); // store current function in place of arguments
+		}
+		
+		var loopLabel:Object = methGen.asm.I_label(undefined);
+		/* Note: Any instructions after this point will be executed on every recur loop.. */
+
+		if(nameLb){/* We need to re-set name reference on each recur cycle (into fresh activation..)*/
+			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
+			methGen.asm.I_getlocal(i); // get current function object
+			methGen.asm.I_setslot(nameSlot);
+		}
+
+		Var.pushBindings(_compiler.rt, RT.map(
+				_compiler.RECURING_BINDER, this,
+				_compiler.RECUR_LABEL, loopLabel
+			));
+		body.emit(C.RETURN, methGen);
+		Var.popBindings(_compiler.rt);
+
+		methGen.asm.I_returnvalue();
+
 	}
-	class FnExpr implements Expr{
-		public var nameSym:Symbol;
-		public var methods:IVector;
+	
+	
+}
 
-		private var _compiler:Compiler;
+class PSTATE{
+	public static var REQ:PSTATE = new PSTATE();
+	public static var OPT:PSTATE = new PSTATE();
+	public static var REST:PSTATE = new PSTATE();
+	public static var DONE:PSTATE = new PSTATE();
+}
+class FnExpr implements Expr{
+	public var nameSym:Symbol;
+	public var methods:IVector;
 
-		public function FnExpr(c:Compiler){
-			_compiler = c;
-		}
+	private var _compiler:Compiler;
 
-		public function get isVariadic():Boolean{
-			return methods.count() > 1;
-		}
+	public function FnExpr(c:Compiler){
+		_compiler = c;
+	}
 
-		public static function parse(c:Compiler, context:C, form:ISeq):Expr{
-			var f:FnExpr = new FnExpr(c);
-			//arglist might be preceded by symbol naming this fn
-			if(RT.second(form) is Symbol)
-			{
-				f.nameSym = Symbol(RT.second(form));
-				form = RT.cons(c.rt.FN, RT.rest(RT.rest(form)));
+	public function get isVariadic():Boolean{
+		return methods.count() > 1;
+	}
+
+	public static function parse(c:Compiler, context:C, form:ISeq):Expr{
+		var f:FnExpr = new FnExpr(c);
+		//arglist might be preceded by symbol naming this fn
+		if(RT.second(form) is Symbol)
+		{
+			f.nameSym = Symbol(RT.second(form));
+			form = RT.cons(c.rt.FN, RT.rest(RT.rest(form)));
 		}
 
 		//now (fn [args] body...) or (fn ([args] body...) ([args2] body2...) ...)
@@ -1442,7 +1460,7 @@ package com.las3r.runtime{
 			meth.emit(context, methGen);
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
-		else{ // Function is variadic, we must xdispatch at runtime to the correct method...
+		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 
 			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth);
 			var argsIndex:int = 1;
@@ -1608,20 +1626,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-		// 			PersistentVector restArgs = PersistentVector.EMPTY;
-		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-		// 			{
-		// 				restArgs = restArgs.cons(args.nth(i));
-		// 			}
-		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-		// 		}
+			// 			PersistentVector restArgs = PersistentVector.EMPTY;
+			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+			// 			{
+				// 				restArgs = restArgs.cons(args.nth(i));
+				// 			}
+			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+			// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-		// 			FnMethod method = (FnMethod) METHOD.get();
-		// 			method.emitClearLocals(gen);
-		// 		}
+			// 			FnMethod method = (FnMethod) METHOD.get();
+			// 			method.emitClearLocals(gen);
+			// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1963,279 +1981,334 @@ class HostExpr implements Expr{
 			if(sym.ns == null) //if ns-qualified can't be classname
 			{
 				if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '['){
-						c = compiler.rt.classForName(sym.name);
-					}
-					else
-					{
-						var o:Object = compiler.currentNS().getMapping(sym);
-						if(o is Class)
-						c = Class(o);
-					}
+					c = compiler.rt.classForName(sym.name);
+				}
+				else
+				{
+					var o:Object = compiler.currentNS().getMapping(sym);
+					if(o is Class)
+					c = Class(o);
 				}
 			}
-			else if(stringOk && form is String)
-			c = compiler.rt.classForName(String(form));
-			return c;
 		}
-
-
+		else if(stringOk && form is String)
+		c = compiler.rt.classForName(String(form));
+		return c;
 	}
 
 
+}
 
-	class StaticMethodExpr extends HostExpr{
-		public var methName:String;
-		public var c:Class;
-		public var classId:int;
-		public var args:IVector;
-		private var _compiler:Compiler;
 
-		public function StaticMethodExpr(compiler:Compiler, c:Class, methName:String, args:IVector){
-			_compiler = compiler;
-			this.methName = methName;
-			this.c = c;
-			this.classId = _compiler.registerConstant(c);
-			this.args = args;
-		}
 
-		override public function interpret():Object{
-			return c[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
-		}
+class StaticMethodExpr extends HostExpr{
+	public var methName:String;
+	public var c:Class;
+	public var classId:int;
+	public var args:IVector;
+	private var _compiler:Compiler;
 
-		override public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitConstant(gen, this.classId);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
-			gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	public function StaticMethodExpr(compiler:Compiler, c:Class, methName:String, args:IVector){
+		_compiler = compiler;
+		this.methName = methName;
+		this.c = c;
+		this.classId = _compiler.registerConstant(c);
+		this.args = args;
+	}
 
+	override public function interpret():Object{
+		return c[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitConstant(gen, this.classId);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
+		gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+}
+
+
+class InstanceMethodExpr extends HostExpr{
+	public var methName:String;
+	public var target:Expr;
+	public var args:IVector;
+	private var _compiler:Compiler;
+
+	public function InstanceMethodExpr(compiler:Compiler, target:Expr, methName:String, args:IVector){
+		_compiler = compiler;
+		this.methName = methName;
+		this.target = target;
+		this.args = args;
+	}
+
+	override public function interpret():Object{
+		return (target.interpret())[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
+		gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+}
+
+
+
+
+class StaticFieldExpr extends HostExpr implements AssignableExpr{
+	public var fieldName:String;
+	public var c:Class;
+	public var classId:int;
+	private var _compiler:Compiler;
+
+	public function StaticFieldExpr(compiler:Compiler, c:Class, fieldName:String){
+		_compiler = compiler;
+		this.fieldName = fieldName;
+		this.c = c;
+		this.classId = _compiler.registerConstant(c);
+	}
+
+	override public function interpret():Object{
+		return c[this.fieldName];
+	}
+
+	public function interpretAssign(val:Expr):Object{
+		return c[this.fieldName] = val.interpret();
 	}
 
 
-	class InstanceMethodExpr extends HostExpr{
-		public var methName:String;
-		public var target:Expr;
-		public var args:IVector;
-		private var _compiler:Compiler;
-
-		public function InstanceMethodExpr(compiler:Compiler, target:Expr, methName:String, args:IVector){
-			_compiler = compiler;
-			this.methName = methName;
-			this.target = target;
-			this.args = args;
-		}
-
-		override public function interpret():Object{
-			return (target.interpret())[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
-			gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
+	override public function emit(context:C, gen:CodeGen):void{
+		_compiler.emitConstant(gen, classId);
+		gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
 
+	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
+		_compiler.emitConstant(gen, classId);
+		gen.asm.I_dup();
+		val.emit(C.EXPRESSION, gen);
+		gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+}
 
 
-	class StaticFieldExpr extends HostExpr implements AssignableExpr{
-		public var fieldName:String;
-		public var c:Class;
-		public var classId:int;
-		private var _compiler:Compiler;
 
-		public function StaticFieldExpr(compiler:Compiler, c:Class, fieldName:String){
-			_compiler = compiler;
-			this.fieldName = fieldName;
-			this.c = c;
-			this.classId = _compiler.registerConstant(c);
-		}
+class InstanceFieldExpr extends HostExpr implements AssignableExpr{
+	public var fieldName:String;
+	public var target:Expr;
+	private var _compiler:Compiler;
 
-		override public function interpret():Object{
-			return c[this.fieldName];
-		}
+	public function InstanceFieldExpr(compiler:Compiler, target:Expr, fieldName:String){
+		_compiler = compiler;
+		this.target = target;
+		this.fieldName = fieldName;
+	}
 
-		public function interpretAssign(val:Expr):Object{
-			return c[this.fieldName] = val.interpret();
-		}
+	override public function interpret():Object{
+		return this.target[this.fieldName];
+	}
 
+	public function interpretAssign(val:Expr):Object{
+		return this.target[this.fieldName] = val.interpret();
+	}
 
-		override public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitConstant(gen, classId);
-			gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-
-		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			_compiler.emitConstant(gen, classId);
-			gen.asm.I_dup();
-			val.emit(C.EXPRESSION, gen);
-			gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	override public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
 
-
-	class InstanceFieldExpr extends HostExpr implements AssignableExpr{
-		public var fieldName:String;
-		public var target:Expr;
-		private var _compiler:Compiler;
-
-		public function InstanceFieldExpr(compiler:Compiler, target:Expr, fieldName:String){
-			_compiler = compiler;
-			this.target = target;
-			this.fieldName = fieldName;
-		}
-
-		override public function interpret():Object{
-			return this.target[this.fieldName];
-		}
-
-		public function interpretAssign(val:Expr):Object{
-			return this.target[this.fieldName] = val.interpret();
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
+		target.emit(C.EXPRESSION, gen);
+		gen.asm.I_dup();
+		val.emit(C.EXPRESSION, gen);
+		gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+}
 
 
-		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			target.emit(C.EXPRESSION, gen);
-			gen.asm.I_dup();
-			val.emit(C.EXPRESSION, gen);
-			gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+class NewExpr implements Expr{
+	public var args:IVector;
+	public var target:Expr;
+	private var _compiler:Compiler;
+
+	public function NewExpr(compiler:Compiler, target:Expr, args:IVector){
+		this.args = args;
+		this.target = target;
+		_compiler = compiler;
 	}
 
-
-	class NewExpr implements Expr{
-		public var args:IVector;
-		public var target:Expr;
-		private var _compiler:Compiler;
-
-		public function NewExpr(compiler:Compiler, target:Expr, args:IVector){
-			this.args = args;
-			this.target = target;
-			_compiler = compiler;
-		}
-
-		public function interpret():Object{
-			throw new Error("Interpretation of NewExpr not supported.");
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); });
-			gen.asm.I_construct(args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-		public static function parse(compiler:Compiler, context:C, frm:Object):Expr{
-			var form:ISeq = ISeq(frm);
-			//(new classExpr args...)
-			if(form.count() < 2)
-			throw new Error("Wrong number of arguments, expecting: (new classExpr args...)");
-			var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
-			var args:IVector = Vector.empty();
-			for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
-				args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
-			}
-			return new NewExpr(compiler, target, args);
-		}
+	public function interpret():Object{
+		throw new Error("Interpretation of NewExpr not supported.");
 	}
 
-
-	class ThrowExpr extends UntypedExpr{
-		public var excExpr:Expr;
-
-		public function ThrowExpr(excExpr:Expr){
-			this.excExpr = excExpr;
-		}
-
-		override public function interpret():Object{
-			throw new Error("Can't interpret a throw.");
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			// So there's a nil on the stack after the exception is thrown,
-			// required so try/catch will verify equivalent stack depths in each
-			// branch.
-			gen.asm.I_pushnull();
-			// Then, reconcile with type of ensuing catch expr...
-			gen.asm.I_coerce_a(); 
-
-			excExpr.emit(C.EXPRESSION, gen);
-			gen.asm.I_throw();
-		}
-
-		public static function parse(c:Compiler, context:C, form:Object):Expr{
-			if(context == C.INTERPRET)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
-			return new ThrowExpr(c.analyze(C.EXPRESSION, RT.second(form)));
-		}
-
+	public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); });
+		gen.asm.I_construct(args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
-
-	class CatchClause{
-		//final String className;
-		public var c:Class;
-		public var className:String;
-		public var lb:LocalBinding;
-		public var handler:Expr;
-		public var label:Object;
-		public var endLabel:Object;
-
-		public function CatchClause(c:Class, className:String, lb:LocalBinding, handler:Expr){
-			this.c = c;
-			this.lb = lb;
-			this.handler = handler;
-			this.className = className;
+	public static function parse(compiler:Compiler, context:C, frm:Object):Expr{
+		var form:ISeq = ISeq(frm);
+		//(new classExpr args...)
+		if(form.count() < 2)
+		throw new Error("Wrong number of arguments, expecting: (new classExpr args...)");
+		var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
+		var args:IVector = Vector.empty();
+		for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
+			args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
 		}
+		return new NewExpr(compiler, target, args);
+	}
+}
+
+
+class ThrowExpr extends UntypedExpr{
+	public var excExpr:Expr;
+
+	public function ThrowExpr(excExpr:Expr){
+		this.excExpr = excExpr;
 	}
 
+	override public function interpret():Object{
+		throw new Error("Can't interpret a throw.");
+	}
 
-	class TryExpr implements Expr{
-		public var tryExpr:Expr;
-		public var catchExprs:IVector;
-		public var finallyExpr:Expr;
-		private var _compiler:Compiler;
+	override public function emit(context:C, gen:CodeGen):void{
+		// So there's a nil on the stack after the exception is thrown,
+		// required so that in the event that the try is prematurely aborted (because of
+		// this throw) there will still be something on the stack to match the catch's
+		// result.
+		gen.asm.I_pushnull();
+		// Then, reconcile with type of ensuing catch expr...
+		gen.asm.I_coerce_a(); 
+		excExpr.emit(context, gen);
+		gen.asm.I_throw();
+	}
+
+	public static function parse(c:Compiler, context:C, form:Object):Expr{
+		if(context == C.INTERPRET)
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
+		return new ThrowExpr(c.analyze(context, RT.second(form)));
+	}
+
+}
 
 
-		public function TryExpr(c:Compiler, tryExpr:Expr, catchExprs:IVector, finallyExpr:Expr){
-			_compiler = c;
-			this.tryExpr = tryExpr;
-			this.catchExprs = catchExprs;
-			this.finallyExpr = finallyExpr;
+class CatchClause{
+	//final String className;
+	public var c:Class;
+	public var className:String;
+	public var lb:LocalBinding;
+	public var handler:Expr;
+	public var label:Object;
+	public var endLabel:Object;
+
+	public function CatchClause(c:Class, className:String, lb:LocalBinding, handler:Expr){
+		this.c = c;
+		this.lb = lb;
+		this.handler = handler;
+		this.className = className;
+	}
+}
+
+
+class TryExpr implements Expr{
+	public var tryExpr:Expr;
+	public var catchExprs:IVector;
+	public var finallyExpr:Expr;
+	private var _compiler:Compiler;
+
+
+	public function TryExpr(c:Compiler, tryExpr:Expr, catchExprs:IVector, finallyExpr:Expr){
+		_compiler = c;
+		this.tryExpr = tryExpr;
+		this.catchExprs = catchExprs;
+		this.finallyExpr = finallyExpr;
+	}
+
+	public function interpret():Object{
+		throw new Error("UnsupportedOperationException: Can't eval try");
+	}
+
+	public function emit(context:C, gen:CodeGen):void{			
+		var endClauses:Object = gen.asm.newLabel();
+		var finallyLabel:Object = gen.asm.newLabel();
+		var end:Object = gen.asm.newLabel();
+		for(var i:int = 0; i < catchExprs.count(); i++)
+		{
+			var clause:CatchClause = CatchClause(catchExprs.nth(i));
+			clause.label = gen.asm.newLabel();
+			clause.endLabel = gen.asm.newLabel();
 		}
-
-		public function interpret():Object{
-			throw new Error("UnsupportedOperationException: Can't eval try");
+		var tryStart:Object = gen.asm.I_label(undefined);
+		tryExpr.emit(context, gen);
+		gen.asm.I_coerce_a(); // Reconcile with return type of catch expr..
+		var tryEnd:Object = gen.asm.I_label(undefined);
+		if(finallyExpr != null){
+			gen.asm.I_pop();
+			gen.asm.I_jump(finallyLabel);
 		}
+		else{
+			gen.asm.I_jump(end);
+		}
+		var catchStart:Object = gen.asm.I_label(undefined);
 
-		public function emit(context:C, gen:CodeGen):void{			
-			var endClauses:Object = gen.asm.newLabel();
-			var finallyLabel:Object = gen.asm.newLabel();
-			var end:Object = gen.asm.newLabel();
-			for(var i:int = 0; i < catchExprs.count(); i++)
+		if(catchExprs.count() > 0){
+			var excId:int = gen.meth.addException(new ABCException(
+					tryStart.address, 
+					tryEnd.address, 
+					catchStart.address, 
+					0, // *
+					gen.emitter.nameFromIdent("name")
+				));
+
+			gen.asm.startCatch(); // Increment max stack by 1, for exception object
+			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
+			gen.pushCatchScope(excId); 
+
+			
+			for(i = 0; i < catchExprs.count(); i++)
 			{
-				var clause:CatchClause = CatchClause(catchExprs.nth(i));
-				clause.label = gen.asm.newLabel();
-				clause.endLabel = gen.asm.newLabel();
+				clause = CatchClause(catchExprs.nth(i));
+				gen.asm.I_label(clause.label);
+
+				
+				// Exception object should be on top of operand stack...
+				gen.asm.I_dup();
+				gen.asm.I_istype(gen.emitter.nameFromIdent(clause.className));
+				gen.asm.I_iffalse(clause.endLabel);
+
+
+				// Store the exception in an activation slot..
+				var b:LocalBinding = clause.lb;
+				var activationSlot:int = gen.createActivationSlotForLocalBinding(b);
+				gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
+				gen.asm.I_swap(); 
+				gen.asm.I_setslot(activationSlot); 
+
+				clause.handler.emit(context, gen);
+				gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..
+
+				gen.asm.I_jump(endClauses);
+
+				gen.asm.I_label(clause.endLabel);
 			}
-			var tryStart:Object = gen.asm.I_label(undefined);
-			tryExpr.emit(context, gen);
-			gen.asm.I_coerce_a(); // Reconcile with return type of catch expr..
-			var tryEnd:Object = gen.asm.I_label(undefined);
+			// If none of the catch clauses apply, rethrow the exception.
+			gen.asm.I_throw();
+
+			gen.asm.I_label(endClauses);
+			// Pop the catch scope..
+			gen.popScope(); 
 			if(finallyExpr != null){
 				gen.asm.I_pop();
 				gen.asm.I_jump(finallyLabel);
@@ -2243,136 +2316,81 @@ class HostExpr implements Expr{
 			else{
 				gen.asm.I_jump(end);
 			}
-			var catchStart:Object = gen.asm.I_label(undefined);
-
-			if(catchExprs.count() > 0){
-				var excId:int = gen.meth.addException(new ABCException(
-						tryStart.address, 
-						tryEnd.address, 
-						catchStart.address, 
-						0, // *
-						gen.emitter.nameFromIdent("name")
-					));
-
-				gen.asm.startCatch(); // Increment max stack by 1, for exception object
-				gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
-				gen.pushCatchScope(excId); 
-
-				
-				for(i = 0; i < catchExprs.count(); i++)
-				{
-					clause = CatchClause(catchExprs.nth(i));
-					gen.asm.I_label(clause.label);
-
-					
-					// Exception object should be on top of operand stack...
-					gen.asm.I_dup();
-					gen.asm.I_istype(gen.emitter.nameFromIdent(clause.className));
-					gen.asm.I_iffalse(clause.endLabel);
-
-
-					// Store the exception in an activation slot..
-					var b:LocalBinding = clause.lb;
-					var activationSlot:int = gen.createActivationSlotForLocalBinding(b);
-					gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
-					gen.asm.I_swap(); 
-					gen.asm.I_setslot(activationSlot); 
-
-					clause.handler.emit(context, gen);
-					gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..
-
-					gen.asm.I_jump(endClauses);
-
-					gen.asm.I_label(clause.endLabel);
-				}
-				// If none of the catch clauses apply, rethrow the exception.
-				gen.asm.I_throw();
-
-				gen.asm.I_label(endClauses);
-				// Pop the catch scope..
-				gen.popScope(); 
-				if(finallyExpr != null){
-					gen.asm.I_pop();
-					gen.asm.I_jump(finallyLabel);
-				}
-				else{
-					gen.asm.I_jump(end);
-				}
-
-			}
-			if(finallyExpr != null)
-			{
-				gen.asm.I_label(finallyLabel);
-				finallyExpr.emit(context, gen);
-				gen.asm.I_coerce_a();// Reconcile with return types of preceding try/catch exprs..
-			}
-			gen.asm.I_label(end);
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
 
 		}
-
-
-		public static function parse(c:Compiler, context:C, frm:Object):Expr{
-			var form:ISeq = ISeq(frm);
-			if(context != C.RETURN)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
-
-			//(try try-expr* catch-expr* finally-expr?)
-			//catch-expr: (catch class sym expr*)
-			//finally-expr: (finally expr*)
-
-			var body:IVector = Vector.empty();
-			var catches:IVector = Vector.empty();
-			var finallyExpr:Expr = null;
-			var caught:Boolean = false;
-
-			for(var fs:ISeq = form.rest(); fs != null; fs = fs.rest())
-			{
-				var f:Object = fs.first();
-				var op:Object = (f is ISeq) ? ISeq(f).first() : null;
-				if(!Util.equal(op, c.rt.CATCH) && !Util.equal(op, c.rt.FINALLY))
-				{
-					if(caught)
-					throw new Error("Only catch or finally clause can follow catch in try expression");
-					body = body.cons(f);
-				}
-				else
-				{
-					if(Util.equal(op, c.rt.CATCH))
-					{
-						var className:Symbol = Symbol(RT.second(f));
-						var klass:Class = HostExpr.maybeClass(c, className, false);
-						if(klass == null)
-						throw new Error("IllegalArgumentException: Unable to resolve classname: " + RT.second(f));
-						if(!(RT.third(f) is Symbol))
-						throw new Error("IllegalArgumentException: Bad binding form, expected symbol, got: " + RT.third(f));
-						var sym:Symbol = Symbol(RT.third(f));
-						if(sym.getNamespace() != null)
-						throw new Error("Can't bind qualified name:" + sym);
-
-						c.pushLocalBindingSet(new LocalBindingSet());
-						var lb:LocalBinding = c.registerLocal(c.rt.nextID(), sym);
-						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
-						var handler:Expr = BodyExpr.parse(c, context, RT.rest(RT.rest(RT.rest(f))));
-						Var.popBindings(c.rt);
-						c.popLocalBindingSet();
-
-						catches = catches.cons(new CatchClause(klass, className.toString(), lb, handler));
-						caught = true;
-					}
-					else //finally
-					{
-						if(fs.rest() != null)
-						throw new Error("Finally clause must be last in try expression");
-						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
-						finallyExpr = BodyExpr.parse(c, C.STATEMENT, RT.rest(f));
-						Var.popBindings(c.rt);
-					}
-				}
-			}
-
-			return new TryExpr(c, BodyExpr.parse(c, context, RT.seq(body)), catches, finallyExpr);
+		if(finallyExpr != null)
+		{
+			gen.asm.I_label(finallyLabel);
+			finallyExpr.emit(context, gen);
+			gen.asm.I_coerce_a();// Reconcile with return types of preceding try/catch exprs..
 		}
+		gen.asm.I_label(end);
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+
 	}
+
+
+	public static function parse(c:Compiler, context:C, frm:Object):Expr{
+		var form:ISeq = ISeq(frm);
+		if(context != C.RETURN)
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
+
+		//(try try-expr* catch-expr* finally-expr?)
+		//catch-expr: (catch class sym expr*)
+		//finally-expr: (finally expr*)
+
+		var body:IVector = Vector.empty();
+		var catches:IVector = Vector.empty();
+		var finallyExpr:Expr = null;
+		var caught:Boolean = false;
+
+		for(var fs:ISeq = form.rest(); fs != null; fs = fs.rest())
+		{
+			var f:Object = fs.first();
+			var op:Object = (f is ISeq) ? ISeq(f).first() : null;
+			if(!Util.equal(op, c.rt.CATCH) && !Util.equal(op, c.rt.FINALLY))
+			{
+				if(caught)
+				throw new Error("Only catch or finally clause can follow catch in try expression");
+				body = body.cons(f);
+			}
+			else
+			{
+				if(Util.equal(op, c.rt.CATCH))
+				{
+					var className:Symbol = Symbol(RT.second(f));
+					var klass:Class = HostExpr.maybeClass(c, className, false);
+					if(klass == null)
+					throw new Error("IllegalArgumentException: Unable to resolve classname: " + RT.second(f));
+					if(!(RT.third(f) is Symbol))
+					throw new Error("IllegalArgumentException: Bad binding form, expected symbol, got: " + RT.third(f));
+					var sym:Symbol = Symbol(RT.third(f));
+					if(sym.getNamespace() != null)
+					throw new Error("Can't bind qualified name:" + sym);
+
+					c.pushLocalBindingSet(new LocalBindingSet());
+					var lb:LocalBinding = c.registerLocal(c.rt.nextID(), sym);
+					Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
+					var handler:Expr = BodyExpr.parse(c, context, RT.rest(RT.rest(RT.rest(f))));
+					Var.popBindings(c.rt);
+					c.popLocalBindingSet();
+
+					catches = catches.cons(new CatchClause(klass, className.toString(), lb, handler));
+					caught = true;
+				}
+				else //finally
+				{
+					if(fs.rest() != null)
+					throw new Error("Finally clause must be last in try expression");
+					Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
+					finallyExpr = BodyExpr.parse(c, C.STATEMENT, RT.rest(f));
+					Var.popBindings(c.rt);
+				}
+			}
+		}
+
+		return new TryExpr(c, BodyExpr.parse(c, context, RT.seq(body)), catches, finallyExpr);
+	}
+}
 
 
