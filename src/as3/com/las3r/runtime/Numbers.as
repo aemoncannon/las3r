@@ -42,7 +42,7 @@ package com.las3r.runtime{
 
 		static public function xor(a:Number, b:Number):Number{ return a ^ b; }
 
-		static public function not(a:Number):Number{ return ~ b; }
+		static public function not(a:Number):Number{ return ~ a; }
 
 		static public function shl(a:Number, b:Number):Number{ return a << b; }
 

@@ -725,6 +725,50 @@
   "Returns true if num is zero, else false"
   [x] (= x 0))
 
+;;Bit ops
+
+(defn bit-not
+  "Bitwise complement"
+  [x] (. com.las3r.runtime.Numbers (not x)))
+
+
+(defn bit-and
+  "Bitwise and"
+  ([x] x)
+  ([x y] (. com.las3r.runtime.Numbers (and x y)))
+  ([x y & more]
+     (reduce bit-and (bit-and x y) more)))
+
+(defn bit-or
+  "Bitwise or"
+  ([x] x)
+  ([x y] (. com.las3r.runtime.Numbers (or x y)))
+  ([x y & more]
+     (reduce bit-or (bit-or x y) more)))
+
+(defn bit-xor
+  "Bitwise exclusive or"
+  ([x] x)
+  ([x y] (. com.las3r.runtime.Numbers (xor x y)))
+  ([x y & more]
+     (reduce bit-and (bit-and x y) more)))
+
+(defn bit-shl
+  "Bitwise shift left"
+  ([x n] (. com.las3r.runtime.Numbers (shl x n))))
+
+(defn bit-shr
+  "Bitwise shift right"
+  ([x n] (. com.las3r.runtime.Numbers (shr x n))))
+
+(defn bit-shr
+  "Bitwise shift arithmetic right"
+  ([x n] (. com.las3r.runtime.Numbers (sar x n))))
+
+;; clojury aliases
+(def bit-shift-left bit-shl)
+(def bit-shift-right bit-sar)
+
 ;;;;;;;;; var stuff      
 
 
