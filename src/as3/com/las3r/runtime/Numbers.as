@@ -36,18 +36,18 @@ package com.las3r.runtime{
 
 		static public function dec(a:Number):Number{ return a - 1; }
 
-		static public function bitAnd(a:Number, b:Number):Number{ return a & b; }
+		static public function and(a:Number, b:Number):Number{ return a & b; }
 
-		static public function bitOr(a:Number, b:Number):Number{ return a | b; }
+		static public function or(a:Number, b:Number):Number{ return a | b; }
 
-		static public function bitXor(a:Number, b:Number):Number{ return a ^ b; }
+		static public function xor(a:Number, b:Number):Number{ return a ^ b; }
 
-		static public function bitNot(a:Number):Number{ return ~ b; }
+		static public function not(a:Number):Number{ return ~ b; }
 
-		static public function bitShl(a:Number, b:Number):Number{ return a << b; }
+		static public function shl(a:Number, b:Number):Number{ return a << b; }
 
-		static public function bitShr(a:Number, b:Number):Number{ return a >>> b; }
+		static public function shr(a:Number, b:Number):Number{ return a >>> b; }
 
-		static public function bitSar(a:Number, b:Number):Number{ return a >> b; }
+		static public function sar(a:Number, b:Number):Number{ return a >> b; }
 	}
 }
