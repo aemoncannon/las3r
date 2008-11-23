@@ -42,7 +42,7 @@ package com.las3r.runtime{
 
 		static public function bitXor(a:Number, b:Number):Number{ return a ^ b; }
 
-		static public function bitNot(a:Number, b:Number):Number{ return ~ b; }
+		static public function bitNot(a:Number):Number{ return ~ b; }
 
 		static public function bitShl(a:Number, b:Number):Number{ return a << b; }
 
