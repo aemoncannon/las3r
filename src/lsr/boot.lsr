@@ -761,7 +761,7 @@
   "Bitwise shift right"
   ([x n] (. com.las3r.runtime.Numbers (shr x n))))
 
-(defn bit-shr
+(defn bit-sar
   "Bitwise shift arithmetic right"
   ([x n] (. com.las3r.runtime.Numbers (sar x n))))
 
