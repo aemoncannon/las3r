@@ -593,7 +593,7 @@ package com.las3r.runtime{
 		}
 
 		public static function vals(map:IMap):ISeq{
-			return map.keys();
+			return map.vals();
 		}
 
 		public static function nth(coll:Object, n:int, notFound:Object = null):Object{
