@@ -14,7 +14,7 @@ $debug = true
 
 MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
 COMPC = PLATFORM =~ /win/ ? "compc.exe" : "~/lib/flex3/bin/compc"
-DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector"
+DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector_10"
 
 SHARED_CLASS_PATH = [
                      "src/as3",

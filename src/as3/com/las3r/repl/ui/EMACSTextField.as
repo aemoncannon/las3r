@@ -21,6 +21,7 @@ package com.las3r.repl.ui{
 		protected var _mark:int = 0;
 		protected var _point:int = 0;
 		protected var _field:TextField;
+		protected var _ctrlKeyDown:Boolean = false;
 
 		public function EMACSTextField(){
 			super();
@@ -39,6 +40,7 @@ package com.las3r.repl.ui{
 			_field.backgroundColor = 0x222222;
 			_field.wordWrap = true;
 			_field.multiline = true;
+			_field.selectable = true;
 			_field.type = TextFieldType.DYNAMIC;
             addChild(_field);
 
@@ -65,6 +67,7 @@ package com.las3r.repl.ui{
 		}
 
 		protected function onMouseDown(e:Event):void{
+			gotoChar(_field.getCharIndexAtPoint(_field.mouseX, _field.mouseY));
 			e.stopPropagation();
 		}
 
@@ -73,7 +76,35 @@ package com.las3r.repl.ui{
 		}
 
 		protected function onKeyDown(e:KeyboardEvent):void{
+			e.stopPropagation();
 			var key:uint = e.keyCode;
+			if(key == 17){//Ctrl
+				_ctrlKeyDown = true;
+				return;
+			}
+			if(e.ctrlKey || _ctrlKeyDown){
+				switch (key) {
+					case 66 ://B
+					backwardChar();
+					return;
+ 					break;
+
+					case 70 : // F
+					forwardChar();
+					return;
+ 					break;
+
+					case 78 : // N
+					forwardLine();
+					return;
+ 					break;
+
+					case 80 : // P
+					backwardLine();
+					return;
+ 					break;
+				}				
+			}
 			switch (key) {
 				case Keyboard.LEFT :
 				backwardChar();
@@ -92,11 +123,16 @@ package com.las3r.repl.ui{
 				case Keyboard.DOWN :
 				return;
  				break;
-			}
+			}				
 			insert(String.fromCharCode(e.charCode));
 		}
 
-		protected function onKeyUp(e:Event):void{
+		protected function onKeyUp(e:KeyboardEvent):void{
+			e.stopPropagation();
+			var key:uint = e.keyCode;
+			if(key == 17){//Ctrl
+				_ctrlKeyDown = false;
+			}
 		}
 
 		protected function onEnterFrame(e:Event):void{
@@ -104,16 +140,27 @@ package com.las3r.repl.ui{
 		}
 
 		public function insert(str:String):void{
+			_field.setSelection(_point, _point);
 			_field.replaceSelectedText(str);
 			_point += str.length;
 		}
 
 		public function forwardChar():void{
-			_point += 1;
+			_point = Math.min(_field.length - 1, _point + 1);
 		}
 
 		public function backwardChar():void{
-			_point -= 1;
+			_point = Math.max(0, _point - 1);
+		}
+
+		public function gotoChar(index:int):void{
+			_point = Math.max(0, Math.min(_field.length - 1, index));
+		}
+
+		public function forwardLine():void{
+		}
+
+		public function backwardLine():void{
 		}
 
 

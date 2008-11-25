@@ -35,7 +35,7 @@ package com.las3r.repl{
 		protected var _grabButton:Sprite;
 		protected var _closeButton:Sprite;
 		protected var _resizeGrip:DragGrip;
-		protected var _inputField:EMACSTextField;
+		protected var _inputField:TextField;
 		protected var _outputField:TextField;
 		protected var _grabbedListField:TextField;
 		protected var _inputHistory:Array = [];
@@ -130,17 +130,24 @@ package com.las3r.repl{
 			_resizeGrip.addEventListener(DragGrip.DRAGGED, onResizeGripDragged);
 			_ui.addChild(_resizeGrip);
 
-			
-
 			var tf:TextFormat = new TextFormat();
 			tf.color = 0xFFFFFF;
 			tf.font = "Arial";
 			tf.size = 14;
 			tf.indent = 3;
 
-			_inputField = new EMACSTextField();
-// 			_inputField.addEventListener(TextEvent.TEXT_INPUT, onInputTextInput);
-// 			_inputField.addEventListener(KeyboardEvent.KEY_DOWN, onInputKeyDown);
+			_inputField = new TextField();
+			_inputField.defaultTextFormat = tf;
+            _inputField.border = true;
+            _inputField.borderColor = 0x555555;
+            _inputField.background = true;
+			_inputField.backgroundColor = 0x222222;
+			_inputField.wordWrap = true;
+			_inputField.multiline = true;
+			_inputField.selectable = true;
+			_inputField.type = TextFieldType.INPUT;
+ 			_inputField.addEventListener(TextEvent.TEXT_INPUT, onInputTextInput);
+ 			_inputField.addEventListener(KeyboardEvent.KEY_DOWN, onInputKeyDown);
             _ui.addChild(_inputField);
 
 			_outputField = new TextField();
