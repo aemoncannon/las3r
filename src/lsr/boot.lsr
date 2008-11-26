@@ -1004,7 +1004,9 @@
   "Evaluates the form data structure (not text!) and calls back with the result
    if callback is provided."
   ([form] (. *runtime* (evalStr form)))
-  ([form callback] (. *runtime* (evalStr form callback))))
+  ([form callback] (. *runtime* (evalStr form callback)))
+  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback)))
+  )
 
 
 (defmacro doseq
@@ -1343,9 +1345,46 @@
   (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
 
 
+;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
+
+(import '(flash.net URLLoader URLRequest))
+(import '(flash.events Event IOErrorEvent TimerEvent))
+(import '(flash.utils Timer))
+
+(def *eval-poll-timer* (let [t (new Timer 1000)]
+			 (. t
+			    (addEventListener 
+			     (. TimerEvent TIMER)
+			     (fn [e]
+			       (let [url (str "http://localhost:" 9876 "/pop")
+				     loader (new URLLoader)
+				     req (new URLRequest url)]
+				 (. loader (addEventListener 
+					    (. Event COMPLETE)
+					    (fn [e] 
+					      (let [src (cast String (. loader data))]
+						(eval src 
+						      (fn [val] (println val))
+						      (fn [err] (binding [*out* *err*]
+								  (println err))))
+						))))
+				 (. loader (addEventListener (. IOErrorEvent IO_ERROR) (fn [e])))
+				 (. loader (load req))
+				 )
+			       )
+			     ))
+			 t))
+
+
+(defn start-eval-poll 
+  ""
+  ([] (start-eval-poll 9876))
+  ([port]
+     (. *eval-poll-timer* (start))
+     ))
+
 
 ;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
-
 
 (defmacro assert-true
   [form]
@@ -1419,6 +1458,6 @@
     (assert-true (find-ns sym))
     (remove-ns sym)
     (assert-false (find-ns sym)))
-
-
   )
+
+;; (run-tests)

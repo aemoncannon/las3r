@@ -164,6 +164,7 @@ package com.las3r.runtime{
 			STAGE = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*stage*"), _stage);
 			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*out*"), stdout);
 			IN = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*in*"), stdin);
+			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*err*"), stderr);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
 
