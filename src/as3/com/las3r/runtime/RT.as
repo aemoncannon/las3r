@@ -18,6 +18,7 @@ package com.las3r.runtime{
 	import com.las3r.runtime.LispNamespace;
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
+	import com.las3r.util.StringBuffer;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -143,7 +144,7 @@ package com.las3r.runtime{
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
-			var forceImport:Array = [Numbers, LazyCons, Range];
+			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer];
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
@@ -639,7 +640,8 @@ package com.las3r.runtime{
 			var a:Array = [];
 			var b:Array = [];
 
-			if((seq.count() % 2) != 0)
+			var count:int = count(seq);
+			if((count % 2) != 0)
 			throw new Error("IllegalArgumentException: Bad argument to unzip, expected even number of args.");
 
 			for(var sq:ISeq = seq; sq != null; sq = sq.rest().rest())

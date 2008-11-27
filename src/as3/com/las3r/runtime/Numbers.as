@@ -32,6 +32,8 @@ package com.las3r.runtime{
 
 		static public function equiv(a:Number, b:Number):Boolean{ return a === b; }
 
+		static public function remainder(a:Number, b:Number):Number{ return a % b; }
+
 		static public function inc(a:Number):Number{ return a + 1; }
 
 		static public function dec(a:Number):Number{ return a - 1; }

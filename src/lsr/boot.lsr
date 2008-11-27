@@ -127,10 +127,10 @@
  #^{:macro true
     :doc "Loop macro that expands into a let expression with a body that
           applies a function to the bound locals."}
- loop (fn* loop [bindings & body] 
+ loop (fn* loop [bindings & body]
 	   (let [names-vals (. com.las3r.runtime.RT (unzip (seq bindings)))
-		 names (. com.las3r.runtime.Vector (createFromSeq (first names-vals)))
-		 vals (second names-vals)]
+		 names (. com.las3r.runtime.Vector (createFromSeq (seq (first names-vals))))
+		 vals (seq (second names-vals))]
 	     (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
  )
 
@@ -302,6 +302,10 @@
 	 (recur (. sb  (concat (str (first more)))) (rest more))
 	 (str sb)))))
 
+(defn char-code->str 
+  "Return the string corresponding to the numeric code."
+  [code]
+  (. String (fromCharCode code)))
 
 (defn symbol
   "Returns a Symbol with the given namespace and name."
@@ -724,6 +728,11 @@
 (defn zero?
   "Returns true if num is zero, else false"
   [x] (= x 0))
+
+(defn rem
+  "rem[ainder] of dividing numerator by denominator."
+  [num div]
+  (. com.las3r.runtime.Numbers (remainder num div)))
 
 ;;Bit ops
 
@@ -1386,46 +1395,59 @@
 (defmacro defn-
   "same as defn, yielding non-public def"
   [name & decls]
-  (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
+  (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
 
 (import '(flash.net URLLoader URLRequest))
-(import '(flash.events Event IOErrorEvent TimerEvent))
+(import '(flash.events Event IOErrorEvent TimerEvent ProgressEvent))
 (import '(flash.utils Timer))
-
-(def *eval-poll-timer* (let [t (new Timer 1000)]
-			 (. t
-			    (addEventListener 
-			     (. TimerEvent TIMER)
-			     (fn [e]
-			       (let [url (str "http://localhost:" 9876 "/pop")
-				     loader (new URLLoader)
-				     req (new URLRequest url)]
-				 (. loader (addEventListener 
-					    (. Event COMPLETE)
-					    (fn [e] 
-					      (let [src (cast String (. loader data))]
-						(eval src 
-						      (fn [val] (println val))
-						      (fn [err] (binding [*out* *err*]
-								  (println err))))
-						))))
-				 (. loader (addEventListener (. IOErrorEvent IO_ERROR) (fn [e])))
-				 (. loader (load req))
-				 )
-			       )
-			     ))
-			 t))
+(import '(flash.net Socket))
+(import '(com.las3r.util StringBuffer))
 
 
-(defn start-eval-poll 
+(defn- read-bytes
   ""
-  ([] (start-eval-poll 9876))
+  [socket buffer]
+  (let [to-eval []
+	term 0]
+    (loop []
+      (if (> (. socket bytesAvailable) 0)
+	(let [byte (. socket (readUnsignedByte))]
+	  (if (= byte term)
+	    (do
+	      (. to-eval (push (str buffer)))
+	      (. buffer (clear)))
+	    (do
+	      (. buffer (append (char-code->str byte)
+				))))
+	  (recur)
+	  )))
+    to-eval
+    ))
+
+
+(defn connect-to-eval-q
+  ""
+  ([] (connect-to-eval-q 9877))
   ([port]
-     (. *eval-poll-timer* (start))
-     ))
+     (let [socket (new Socket)
+	   buffer (new StringBuffer)]
+       (. socket (addEventListener (. Event CONNECT) (fn [e] (println "Socket connected."))))
+       (. socket (addEventListener (. Event CLOSE) (fn [e] (println "Socket closed."))))
+       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (println "Socket error."))))
+       (. socket (addEventListener (. ProgressEvent SOCKET_DATA) 
+				   (fn [e]
+				     (doseq src (read-bytes socket buffer)
+				       (eval src 
+					     (fn [val] (println val))
+					     (fn [err] (binding [*out* *err*]
+							 (println err)))))
+				     )))
+       (. socket (connect "localhost" port))
+       )))
+
 
 
 ;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests

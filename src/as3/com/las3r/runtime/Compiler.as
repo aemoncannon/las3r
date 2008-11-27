@@ -404,7 +404,7 @@ package com.las3r.runtime{
 				var v:Var = isMacro(op);
 				if(v != null)
 				{
-					return v.apply(Vector.createFromSeq(form.rest()));
+					return v.apply(Vector.createFromSeq(RT.seq(form.rest())));
 				}
 			}
 			return x;

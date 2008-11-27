@@ -75,7 +75,7 @@ package com.las3r.repl{
 						outputText(" .");
 					},
 					function(error:*):void{
-						outputError(error);
+						outputError(error + "\n");
 					}
 				);
 			}

@@ -2,48 +2,83 @@ require 'webrick'
 require 'net/http'
 require 'fileutils'
 require 'cgi'
+require 'socket'
 include WEBrick
 
-# Start a simple http server that listens to 'push' and 'pop' requests.
-#  'push' adds a string to the eval queue
-#  'pop' pops a string from the eval queue
-# 
-# This server is designed for use with the function las3r-eval-last-sexp
-# in las3r-mode.el
+
+HTTP_PORT = 9876
+SOCKET_PORT = 9877
 
 
-@port = 9876
 @eval_q = []
 
-s = HTTPServer.new(
-                   :Port => @port,
-                   :Logger => Log.new(nil, BasicLog::WARN),
-                   :AccessLog => []
-                   )
+http_server = HTTPServer.new(
+                             :Port => HTTP_PORT,
+                             :Logger => Log.new(nil, BasicLog::WARN),
+                             :AccessLog => []
+                             )
 
-s.mount_proc("/push"){ |req, res|
-  params = CGI.parse(req.body)
-  if params["src"]
-    src = params["src"][0]
-    @eval_q.push(src);
-  end
-  res['Content-Type'] = "text/plain"
-}
-
-s.mount_proc("/pop"){ |req, res|
-  next_src = @eval_q.pop
-  if next_src
-    puts "."
-    res.body = next_src
-    res['Content-Type'] = "text/plain"
-  else
-    res.status = 404
+http_server.mount_proc("/push"){ |req, res|
+  if req.body
+    params = CGI.parse(req.body)
+    if params["src"]
+      src = params["src"][0]
+      @eval_q.push(src);
+      puts "push"
+    end
   end
 }
-
 
 trap("INT"){
-  s.shutdown 
+  http_server.shutdown 
 }
 
-s.start
+
+socket_server = TCPServer.open(SOCKET_PORT)
+
+def handle_socket_client(client)
+
+  Thread.start do # one thread per client
+
+    port = client.peeraddr[1]
+    name = client.peeraddr[2]
+    addr = client.peeraddr[3]
+
+    puts "Socket client connected: #{name}:#{port}"
+
+    begin
+      loop do
+        if @eval_q.length > 0
+          client.write(@eval_q.pop)
+          client.write("\0")
+          puts "pop"
+        end
+        sleep 1
+      end
+    rescue RuntimeError
+      puts "Client #{name}:#{port} disconnected"
+    ensure
+      client.close # close socket on error
+    end
+    puts "Done with #{name}:#{port}"
+  end
+
+end
+
+
+Thread.start do 
+  loop do
+    begin
+      client = socket_server.accept_nonblock
+      handle_socket_client(client)
+    rescue Errno::EAGAIN, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
+      IO.select([socket_server])
+      retry
+    end
+  end
+end
+
+
+
+http_server.start
+
