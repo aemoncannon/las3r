@@ -1421,7 +1421,7 @@
 	      (. buffer (clear)))
 	    (do
 	      (. buffer (append (char-code->str byte)
-				))))
+			))))
 	  (recur)
 	  )))
     to-eval
@@ -1446,6 +1446,7 @@
 							 (println err)))))
 				     )))
        (. socket (connect "localhost" port))
+       socket
        )))
 
 

@@ -23,7 +23,7 @@ http_server.mount_proc("/push"){ |req, res|
     params = CGI.parse(req.body)
     if params["src"]
       src = params["src"][0]
-      @eval_q.push(src);
+      @eval_q.push(src)
       puts "push"
     end
   end
@@ -53,7 +53,7 @@ def handle_socket_client(client)
           client.write("\0")
           puts "pop"
         end
-        sleep 1
+        sleep 0.1
       end
     rescue RuntimeError
       puts "Client #{name}:#{port} disconnected"
