@@ -1487,8 +1487,6 @@
   [name & decls]
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
-
-
 (defn destructure [bindings]
   (let [bmap (apply hash-map bindings)
         pb (fn pb [bvec b v]
@@ -1627,7 +1625,6 @@
 		  (let ~(vec (interleave bs gs))
 		    ~@body)))))))
 
-
 (defn special-symbol?
   "Returns true if s names a special form"
   [s]
@@ -1683,6 +1680,17 @@
        (let [~binding-form temp#]
          ~@body))))
 
+;;;;;;;;;;;;;;;; for..each and for..in wrappers
+
+(defn get-property-values
+  "Return a list of all the values of an object's dynamic properties, wrapper for actionscript's for each(...) construct."
+  [obj]
+  (. *runtime* (propertyValuesList obj)))
+
+(defn get-property-names
+  "Return a list of all the names of an object's dynamic properties, wrapper for actionscript's for(.. in ..) construct."
+  [obj]
+  (. *runtime* (propertyNamesList obj)))
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
 

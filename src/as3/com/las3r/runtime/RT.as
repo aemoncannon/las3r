@@ -792,6 +792,23 @@ package com.las3r.runtime{
 				return List.createFromArray(a.slice(i));
 			}
 
+		public function propertyNamesList(object:Object):List{
+			var result:Array = [];
+
+			for(var iterant:String in object){
+				result.push(iterant);
+			}
+			return List.createFromArray(result);
+		}
+
+		public function propertyValuesList(object:Object):List{
+			var result:Array = [];
+			
+			for each(var iterant:* in object){
+				result.push(iterant);
+			}
+			return List.createFromArray(result);
+		}
 
 			public function printToString(x:Object):String {
 				var w:NaiveStringWriter = new NaiveStringWriter();
