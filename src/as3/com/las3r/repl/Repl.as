@@ -146,6 +146,8 @@ package com.las3r.repl{
 			_inputField.multiline = true;
 			_inputField.selectable = true;
 			_inputField.type = TextFieldType.INPUT;
+			_inputField.addEventListener(MouseEvent.MOUSE_DOWN, function(e:Event):void{ e.stopPropagation(); });
+			_inputField.addEventListener(MouseEvent.MOUSE_UP, function(e:Event):void{ e.stopPropagation(); });
  			_inputField.addEventListener(TextEvent.TEXT_INPUT, onInputTextInput);
  			_inputField.addEventListener(KeyboardEvent.KEY_DOWN, onInputKeyDown);
             _ui.addChild(_inputField);

@@ -17,6 +17,7 @@ package com.las3r.runtime{
 	public class LispNamespace {
 		public var name:Symbol;
 		private var _mappings:IMap = new Map();
+		private var _aliases:IMap = new Map();
 		private var _rt:RT;
 
 		public static var LAS3R_NAMESPACE_NAME:String = "las3r";
@@ -147,6 +148,28 @@ package com.las3r.runtime{
 			return Var(o);
 			return null;
 		}
+
+		public function getAliases():IMap{
+			return _aliases;
+		}
+
+		public function lookupAlias(alias:Symbol):LispNamespace{
+			return LispNamespace(_aliases.valAt(alias));
+		}
+
+		public function addAlias(alias:Symbol, ns:LispNamespace):void{
+			if (alias == null || ns == null)
+			throw new Error("NullPointerException: Expecting Symbol + Namespace");
+			_aliases = _aliases.assoc(alias, ns);
+			// you can rebind an alias, but only to the initially-aliased namespace.
+			if(!_aliases.valAt(alias).equals(ns))
+			throw new Error("IllegalStateException: Alias " + alias + " already exists in namespace " + name + ", aliasing " + _aliases.valAt(alias));
+		}
+
+		public function removeAlias(alias:Symbol):void{
+			_aliases = _aliases.remove(alias);
+		}
+
 
 	}
 }

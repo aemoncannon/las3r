@@ -133,11 +133,12 @@ if that value is non-nil."
 (defun las3r-eval-last-sexp (p)
   "Evaluate the sexp before point."
   (interactive (list (point)))
-  (backward-sexp)
-  (let ((src (buffer-substring-no-properties (point) p)))
-    (let* ((proc (http-post "http://localhost:9876/push" `(("src" . ,(format "%s" src))) 'iso-8859-1))
-	   (buf (process-buffer proc)))
-      (kill-buffer buf))))
+  (save-excursion
+    (backward-sexp)
+    (let ((src (buffer-substring-no-properties (point) p)))
+      (let* ((proc (http-post "http://localhost:9876/push" `(("src" . ,(format "%s" src))) 'iso-8859-1))
+	     (buf (process-buffer proc)))
+	(kill-buffer buf)))))
   
 
 (defun las3r-font-lock-def-at-point (point)

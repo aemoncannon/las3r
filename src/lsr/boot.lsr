@@ -1276,6 +1276,24 @@
 						       (= ns (. v ns))))
 	      (ns-map ns)))
 
+
+(defn alias
+  "Add an alias in the current namespace to another
+  namespace. Arguments are two symbols: the alias to be used, and
+  the symbolic name of the target namespace. Use :as in the ns macro in preference 
+  to calling this directly."
+  [alias namespace-sym]
+  (. *ns* (addAlias alias (find-ns namespace-sym))))
+
+(defn ns-aliases
+  "Returns a map of the aliases for the namespace."
+  [#^com.las3r.runtime.LispNamespace ns]  (. ns (getAliases)))
+
+(defn ns-unalias
+  "Removes the alias for the symbol from the namespace."
+  [#^com.las3r.runtime.LispNamespace ns sym]
+  (. ns (removeAlias sym)))
+
 (defn take-nth
   "Returns a lazy seq of every nth item in coll."
   [n coll]
@@ -1333,6 +1351,15 @@
 	 ~@(map (fn [m] (list '. gx m))
 		members))
        ~gx)))
+
+(defmacro memfn
+  "Expands into code that creates a fn that expects to be passed an
+  object and any args and calls the named instance method on the
+  object passing the args. Use when you want to treat a Java method as
+  a first-class fn."
+  [name & args]
+  `(fn [target# ~@args]
+     (. target# (~name ~@args))))
 
 (defmacro ..
   "form => fieldName-symbol or (instanceMethodName-symbol args*)
@@ -1398,6 +1425,64 @@
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
 
+
+;;(defn destructure [bindings]
+;;  (let [bmap (apply array-map bindings)
+;;        pb (fn pb [bvec b v]
+;;	     (let [pvec
+;;		   (fn [bvec b val]
+;;		     (let [gvec (gensym "vec__")]
+;;		       (loop [ret (-> bvec (conj gvec) (conj val))
+;;			      n 0
+;;			      bs b
+;;			      seen-rest? false]
+;;			 (if bs
+;;			   (let [firstb (first bs)]
+;;			     (cond
+;;			      (= firstb '&) (recur (pb ret (second bs) (list `nthrest gvec n))
+;;						   n
+;;						   (rrest bs)
+;;						   true)
+;;			      (= firstb :as) (pb ret (second bs) gvec)
+;;			      :else (if seen-rest?
+;;				      (throw (new Error "Unsupported binding form, only :as can follow & parameter"))
+;;				      (recur (pb ret firstb  (list `nth gvec n nil))
+;;					     (inc n)
+;;					     (rest bs)
+;;					     seen-rest?))))
+;;			   ret))))
+;;		   pmap
+;;		   (fn [bvec b v]
+;;		     (let [gmap (or (:as b) (gensym "map__"))
+;;			   defaults (:or b)]
+;;		       (loop [ret (-> bvec (conj gmap) (conj v))
+;;			      bes (reduce
+;;				   (fn [bes entry]
+;;				     (reduce (fn [a b] (assoc a b ((val entry) b)))
+;;					     (dissoc bes (key entry))
+;;					     ((key entry) bes)))
+;;				   (dissoc b :as :or)
+;;				   {:keys (fn [a] (keyword (str a))), :strs str, :syms (fn [a] (list `quote a))})]
+;;			 (if bes
+;;			   (let [bb (key (first bes))
+;;				 bk (val (first bes))
+;;				 has-default (contains? defaults bb)]
+;;			     (recur (pb ret bb (if has-default
+;;						 (list `get gmap bk (defaults bb))
+;;						 (list `get gmap bk)))
+;;				    (rest bes)))
+;;			   ret))))]
+;;	       (cond
+;;		(symbol? b) (-> bvec (conj b) (conj v))
+;;		(vector? b) (pvec bvec b v)
+;;		(map? b) (pmap bvec b v)
+;;		:else (throw (new Error (str "Unsupported binding form: " b))))))
+;;        process-entry (fn [bvec b] (pb bvec (key b) (val b)))]
+;;    (if (every? symbol? (keys bmap))
+;;      bindings
+;;      (reduce process-entry [] bmap))))
+
+
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
 
 (import '(flash.net URLLoader URLRequest))
@@ -1408,7 +1493,7 @@
 
 
 (defn- read-bytes
-  ""
+  "Helper function for reading 0-terminated strings from eval_pipe."
   [socket buffer]
   (let [to-eval []
 	term 0]
@@ -1420,36 +1505,34 @@
 	      (. to-eval (push (str buffer)))
 	      (. buffer (clear)))
 	    (do
-	      (. buffer (append (char-code->str byte)
-			))))
+	      (. buffer (append (char-code->str byte)))))
 	  (recur)
 	  )))
     to-eval
     ))
 
 
-(defn connect-to-eval-q
-  ""
-  ([] (connect-to-eval-q 9877))
+(defn connect-to-eval-pipe
+  "Connect to eval_pipe, reading and evaluating strings as they arrive."
+  ([] (connect-to-eval-pipe 9877))
   ([port]
      (let [socket (new Socket)
 	   buffer (new StringBuffer)]
-       (. socket (addEventListener (. Event CONNECT) (fn [e] (println "Socket connected."))))
-       (. socket (addEventListener (. Event CLOSE) (fn [e] (println "Socket closed."))))
-       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (println "Socket error."))))
-       (. socket (addEventListener (. ProgressEvent SOCKET_DATA) 
-				   (fn [e]
-				     (doseq src (read-bytes socket buffer)
-				       (eval src 
-					     (fn [val] (println val))
-					     (fn [err] (binding [*out* *err*]
-							 (println err)))))
-				     )))
+       (. socket (addEventListener (. Event CONNECT) (fn [e] (println "Connected to eval_pipe."))))
+       (. socket (addEventListener (. Event CLOSE) (fn [e] (println "Disconnected from eval_pipe."))))
+       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (println "Error on eval_pipe."))))
+       (. socket (addEventListener 
+		  (. ProgressEvent SOCKET_DATA)
+		  (fn [e]
+		    (doseq src (read-bytes socket buffer)
+		      (eval src 
+			    (fn [val] (println val))
+			    (fn [err] (binding [*out* *err*]
+					(println err)))))
+		    )))
        (. socket (connect "localhost" port))
        socket
        )))
-
-
 
 ;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
@@ -1525,6 +1608,11 @@
     (assert-true (find-ns sym))
     (remove-ns sym)
     (assert-false (find-ns sym)))
+
+  (assert-true (= "1,2,3" ((memfn join sep) ["1", "2", "3"] ",")))
+
   )
 
-;; (run-tests)
+;;(run-tests)
+
+;;(connect-to-eval-pipe)
