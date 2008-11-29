@@ -50,7 +50,6 @@ package com.las3r.runtime{
 
 			specialParsers = RT.map(
 				_rt.DEF, DefExpr.parse,
-				_rt.LOOP, LetExpr.parse,
 				_rt.RECUR, RecurExpr.parse,
 				_rt.IF, IfExpr.parse,
 				_rt.LET, LetExpr.parse,

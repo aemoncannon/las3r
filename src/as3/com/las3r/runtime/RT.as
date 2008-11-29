@@ -101,7 +101,6 @@ package com.las3r.runtime{
 
 		// Special forms..
 		public var DEF:Symbol;
-		public var LOOP:Symbol;
 		public var RECUR:Symbol;
 		public var IF:Symbol;
 		public var LET:Symbol;
@@ -249,7 +248,6 @@ package com.las3r.runtime{
 
 
 			DEF = sym1("def");
-			LOOP = sym1("loop*");
 			RECUR = sym1("recur");
 			IF = sym1("if");
 			LET = sym1("let*");
@@ -271,7 +269,6 @@ package com.las3r.runtime{
 
 			specials = Vector(RT.vector(
 					DEF,
-					LOOP,
 					RECUR,
 					IF,
 					LET,

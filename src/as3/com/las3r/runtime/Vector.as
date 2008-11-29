@@ -81,7 +81,8 @@ package com.las3r.runtime{
 			return new Vector([]);
 		}
 
-		public function Vector(source:Array){
+		public function Vector(source:Array, meta:IMap = null){
+			_meta = meta;
 			for each(var ea:Object in source){
 				push(ea);
 			}

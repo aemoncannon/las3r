@@ -127,11 +127,11 @@
  #^{:macro true
     :doc "Loop macro that expands into a let expression with a body that
           applies a function to the bound locals."}
- loop (fn* loop [bindings & body]
-	   (let [names-vals (. com.las3r.runtime.RT (unzip (seq bindings)))
-		 names (. com.las3r.runtime.Vector (createFromSeq (seq (first names-vals))))
-		 vals (seq (second names-vals))]
-	     (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
+ loop* (fn* loop* [bindings & body]
+	    (let [names-vals (. com.las3r.runtime.RT (unzip (seq bindings)))
+		  names (. com.las3r.runtime.Vector (createFromSeq (seq (first names-vals))))
+		  vals (seq (second names-vals))]
+	      (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
  )
 
 ;;;;;;;;;;;;;;;;; metadata ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -163,10 +163,10 @@
  #^{:arglists '([coll])
     :doc "Return a sequence of all but the last item in coll, in linear time"}
  butlast (fn butlast [s]
-           (loop [ret [] s s]
-             (if (rest s)
-               (recur (conj ret (first s)) (rest s))
-               (seq ret)))))
+           (loop* [ret [] s s]
+		  (if (rest s)
+		    (recur (conj ret (first s)) (rest s))
+		    (seq ret)))))
 
 
 
@@ -175,10 +175,10 @@
  sigs
  (fn [fdecl]
    (if (seq? (first fdecl))
-     (loop [ret [] fdecl fdecl]
-       (if fdecl
-         (recur (conj ret (first (first fdecl))) (rest fdecl))
-         (seq ret)))
+     (loop* [ret [] fdecl fdecl]
+	    (if fdecl
+	      (recur (conj ret (first (first fdecl))) (rest fdecl))
+	      (seq ret)))
      (list (first fdecl)))))
 
 (def 
@@ -296,11 +296,11 @@
   ([x]
      (if (nil? x) "" (cast String x )))
   ([x & ys]
-     (loop [sb (str x) 
-	    more ys]
-       (if more
-	 (recur (. sb  (concat (str (first more)))) (rest more))
-	 (str sb)))))
+     (loop* [sb (str x) 
+	     more ys]
+	    (if more
+	      (recur (. sb  (concat (str (first more)))) (rest more))
+	      (str sb)))))
 
 (defn char-code->str 
   "Return the string corresponding to the numeric code."
@@ -508,10 +508,10 @@
   [& fs]
   (let [fs (reverse fs)]
     (fn [& args]
-      (loop [ret (apply (first fs) args) fs (rest fs)]
-	(if fs
-	  (recur ((first fs) ret) (rest fs))
-	  ret)))))
+      (loop* [ret (apply (first fs) args) fs (rest fs)]
+	     (if fs
+	       (recur ((first fs) ret) (rest fs))
+	       ret)))))
 
 
 (defn partial
@@ -562,15 +562,15 @@
 (defn select-keys
   "Returns a map containing only those entries in map whose key is in keys"
   [map keyseq]
-  (loop [ret {} keys (seq keyseq)]
-    (if keys
-      (let [entry (. com.las3r.runtime.RT (find map (first keys)))]
-	(recur
-	 (if entry
-	   (conj ret entry)
-	   ret)
-	 (rest keys)))
-      ret)))
+  (loop* [ret {} keys (seq keyseq)]
+	 (if keys
+	   (let [entry (. com.las3r.runtime.RT (find map (first keys)))]
+	     (recur
+	      (if entry
+		(conj ret entry)
+		ret)
+	      (rest keys)))
+	   ret)))
 
 (defn keys
   "Returns a sequence of the map's keys."
@@ -789,11 +789,11 @@
   re-establishes the bindings that existed before."  
   [bindings & body]
   (let [var-ize (fn [var-vals]
-		  (loop [ret [] vvs (seq var-vals)]
-		    (if vvs
-		      (recur  (conj (conj ret `(var ~(first vvs))) (second vvs))
-			      (rest (rest vvs)))
-		      (seq ret))))]
+		  (loop* [ret [] vvs (seq var-vals)]
+			 (if vvs
+			   (recur  (conj (conj ret `(var ~(first vvs))) (second vvs))
+				   (rest (rest vvs)))
+			   (seq ret))))]
     `(do
        (. com.las3r.runtime.Var (pushBindings *runtime* (hash-map ~@(var-ize bindings))))
        (try
@@ -1043,14 +1043,14 @@
 (defn zipmap
   "Returns a map with the keys mapped to the corresponding vals."
   [keys vals]
-  (loop [map {}
-	 ks (seq keys)
-	 vs (seq vals)]
-    (if (and ks vs)
-      (recur (assoc map (first ks) (first vs))
-	     (rest ks)
-	     (rest vs))
-      map)))
+  (loop* [map {}
+	  ks (seq keys)
+	  vs (seq vals)]
+	 (if (and ks vs)
+	   (recur (assoc map (first ks) (first vs))
+		  (rest ks)
+		  (rest vs))
+	   map)))
 
 
 (defn eval
@@ -1067,11 +1067,11 @@
   binding-form bound to successive items from coll.  Does not retain
   the head of the sequence. Returns nil."
   [item list & body]
-  `(loop [list# (seq ~list)]
-     (when list#
-       (let [~item (first list#)]
-	 ~@body)
-       (recur (rest list#)))))
+  `(loop* [list# (seq ~list)]
+	  (when list#
+	    (let [~item (first list#)]
+	      ~@body)
+	    (recur (rest list#)))))
 
 (defn dorun
   "When lazy sequences are produced via functions that have side
@@ -1105,10 +1105,10 @@
   bound to integers from 0 through n-1."
   [i n & body]
   `(let [n# ~n]
-     (loop [~i 0]
-       (when (< ~i n#)
-	 ~@body
-	 (recur (inc ~i))))))
+     (loop* [~i 0]
+	    (when (< ~i n#)
+	      ~@body
+	      (recur (inc ~i))))))
 
 
 (defn import
@@ -1158,12 +1158,12 @@
 
 (defn #^{:private true}
   filter-key [keyfn pred amap]
-  (loop [ret {} es (seq amap)]
-    (if es
-      (if (pred (keyfn (first es)))
-	(recur (assoc ret (key (first es)) (val (first es))) (rest es))
-	(recur ret (rest es)))
-      ret)))
+  (loop* [ret {} es (seq amap)]
+	 (if es
+	   (if (pred (keyfn (first es)))
+	     (recur (assoc ret (key (first es)) (val (first es))) (rest es))
+	     (recur ret (rest es)))
+	   ret)))
 
 
 (defmacro time
@@ -1310,10 +1310,10 @@
 (defn nthrest
   "Returns the nth rest of coll, (seq coll) when n is 0."
   [coll n]
-  (loop [n n xs (seq coll)]
-    (if (and xs (pos? n))
-      (recur (dec n) (rest xs))
-      xs)))
+  (loop* [n n xs (seq coll)]
+	 (if (and xs (pos? n))
+	   (recur (dec n) (rest xs))
+	   xs)))
 
 (defn var-get
   "Gets the value in the var object"
@@ -1425,62 +1425,142 @@
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
 
+(defn destructure [bindings]
+  (let [bmap (apply hash-map bindings)
+        pb (fn pb [bvec b v]
+	     (let [pvec
+		   (fn [bvec b val]
+		     (let [gvec (gensym "vec__")]
+		       (loop* [ret (-> bvec (conj gvec) (conj val))
+			       n 0
+			       bs b
+			       seen-rest? false]
+			      (if bs
+				(let [firstb (first bs)]
+				  (cond
+				   (= firstb '&) (recur (pb ret (second bs) (list `nthrest gvec n))
+							n
+							(rrest bs)
+							true)
+				   (= firstb :as) (pb ret (second bs) gvec)
+				   :else (if seen-rest?
+					   (throw (new Error "Unsupported binding form, only :as can follow & parameter"))
+					   (recur (pb ret firstb  (list `nth gvec n nil))
+						  (inc n)
+						  (rest bs)
+						  seen-rest?))))
+				ret))))
+		   pmap
+		   (fn [bvec b v]
+		     (let [gmap (or (:as b) (gensym "map__"))
+			   defaults (:or b)]
+		       (loop* [ret (-> bvec (conj gmap) (conj v))
+			       bes (reduce
+				    (fn [bes entry]
+				      (reduce (fn [a b] (assoc a b ((val entry) b)))
+					      (dissoc bes (key entry))
+					      ((key entry) bes)))
+				    (dissoc b :as :or)
+				    {:keys (fn [a] (keyword (str a))), :strs str, :syms (fn [a] (list `quote a))})]
+			      (if bes
+				(let [bb (key (first bes))
+				      bk (val (first bes))
+				      has-default (contains? defaults bb)]
+				  (recur (pb ret bb (if has-default
+						      (list `get gmap bk (defaults bb))
+						      (list `get gmap bk)))
+					 (rest bes)))
+				ret))))]
+	       (cond
+		(symbol? b) (-> bvec (conj b) (conj v))
+		(vector? b) (pvec bvec b v)
+		(map? b) (pmap bvec b v)
+		:else (throw (new Error (str "Unsupported binding form: " b))))))
+        process-entry (fn [bvec b] (pb bvec (key b) (val b)))]
+    (if (every? symbol? (keys bmap))
+      bindings
+      (reduce process-entry [] bmap))))
+;; (try (destructure '[{a :a} {:a 1}]) (catch Error e (. e (getStackTrace))))
 
-;;(defn destructure [bindings]
-;;  (let [bmap (apply array-map bindings)
-;;        pb (fn pb [bvec b v]
-;;	     (let [pvec
-;;		   (fn [bvec b val]
-;;		     (let [gvec (gensym "vec__")]
-;;		       (loop [ret (-> bvec (conj gvec) (conj val))
-;;			      n 0
-;;			      bs b
-;;			      seen-rest? false]
-;;			 (if bs
-;;			   (let [firstb (first bs)]
-;;			     (cond
-;;			      (= firstb '&) (recur (pb ret (second bs) (list `nthrest gvec n))
-;;						   n
-;;						   (rrest bs)
-;;						   true)
-;;			      (= firstb :as) (pb ret (second bs) gvec)
-;;			      :else (if seen-rest?
-;;				      (throw (new Error "Unsupported binding form, only :as can follow & parameter"))
-;;				      (recur (pb ret firstb  (list `nth gvec n nil))
-;;					     (inc n)
-;;					     (rest bs)
-;;					     seen-rest?))))
-;;			   ret))))
-;;		   pmap
-;;		   (fn [bvec b v]
-;;		     (let [gmap (or (:as b) (gensym "map__"))
-;;			   defaults (:or b)]
-;;		       (loop [ret (-> bvec (conj gmap) (conj v))
-;;			      bes (reduce
-;;				   (fn [bes entry]
-;;				     (reduce (fn [a b] (assoc a b ((val entry) b)))
-;;					     (dissoc bes (key entry))
-;;					     ((key entry) bes)))
-;;				   (dissoc b :as :or)
-;;				   {:keys (fn [a] (keyword (str a))), :strs str, :syms (fn [a] (list `quote a))})]
-;;			 (if bes
-;;			   (let [bb (key (first bes))
-;;				 bk (val (first bes))
-;;				 has-default (contains? defaults bb)]
-;;			     (recur (pb ret bb (if has-default
-;;						 (list `get gmap bk (defaults bb))
-;;						 (list `get gmap bk)))
-;;				    (rest bes)))
-;;			   ret))))]
-;;	       (cond
-;;		(symbol? b) (-> bvec (conj b) (conj v))
-;;		(vector? b) (pvec bvec b v)
-;;		(map? b) (pmap bvec b v)
-;;		:else (throw (new Error (str "Unsupported binding form: " b))))))
-;;        process-entry (fn [bvec b] (pb bvec (key b) (val b)))]
-;;    (if (every? symbol? (keys bmap))
-;;      bindings
-;;      (reduce process-entry [] bmap))))
+
+;; (let [[a b c] [1 2 3]] a)
+;; (let [[a b c & d] [1 2 3 4 5 6 7]] d)
+(defmacro let
+  "Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein."
+  [bindings & body]
+  `(let* ~(destructure bindings) ~@body))
+
+
+;; ((fn [[x y z] a b c & d] x) [1 2 3] 2 3 4 5 6 7)
+(defmacro fn
+  "(fn name? [params* ] exprs*)
+  (fn name? ([params* ] exprs*)+)
+
+  params => positional-params* , or positional-params* & rest-param
+  positional-param => binding-form
+  rest-param => binding-form
+  name => symbol
+
+  Defines a function"
+  [& sigs]
+  (let [name (if (symbol? (first sigs)) (first sigs) nil)
+	sigs (if name (rest sigs) sigs)
+	sigs (if (vector? (first sigs)) (list sigs) sigs)
+	psig (fn [sig]
+	       (let [[params & body] sig]
+		 (if (every? symbol? params)
+		   sig
+		   (loop* [params params
+			   new-params []
+			   lets []]
+			  (if params
+			    (if (symbol? (first params))
+			      (recur (rest params) (conj new-params (first params)) lets)
+			      (let [gparam (gensym "p__")]
+				(recur (rest params) (conj new-params gparam) 
+				       (-> lets (conj (first params)) (conj gparam)))))
+			    `(~new-params
+			      (let ~lets
+				~@body)))))))
+	new-sigs (map psig sigs)]
+    (with-meta
+     (if name
+       (list* 'fn* name new-sigs)
+       (cons 'fn* new-sigs))
+     {}	;;*macro-meta*
+     )))
+
+
+;; (vec '(1 2 3))
+(defn vec
+  "Creates a new vector containing the contents of coll."
+  [coll]
+  (into [] (seq coll)))
+
+
+(defmacro loop
+  "Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein. Acts as a recur target."
+  [bindings & body]
+  (let [db (destructure bindings)]
+    (if (= db bindings)
+      `(loop* ~bindings ~@body)
+      (let [vs (take-nth 2 (drop 1 bindings))
+	    bs (take-nth 2 bindings)
+	    gs (map (fn [b] (if (symbol? b) b (gensym))) bs)
+	    bfs (reduce (fn [ret [b v g]]
+			  (if (symbol? b)
+			    (conj ret g v)
+			    (conj ret g v b g)))
+			[] (map vector bs vs gs))]
+	`(let ~bfs
+	   (loop* ~(vec (interleave gs gs))
+		  (let ~(vec (interleave bs gs))
+		    ~@body)))))))
+
 
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
@@ -1497,17 +1577,17 @@
   [socket buffer]
   (let [to-eval []
 	term 0]
-    (loop []
-      (if (> (. socket bytesAvailable) 0)
-	(let [byte (. socket (readUnsignedByte))]
-	  (if (= byte term)
-	    (do
-	      (. to-eval (push (str buffer)))
-	      (. buffer (clear)))
-	    (do
-	      (. buffer (append (char-code->str byte)))))
-	  (recur)
-	  )))
+    (loop* []
+	   (if (> (. socket bytesAvailable) 0)
+	     (let [byte (. socket (readUnsignedByte))]
+	       (if (= byte term)
+		 (do
+		   (. to-eval (push (str buffer)))
+		   (. buffer (clear)))
+		 (do
+		   (. buffer (append (char-code->str byte)))))
+	       (recur)
+	       )))
     to-eval
     ))
 
@@ -1534,7 +1614,7 @@
        socket
        )))
 
-;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
+;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
 (defmacro assert-true
   [form]
@@ -1590,17 +1670,17 @@
   (assert-true (= 1 (if true (do (doseq a (quote (1 2)) a) 1))))
 
   (assert-true (let [obj (new Object)]
-		 (set! (. obj nums) [])
-		 (set! (. obj funcs) [])
-		 (doseq ea '[1 2 3 4 5]
-		   (set! (. obj funcs) (conj
-					(. obj funcs)
-					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
-					)))
-		 (doseq ea (. obj funcs) (ea))
-		 (= [1 2 3 4 5] (. obj nums))
-		 ))
-
+  		 (set! (. obj nums) [])
+  		 (set! (. obj funcs) [])
+  		 (doseq ea '[1 2 3 4 5]
+  		   (set! (. obj funcs) (conj
+  					(. obj funcs)
+  					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
+  					)))
+  		 (doseq ea (. obj funcs) (ea))
+  		 (= [1 2 3 4 5] (. obj nums))
+  		 ))
+  
   ;;namespace stuff
   (let [sym (gensym)]
     (assert-false (find-ns sym))
@@ -1608,8 +1688,28 @@
     (assert-true (find-ns sym))
     (remove-ns sym)
     (assert-false (find-ns sym)))
-
+  
   (assert-true (= "1,2,3" ((memfn join sep) ["1", "2", "3"] ",")))
+
+
+  ;;Test destructuring binds
+  (assert-true (= '(1 2 3) (let [[a b c] [1 2 3]] (list a b c))))
+  
+  (assert-true (= '(4 5) (let [[a b c & d] [1 2 3 4 5]] d)))
+  
+  (assert-true (= '[1 2 3 4 5] (let [[a b c & d :as e] [1 2 3 4 5]] e)))
+  
+  (assert-true (= '(1 2 3 4 5) (let [[a b c & d :as e] '(1 2 3 4 5)] e)))
+  
+  (assert-true (= '[1 2 3 4] (let [[[x1 y1][x2 y2]] [[1 2] [3 4]]] [x1 y1 x2 y2])))
+  
+  (assert-true (= '["a" "s" ("d" "j" "h" "h" "f" "d" "a" "s") "asdjhhfdas"]
+  		  (let [[a b & c :as str] "asdjhhfdas"] [a b c str])))
+  
+  ;;  (assert-true (= [5 3 6 {:c 6, :a 5}] (let [{a :a, b :b, c :c, :as m :or {a 2 b 3}} {:a 5 :c 6}]
+  ;;  					 [a b c m])))
+  ;;(try (destructure '[{a :a} {:a 1}]) (catch Error e (. e (getStackTrace))))
+
 
   )
 

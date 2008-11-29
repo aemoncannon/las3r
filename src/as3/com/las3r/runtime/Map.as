@@ -202,10 +202,10 @@ class MapSeq extends ASeq implements ISeq{
 	}
 
 	override public function reduce(f:Function, start:Object):Object {
-		var ret:Object = f(start, entries[i].value);
+		var ret:Object = f(start, entries[i]);
 		var len:int = count();
 		for(var x:int = i + 1; x < len; x++){
-			ret = f(ret, entries[x].value);
+			ret = f(ret, entries[x]);
 		}
 		return ret;
 	}
