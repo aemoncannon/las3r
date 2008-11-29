@@ -792,133 +792,153 @@ package com.las3r.runtime{
 				return List.createFromArray(a.slice(i));
 			}
 
-		public function propertyNamesList(object:Object):List{
-			var result:Array = [];
+			public function propertyNamesList(object:Object):List{
+				var result:Array = [];
 
-			for(var iterant:String in object){
-				result.push(iterant);
+				for(var iterant:String in object){
+					result.push(iterant);
+				}
+				return List.createFromArray(result);
 			}
-			return List.createFromArray(result);
-		}
 
-		public function propertyValuesList(object:Object):List{
-			var result:Array = [];
-			
-			for each(var iterant:* in object){
-				result.push(iterant);
+			public function propertyValuesList(object:Object):List{
+				var result:Array = [];
+				
+				for each(var iterant:* in object){
+					result.push(iterant);
+				}
+				return List.createFromArray(result);
 			}
-			return List.createFromArray(result);
-		}
+
+			public function getPropertyByName(instance:Object, property:String) {
+				return instance[property];
+			}
 
 			public function printToString(x:Object):String {
 				var w:NaiveStringWriter = new NaiveStringWriter();
 				print(x, w);
 				return w.toString();
-			}
+				public function printToString(x:Object):String {
+					var w:NaiveStringWriter = new NaiveStringWriter();
+					print(x, w);
+					return w.toString();
+				}
 
-			public function print(x:Object, w:OutputStream):void {
-				//TODO - make extensible
-				var readably:Boolean = Boolean(PRINT_READABLY.get());
-				if(x == null)
-				w.write("nil");
-				else if(x is ISeq || x is IList)
-				{
-					w.write('(');
+				public function print(x:Object, w:OutputStream):void {
+					//TODO - make extensible
+					var readably:Boolean = Boolean(PRINT_READABLY.get());
+					if(x == null)
+					w.write("nil");
+					else if(x is ISeq || x is IList)
+					{
+						w.write('(');
 						printInnerSeq(seq(x), w);
 						w.write(')');
-				}
-				else if(x is String)
-				{
-					var s:String = String(x);
-					if(!readably)
-					w.write(s);
-					else
-					{
-						w.write('"');
-						//w.write(x.toString());
-						for(var i:int = 0; i < s.length; i++)
+					}
+
+					public function print(x:Object, w:OutputStream):void {
+						//TODO - make extensible
+						var readably:Boolean = Boolean(PRINT_READABLY.get());
+						if(x == null)
+						w.write("nil");
+						else if(x is ISeq || x is IList)
 						{
-							var c:String = s.charAt(i);
-							switch(c)
+							w.write('(');
+							printInnerSeq(seq(x), w);
+							w.write(')');
+						}
+						else if(x is String)
+						{
+							var s:String = String(x);
+							if(!readably)
+							w.write(s);
+							else
 							{
-								case '\n':
-								w.write("\\n");
-								break;
-								case '\t':
-								w.write("\\t");
-								break;
-								case '\r':
-								w.write("\\r");
-								break;
-								case '"':
-								w.write("\\\"");
-								break;
-								case '\\':
-								w.write("\\\\");
-								break;
-								case '\f':
-								w.write("\\f");
-								break;
-								case '\b':
-								w.write("\\b");
-								break;
-								default:
-								w.write(c);
+								w.write('"');
+								//w.write(x.toString());
+								for(var i:int = 0; i < s.length; i++)
+								{
+									var c:String = s.charAt(i);
+									switch(c)
+									{
+										case '\n':
+										w.write("\\n");
+										break;
+										case '\t':
+										w.write("\\t");
+										break;
+										case '\r':
+										w.write("\\r");
+										break;
+										case '"':
+										w.write("\\\"");
+										break;
+										case '\\':
+										w.write("\\\\");
+										break;
+										case '\f':
+										w.write("\\f");
+										break;
+										case '\b':
+										w.write("\\b");
+										break;
+										default:
+										w.write(c);
+									}
+								}
+								w.write('"');
 							}
 						}
-						w.write('"');
+						else if(x is IMap)
+						{
+							w.write('{');
+							for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+							{
+								var v:MapEntry = MapEntry(sq.first());
+								print(v.key, w);
+								w.write(' ');
+								print(v.value, w);
+								if(sq.rest() != null)
+								w.write(", ");
+							}
+							w.write('}');
+						}
+						else if(x is IVector)
+						{
+							var a:IVector = IVector(x);
+							w.write('[');
+							for(i = 0; i < a.count(); i++)
+							{
+								print(a.nth(i), w);
+								if(i < a.count() - 1)
+								w.write(' ');
+							}
+							w.write(']');
+						}
+						else if(x is ISet)
+						{
+							w.write("#{");
+							for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+							{
+								print(setSq.first(), w);
+								if(setSq.rest() != null)
+								w.write(" ");
+							}
+							w.write('}');
+						}
+						else w.write(x.toString());
 					}
-				}
-				else if(x is IMap)
-				{
-					w.write('{');
-						for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+
+
+					private function printInnerSeq(x:ISeq, w:OutputStream):void{
+						for(var sq:ISeq = x; sq != null; sq = sq.rest())
 						{
-							var v:MapEntry = MapEntry(sq.first());
-							print(v.key, w);
-							w.write(' ');
-							print(v.value, w);
+							print(sq.first(), w);
 							if(sq.rest() != null)
-							w.write(", ");
-						}
-						w.write('}');
-				}
-				else if(x is IVector)
-				{
-					var a:IVector = IVector(x);
-					w.write('[');
-						for(i = 0; i < a.count(); i++)
-						{
-							print(a.nth(i), w);
-							if(i < a.count() - 1)
 							w.write(' ');
 						}
-						w.write(']');
-				}
-				else if(x is ISet)
-				{
-					w.write("#{");
-						for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-						{
-							print(setSq.first(), w);
-							if(setSq.rest() != null)
-							w.write(" ");
-						}
-						w.write('}');
-				}
-				else w.write(x.toString());
-			}
+					}
 
 
-			private function printInnerSeq(x:ISeq, w:OutputStream):void{
-				for(var sq:ISeq = x; sq != null; sq = sq.rest())
-				{
-					print(sq.first(), w);
-					if(sq.rest() != null)
-					w.write(' ');
 				}
 			}
-
-
-		}
-	}
