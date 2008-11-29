@@ -64,6 +64,12 @@ package com.las3r.runtime{
 			this.ns = nsInterned;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			var s:Symbol = this;//new Symbol(ns, name, new Lock());
+			s._meta = meta;
+			return s;
+		}
+
 		public function equals(o:Object):Boolean{
 			if(this == o)
 			return true;

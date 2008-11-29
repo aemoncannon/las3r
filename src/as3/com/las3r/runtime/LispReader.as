@@ -64,10 +64,10 @@ package com.las3r.runtime{
 		}
 
 		public function pushGensymEnv(env:IMap):void{
-			_gensymEnvStack.cons(env);
+			_gensymEnvStack = _gensymEnvStack.cons(env);
 		}
 		public function popGensymEnv():void{
-			_gensymEnvStack.popEnd();
+			_gensymEnvStack = _gensymEnvStack.popEnd();
 		}
 		public function get currentGensymEnv():IMap{
 			return IMap(_gensymEnvStack.peek());
@@ -461,7 +461,7 @@ class MetaReader implements IReaderMacro{
 	public function invoke(reader:Object, semicolon:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		var line:int = -1;
-		// TODO: Aemon do this..		
+		// TODO: Aemon do this..
 		// 		if(r is LineNumberingPushbackReader)
 		// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
 
@@ -474,8 +474,8 @@ class MetaReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is IObj)
 		{
-			// 			if(line != -1 && o instanceof ISeq)
-			// 			meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
+			//if(line != -1 && o instanceof ISeq)
+			//meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
 			return (IObj(o).withMeta(IMap(meta)));
 		}
 		else
@@ -767,10 +767,10 @@ class SyntaxQuoteReader implements IReaderMacro{
 	}
 
 	private static function flattenMap(form:Object):IVector{
-		var keyvals:IVector = RT.vector();
+		var keyvals:Vector = Vector(RT.vector());
 		form.each(function(key:Object, val:Object):void{
-				keyvals = keyvals.cons(key);
-				keyvals = keyvals.cons(val);				
+				keyvals.push(key);
+				keyvals.push(val);				
 			});
 		return keyvals;
 	}

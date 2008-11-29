@@ -44,6 +44,27 @@ package com.las3r.runtime{
 			return ret;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			if(meta != _meta){
+				var m:Map = copy();
+				m._meta = meta;
+				return m;
+			}
+			else{
+				return this;
+			}
+		}
+
+		private function copy():Map{
+			var d:Dictionary = new Dictionary();
+			for(var name:* in _dict){
+				d[name] = _dict[name];
+			}
+			var m:Map = new Map();
+			m._dict = d;
+			return m;
+		}
+
 		public function Map(){
 			_dict = new Dictionary();
 		}

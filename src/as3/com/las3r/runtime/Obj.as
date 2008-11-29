@@ -12,7 +12,7 @@
 
 
 package com.las3r.runtime{
-	public class Obj implements IObj{
+	/*abstract*/ public class Obj implements IObj{
 		protected var _meta:IMap;
 
 		public function Obj(meta:IMap = null){
@@ -23,9 +23,9 @@ package com.las3r.runtime{
 			return _meta;
 		}
 
-		public function withMeta(meta:IMap):IObj{
-			_meta = meta;
-			return this;
+		public function withMeta(meta:IMap):IObj{ 
+			throw "subclass responsibility";
+			return null;
 		}
 
 	}

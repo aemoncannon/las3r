@@ -139,6 +139,12 @@ class SetSeq extends ASeq implements ISeq{
 		this.i = i;
 	}
 
+	override public function withMeta(meta:IMap):IObj{
+		var s:SetSeq = new SetSeq(entries, i);
+		s._meta = meta;
+		return s;
+	}
+
 	override public function first():Object{
 		return entries[i];
 	}
