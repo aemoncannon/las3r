@@ -700,7 +700,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 				var gs:Symbol = Symbol(gmap.valAt(sym));
 				if(gs == null){
 					gs = rt.sym2(null, sym.name.substring(0, sym.name.length - 1) + "__" + rt.nextID());
-					gmap.assoc(sym, gs);
+					gmap = gmap.assoc(sym, gs);
 				}
 				sym = gs;
 			}

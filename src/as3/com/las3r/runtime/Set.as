@@ -48,7 +48,7 @@ package com.las3r.runtime{
 			return "<set: " + count() + " items>";
 		}
 
-		public function equals(obj:Object):Boolean{
+		override public function equals(obj:*):Boolean{
 			if(!(obj is ISet)){
 				return false;
 			}

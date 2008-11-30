@@ -14,7 +14,7 @@ package com.las3r.runtime{
 
 	import flash.utils.Dictionary;
 
-	public class LispNamespace {
+	public class LispNamespace implements IHashable{
 		public var name:Symbol;
 		private var _mappings:IMap = new Map();
 		private var _aliases:IMap = new Map();
@@ -30,11 +30,15 @@ package com.las3r.runtime{
 			return "#<LispNamespace: " + name + ">";
 		}
 
+		public function hashCode():*{
+			return toString();
+		}
+
 		function LispNamespace(rt:RT, name:Symbol){
 			_rt = rt;
 			this.name = name;
 			rt.DEFAULT_IMPORTS.each(function(key:Object, val:Object):void{
-					_mappings.assoc(key, val);
+					_mappings = _mappings.assoc(key, val);
 				});
 		}
 
@@ -53,14 +57,13 @@ package com.las3r.runtime{
 			{
 				throw new Error("IllegalArgumentException: Can't intern namespace-qualified symbol");
 			}
-			var map:IMap = getMappings();
-			var o:Object = map.valAt(sym);
+			var o:Object = _mappings.valAt(sym);
 			if(o is Var && (Var(o).ns == this)) {
 				return Var(o);
 			}
 			else if(o == null){
 				var v:Var = new Var(_rt, this, sym);
-				map.assoc(sym, v);
+				_mappings = _mappings.assoc(sym, v);
 				return v;
 			}
 			else{
@@ -74,13 +77,12 @@ package com.las3r.runtime{
 			{
 				throw new Error("IllegalArgumentException: Can't intern namespace-qualified symbol");
 			}
-			var map:IMap = getMappings();
-			var o:Object = map.valAt(sym);
+			var o:Object = _mappings.valAt(sym);
 			if(o == val) {
 				return o;
 			}
 			else if(o == null){
-				map.assoc(sym, val);
+				_mappings = _mappings.assoc(sym, val);
 				return val;
 			}
 			else{
@@ -94,8 +96,7 @@ package com.las3r.runtime{
 			{
 				throw new Error("IllegalArgumentException: Can't unintern namespace-qualified symbol");
 			}
-			var map:IMap = getMappings();
-			map.remove(sym);
+			_mappings = _mappings.without(sym);
 		}
 
 
@@ -118,7 +119,7 @@ package com.las3r.runtime{
 			return ns;
 
 			var newns:LispNamespace = new LispNamespace(rt, name);
-			rt.namespaces.assoc(name, newns);
+			rt.namespaces = rt.namespaces.assoc(name, newns);
 			return newns;
 		}
 
@@ -127,7 +128,7 @@ package com.las3r.runtime{
 			if(name.getName() == LAS3R_NAMESPACE_NAME)
 			throw new Error("IllegalArgumentException: Cannot remove las3r namespace");
 			var ns:LispNamespace  = LispNamespace(rt.namespaces.valAt(name));
-			rt.namespaces.remove(name);
+			rt.namespaces = rt.namespaces.without(name);
 			return ns;
 		}
 
@@ -167,7 +168,7 @@ package com.las3r.runtime{
 		}
 
 		public function removeAlias(alias:Symbol):void{
-			_aliases = _aliases.remove(alias);
+			_aliases = _aliases.without(alias);
 		}
 
 

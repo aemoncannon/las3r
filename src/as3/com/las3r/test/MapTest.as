@@ -28,7 +28,7 @@ package com.las3r.test{
 			var m:IMap = Map.createFromMany("one", 1, "two", 2, "three", 3);
 			assertTrue("'one' should be 1", m.valAt("one") == 1);
 			assertTrue("count of map should be 3", m.count() == 3);
-			m.assoc("dude", 5);
+			m = m.assoc("dude", 5);
 			assertTrue("'dude' should be 5", m.valAt("dude") == 5);
 			assertTrue("'dudette' should be default val", m.valAt("dudette", "horse") == "horse");
 		}

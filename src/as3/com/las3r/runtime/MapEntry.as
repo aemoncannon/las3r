@@ -12,6 +12,8 @@
 
 package com.las3r.runtime{
 
+	import com.las3r.util.Util;
+
 	public class MapEntry{
 
 		public var key:*;
@@ -20,6 +22,18 @@ package com.las3r.runtime{
 		public function MapEntry(key:*, value:*){
 			this.key = key;
 			this.value = value;
+		}
+
+		public function equals(obj:Object):Boolean{
+			if(obj == this){
+				return true;
+			}
+			else if(!(obj is MapEntry)){
+				return false;
+			}
+			else{
+				return Util.equal(obj.key, key) && Util.equal(obj.value, value);
+			}
 		}
 
 	}

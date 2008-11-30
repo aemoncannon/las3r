@@ -16,6 +16,7 @@ package com.las3r.runtime{
 	import com.las3r.errors.CompilerError;
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	import flash.events.*;
 	import com.hurlant.eval.gen.Script;
 	import com.hurlant.eval.gen.ABCEmitter;
@@ -42,8 +43,8 @@ package com.las3r.runtime{
 
 		public function get rt():RT{ return _rt; }
 		public function get constants():Array{ return _rt.constants; }
-		public function get keywords():IMap{ return _rt.keywords; }
-		public function get vars():IMap{ return _rt.vars; }
+		public function get keywords():Dictionary{ return _rt.keywords; }
+		public function get vars():Dictionary{ return _rt.vars; }
 
 		public function Compiler(rt:RT){
 			_rt = rt;
@@ -255,17 +256,17 @@ package com.las3r.runtime{
 		}
 
 		public function registerVar(v:Var):void{
-			var id:Object = RT.get(vars, v);
+			var id:Object = vars[v];
 			if(id == null){
-				RT.assoc(vars, v, registerConstant(v));
+				vars[v] =  registerConstant(v);
 			}
 		}
 
 		public function registerKeyword(keyword:Keyword):KeywordExpr{
-			var id:Object = RT.get(keywords, keyword);
+			var id:Object = keywords[keyword];
 			if(id == null)
 			{
-				RT.assoc(keywords, keyword, registerConstant(keyword));
+				keywords[keyword] = registerConstant(keyword);
 			}
 			return new KeywordExpr(this, keyword);
 		}
@@ -285,12 +286,12 @@ package com.las3r.runtime{
 		}
 
 		public function emitVar(gen:CodeGen, aVar:Var):void{
-			var i:int = int(vars.valAt(aVar));
+			var i:int = int(vars[aVar]);
 			emitConstant(gen, i);
 		}
 
 		public function emitKeyword(gen:CodeGen, k:Keyword):void {
-			var i:int = int(keywords.valAt(k));
+			var i:int = int(keywords[k]);
 			emitConstant(gen, i);
 		}
 
@@ -1866,7 +1867,7 @@ class MapExpr implements Expr{
 		for(var i:int = 0; i < keyvals.count(); i += 2){
 			var key:Object = Expr(keyvals.nth(i)).interpret();
 			var val:Object = Expr(keyvals.nth(i + 1)).interpret();
-			m.assoc(key, val);
+			m = m.assoc(key, val);
 		}
 		return m;
 	}

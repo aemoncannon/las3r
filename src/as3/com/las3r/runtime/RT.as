@@ -44,8 +44,8 @@ package com.las3r.runtime{
 		public var specials:Vector;
 		public var dvals:Frame = new Frame();
 
-		public var vars:IMap;
-		public var keywords:IMap;
+		public var vars:Dictionary;
+		public var keywords:Dictionary;
 		public var constants:Array;
 
 		public var stdout:OutputStream;
@@ -147,8 +147,8 @@ package com.las3r.runtime{
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
-			keywords = RT.map();
-			vars = RT.map();
+			keywords = new Dictionary();
+			vars = new Dictionary();
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));

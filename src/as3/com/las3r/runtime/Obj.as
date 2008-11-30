@@ -12,7 +12,7 @@
 
 
 package com.las3r.runtime{
-	/*abstract*/ public class Obj implements IObj{
+	/*abstract*/ public class Obj implements IObj, IHashable{
 		protected var _meta:IMap;
 
 		public function Obj(meta:IMap = null){
@@ -24,9 +24,19 @@ package com.las3r.runtime{
 		}
 
 		public function withMeta(meta:IMap):IObj{ 
-			throw "subclass responsibility";
+			throw "Subclass responsibility";
 			return null;
 		}
+
+		public function hashCode():*{
+			throw "Subclass responsibility. " + this + " is not hashable.";
+			return -1;
+		}
+
+		public function equals(o:*):Boolean{
+			return o === this;
+		}
+
 
 	}
 }

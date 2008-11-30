@@ -12,9 +12,10 @@
 
 package com.las3r.runtime{
 
-	public class Keyword{
+	public class Keyword implements IHashable{
 
 		public var sym:Symbol;
+		private var hash:String;
 
 		public static function intern1(rt:RT, sym:Symbol):Keyword{
 			var k:Keyword = rt.internedKeywords[sym];
@@ -34,9 +35,14 @@ package com.las3r.runtime{
 
 		public function Keyword(sym:Symbol, l:Lock){
 			this.sym = sym;
+			this.hash = ":" + this.sym.hashCode;
 		}
 
-		public function equals(o:Object):Boolean{
+		public function hashCode():*{
+			return this.hash;
+		}
+
+		public function equals(o:*):Boolean{
 			if(this == o)
 			return true;
 
