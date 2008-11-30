@@ -763,8 +763,11 @@ package com.las3r.runtime{
 		}
 
 		public static function assoc(map:IMap, key:Object, val:Object):IMap{
-			map.assoc(key, val);
-			return map;
+			return map.assoc(key, val);
+		}
+
+		public static function dissoc(map:IMap, key:Object):IMap{
+			return map.without(key);
 		}
 
 		public static function map(...init:Array):IMap{

@@ -29,6 +29,8 @@ package com.las3r.runtime{
 		public var dispatchMacros:IMap;
 		public var _gensymEnvStack:IVector;
 
+		public var GENSYM_ENV:Var;
+
 		//symbol->gensymbol
 		//sorted-map num->gensymbol
 		//	static Var ARG_ENV = Var.create(null);
@@ -60,17 +62,7 @@ package com.las3r.runtime{
 				CharUtil.LBRACE, new SetReader(this)
 			);
 
-			_gensymEnvStack = RT.vector();
-		}
-
-		public function pushGensymEnv(env:IMap):void{
-			_gensymEnvStack = _gensymEnvStack.cons(env);
-		}
-		public function popGensymEnv():void{
-			_gensymEnvStack = _gensymEnvStack.popEnd();
-		}
-		public function get currentGensymEnv():IMap{
-			return IMap(_gensymEnvStack.peek());
+			GENSYM_ENV = new Var(_rt, null, null, null);
 		}
 
 		public function isWhitespace(ch:int):Boolean{
@@ -674,12 +666,12 @@ class SyntaxQuoteReader implements IReaderMacro{
 	
 	public function invoke(reader:Object, backquote:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
-
-		_reader.pushGensymEnv(RT.map());
+		Var.pushBindings(_rt, RT.map(
+				_reader.GENSYM_ENV, RT.map()
+			));
 		var form:Object = _reader.read(r, true, null);
 		var result:Object = syntaxQuote(_rt, _reader, form)
-		_reader.popGensymEnv();
-
+		Var.popBindings(_rt);
 		return result;
 	}
 
@@ -693,7 +685,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 			var sym:Symbol = Symbol(form);
 			if(sym.ns == null && sym.name.match(/\#$/))
 			{
-				var gmap:IMap = reader.currentGensymEnv;
+				var gmap:IMap = IMap(reader.GENSYM_ENV.get());
 				if(gmap == null){
 					throw new Error("IllegalStateException: Gensym literal not in syntax-quote");
 				}
@@ -702,6 +694,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 					gs = rt.sym2(null, sym.name.substring(0, sym.name.length - 1) + "__" + rt.nextID());
 					gmap = gmap.assoc(sym, gs);
 				}
+				reader.GENSYM_ENV.set(gmap);
 				sym = gs;
 			}
 			else{
