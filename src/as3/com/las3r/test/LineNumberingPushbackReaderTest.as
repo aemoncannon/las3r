@@ -28,6 +28,26 @@ package com.las3r.test{
 			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("hello"));
 		}
 
+		public function testReadStringWithNewline():void{
+			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("a\nb"));
+			assertTrue("first character should be a 'a'", String.fromCharCode(s.readOne()) == "a");
+			assertTrue("next character should be '\\n'", String.fromCharCode(s.readOne()) == "\n");
+			assertTrue("next character should be 'b'", String.fromCharCode(s.readOne()) == "b");
+			assertTrue("next character should be -1", s.readOne() == -1);
+		}
+
+		public function testReadQuotedStringCharByChar():void{
+			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("\"hello\""));
+			assertTrue("first character should be '\"'", String.fromCharCode(s.readOne()) == "\"");
+			assertTrue("next character should be 'h'", String.fromCharCode(s.readOne()) == "h");
+			assertTrue("next character should be 'e'", String.fromCharCode(s.readOne()) == "e");
+			assertTrue("next character should be 'l'", String.fromCharCode(s.readOne()) == "l");
+			assertTrue("next character should be 'l'", String.fromCharCode(s.readOne()) == "l");
+			assertTrue("next character should be 'o'", String.fromCharCode(s.readOne()) == "o");
+			assertTrue("next character should be '\"'", String.fromCharCode(s.readOne()) == "\"");
+			assertTrue("next character should be -1", s.readOne() == -1);
+		}
+
 		public function testReadStringCharByChar():void{
 			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("hello"));
 			assertTrue("first character should be 'h'", String.fromCharCode(s.readOne()) == "h");
