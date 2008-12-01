@@ -15,8 +15,8 @@ package com.las3r.io{
 
 	public class LineNumberingPushbackReader extends PushbackReader{
 
-		public function LineNumberingPushbackReader(r:Reader){
-			super(new LineNumberReader(r));
+		public function LineNumberingPushbackReader(r:Reader, size:int = 2){
+			super(new LineNumberReader(r), size);
 		}
 
 		public function getLineNumber():int{

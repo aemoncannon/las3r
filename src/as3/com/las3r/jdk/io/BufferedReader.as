@@ -47,7 +47,7 @@ package com.las3r.jdk.io{
 
 	import com.las3r.jdk.util.ArrayUtil;
 	import com.las3r.util.StringBuffer;
-	import flash.utils.ArrayUtil;
+	import flash.utils.ByteArray;
 
 	/* Written using "Java Class Libraries", 2nd edition, plus online
 	* API docs for JDK 1.2 beta from http://www.javasoft.com.
@@ -70,6 +70,11 @@ package com.las3r.jdk.io{
 	*/
 	public class BufferedReader extends Reader
 	{
+
+		// The JCL book specifies the default buffer size as 8K characters.
+		// This is package-private because it is used by LineNumberReader.
+		public static const DEFAULT_BUFFER_SIZE:int = 8192;
+
 
 		public static var LF:int = "\n".charCodeAt(0);
 		public static var CR:int = "\r".charCodeAt(0);
@@ -98,10 +103,6 @@ package com.las3r.jdk.io{
 		guaranteed to be >= the read-limit requested in the call to mark. */
 		protected var markPos:int = -1;
 
-		// The JCL book specifies the default buffer size as 8K characters.
-		// This is package-private because it is used by LineNumberReader.
-		public static const DEFAULT_BUFFER_SIZE:int = 8192;
-
 		/**
 		* The line buffer for <code>readLine</code>.
 		*/
@@ -121,7 +122,7 @@ package com.las3r.jdk.io{
 		public function BufferedReader(inReader:Reader, _size:int = -1)
 		{
 			super();
-			var size:int = _size > -1 ? size : DEFAULT_BUFFER_SIZE;
+			var size:int = _size > -1 ? _size : DEFAULT_BUFFER_SIZE;
 			if (size <= 0)
 			throw new Error("IllegalArgumentException: Illegal buffer size: " + size);
 			_in = inReader;
@@ -473,7 +474,7 @@ package com.las3r.jdk.io{
 					}
 					continue;
 				}
-				var ch:int = buffer[pos++];
+				ch = buffer[pos++];
 				if (ch == LF || ch == CR)
 				{
 					// Check here if a '\r' was the last char in the buffer; if so,
@@ -508,7 +509,7 @@ package com.las3r.jdk.io{
 		* @exception IOException If an error occurs.
 		* @exception IllegalArgumentException If count is negative.
 		*/
-		override public function skip(count:Number):Number
+		override public function skip(count:int):int
 		{
 			checkStatus();
 			if (count < 0)

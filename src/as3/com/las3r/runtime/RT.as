@@ -320,7 +320,7 @@ package com.las3r.runtime{
 		*/		
 		public function evalStr(src:String, onComplete:Function = null, progress:Function = null, onFailure:Function = null):void{
 			var workUnit:Object = {};
-			workUnit.reader = new PushbackReader(new StringReader(src));
+			workUnit.reader = new LineNumberingPushbackReader(new StringReader(src));
 			workUnit.start = function():void{
 				Var.pushBindings(_this, 
 					RT.map(

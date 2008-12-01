@@ -94,7 +94,7 @@ package com.las3r.jdk.io{
 		* @param in The subordinate <code>Reader</code> to read from
 		* @param size The buffer size to use for reading
 		*/
-		public function LineNumberReader(inReader:Reader, size:int)
+		public function LineNumberReader(inReader:Reader, size:int = -1)
 		{
 			super(inReader, size > -1 ? size : DEFAULT_BUFFER_SIZE);
 		}
@@ -266,7 +266,7 @@ package com.las3r.jdk.io{
 		* @exception IndexOutOfBoundsException If buffer parameters (offset and
 		* count) lies outside of the buffer capacity.
 		*/
-		override public function readIntoArrayAt(buf:Array, offset:int, count:int)
+		override public function readIntoArrayAt(buf:Array, offset:int, count:int):int
 		{
 			if (buf == null)
 			throw new Error("NullPointerException");
@@ -379,7 +379,7 @@ package com.las3r.jdk.io{
 		*
 		* @exception IOException If an error occurs
 		*/
-		override public function skip(count:Number):Number
+		override public function skip(count:int):int
 		{
 			if (count < 0)
 			throw new Error("IllegalArgumentException: skip() value is negative");
