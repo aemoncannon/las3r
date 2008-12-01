@@ -528,8 +528,8 @@ class CodeGen{
 
 
 
-	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int):CodeGen{
-		return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth));
+	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
+		return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
 	}
 
 
@@ -1484,6 +1484,8 @@ class FnExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
+		var line:int = int(_compiler.LINE.get());
+		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + line;
 		var methGen:CodeGen;
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
@@ -1494,7 +1496,7 @@ class FnExpr implements Expr{
 			meth.optionalParams.each(function(ea:Object):void{
 					formalsTypes.push(0/*'*'*/);
 				});
-			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth);
+			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth, name);
 			if(meth.optionalParams.count() > 0){
 				var defaults:Array = meth.optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 				methGen.meth.setDefaults(defaults);
@@ -1504,7 +1506,7 @@ class FnExpr implements Expr{
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 
-			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth);
+			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth, name);
 			var argsIndex:int = 1;
 
 			// Initialize all the jump labels

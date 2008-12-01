@@ -12,13 +12,30 @@
 package com.las3r.util
 {
 
+	import flash.utils.ByteArray;
+
 	public class StringBuffer{
 
 		private var _pieces:Array = [];
+		private var _length:int = 0;
 		
 		public function append(str:String):StringBuffer{
 			_pieces.push(str);
+			_length += str.length;
 			return this;
+		}
+
+		public function appendBytesFromArray(buffer:Array, i:int, j:int):StringBuffer{
+			var byteArray:ByteArray = new ByteArray();
+			for(var index:int = i; i < j; index++){
+				byteArray.writeByte(buffer[index]);
+			}
+			var str:String = byteArray.readUTFBytes(byteArray.length);
+			return append(str);
+		}
+
+		public function length():int{
+			return _length;
 		}
 
 		public function toString():String{
@@ -26,6 +43,7 @@ package com.las3r.util
 		}
 
 		public function clear():void{
+			_length = 0;
 			_pieces = [];
 		}
 		

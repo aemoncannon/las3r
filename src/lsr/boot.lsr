@@ -1451,7 +1451,7 @@
 						  seen-rest?))))
 				ret))))
 		   pmap
-		   (fn [bvec b v]
+		   (fn pmap [bvec b v]
 		     (let [gmap (or (get b :as) (gensym "map__"))
 			   defaults (get b :or)]
 		       (loop* [ret (-> bvec (conj gmap) (conj v))

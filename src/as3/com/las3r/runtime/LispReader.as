@@ -13,6 +13,7 @@ package com.las3r.runtime{
 
     import com.las3r.jdk.io.PushbackReader;
     import com.las3r.jdk.io.Reader;
+    import com.las3r.io.LineNumberingPushbackReader;
     import com.las3r.util.*;
     import com.las3r.errors.ReaderError;
 
@@ -126,10 +127,8 @@ package com.las3r.runtime{
 			}
 			catch(e:Error)
 			{
-				// if(isRecursive || !(r instanceof LineNumberingPushbackReader))
-				//throw e;
-				// 				LineNumberingPushbackReader rdr = (LineNumberingPushbackReader) r;
-				var lineNumber:int = 0; //TODO: Aemon, get this from the reader..
+				if(r is LineNumberingPushbackReader)
+				var lineNumber = LineNumberingPushbackReader(r).getLineNumber();
 				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber + ": " + e.message, e);
 				throw lispError;
 			}
@@ -340,7 +339,7 @@ package com.las3r.runtime{
 	}
 }
 
-
+import com.las3r.io.LineNumberingPushbackReader;
 import com.las3r.jdk.io.PushbackReader;
 import com.las3r.jdk.io.Reader;
 import com.las3r.runtime.*;
@@ -453,9 +452,8 @@ class MetaReader implements IReaderMacro{
 	public function invoke(reader:Object, semicolon:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		var line:int = -1;
-		// TODO: Aemon do this..
-		// 		if(r is LineNumberingPushbackReader)
-		// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
+		if(r is LineNumberingPushbackReader)
+		line = LineNumberingPushbackReader(r).getLineNumber();
 
 		var meta:Object = _reader.read(r, true, null)
 		if(meta is Symbol || meta is Keyword || meta is String)
@@ -466,8 +464,8 @@ class MetaReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is IObj)
 		{
-			//if(line != -1 && o instanceof ISeq)
-			//meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
+			if(line != -1 && o is ISeq)
+			meta = IMap(meta).assoc(_reader.rt.LINE_KEY, line);
 			return (IObj(o).withMeta(IMap(meta)));
 		}
 		else

@@ -13,7 +13,7 @@ package com.hurlant.eval.gen
             this.formals = formals;
             this.initScopeDepth = initScopeDepth
             this.e = e;
-            this.name = name;
+            this.name = e.constants.stringUtf8(name);
 
             // Standard prologue -- but is this always right?
             // ctors don't need this - have a more complicated prologue
@@ -41,7 +41,7 @@ package com.hurlant.eval.gen
                 return;
             finalized = true;
 
-            var meth = e.file.addMethod(new ABCMethodInfo(0, formals, 0, asm.flags, defaults, null));
+            var meth = e.file.addMethod(new ABCMethodInfo(name, formals, 0, asm.flags, defaults, null));
             var body = new ABCMethodBodyInfo(meth);
             body.setMaxStack(asm.maxStack);
             body.setLocalCount(asm.maxLocal);
