@@ -62,7 +62,7 @@ indentation."
 (defvar las3r-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-x\C-e" 'las3r-eval-last-sexp)
-    (define-key map "\C-c\C-r" 'las3r-eval-buffer)
+    (define-key map [f5] 'las3r-eval-buffer)
     map)
   "Keymap for ordinary Las3r mode.
 All commands in `lisp-mode-shared-map' are inherited by this map.")
