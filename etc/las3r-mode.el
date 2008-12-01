@@ -62,6 +62,7 @@ indentation."
 (defvar las3r-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-x\C-e" 'las3r-eval-last-sexp)
+    (define-key map [f5] 'las3r-eval-buffer)
     map)
   "Keymap for ordinary Las3r mode.
 All commands in `lisp-mode-shared-map' are inherited by this map.")
@@ -140,6 +141,13 @@ if that value is non-nil."
 	     (buf (process-buffer proc)))
 	(kill-buffer buf)))))
   
+(defun las3r-eval-buffer nil
+  "Evaluate the code in the current buffer."
+  (interactive)
+  (let ((src (buffer-string)))
+    (let* ((proc (http-post "http://localhost:9876/push" `(("src" . ,(format "%s" src))) 'iso-8859-1))
+	   (buf (process-buffer proc)))
+      (kill-buffer buf))))
 
 (defun las3r-font-lock-def-at-point (point)
   "Find the position range between the top-most def* and the
