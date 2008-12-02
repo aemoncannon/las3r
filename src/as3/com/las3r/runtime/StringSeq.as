@@ -22,6 +22,12 @@ package com.las3r.runtime{
 			this.i = i;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			var s:StringSeq = new StringSeq(str, i);
+			s._meta = meta;
+			return s;
+		}
+
 		override public function first():Object{
 			return str.charAt(i);
 		}

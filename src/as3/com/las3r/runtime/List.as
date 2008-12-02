@@ -27,6 +27,17 @@ package com.las3r.runtime{
 			return _empty;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			if(meta != _meta){
+				var l:List = new List(_first, _rest, _count);
+				l._meta = meta;
+				return l;
+			}
+			else{
+				return this;
+			}
+		}
+
 		public function List(first:Object, rest:List = null, count:int = 1){
 			_first = first;
 			_rest = rest;

@@ -23,8 +23,7 @@ package com.las3r.runtime{
 		}
 
 		public function withMeta(meta:IMap):IObj{
-			_meta = meta;
-			return this;
+			return new Vector(this, meta);
 		}
 
 		public static function doEquals(v:IVector, obj:Object):Boolean{
@@ -95,8 +94,10 @@ package com.las3r.runtime{
 		}
 
 
-		public function popEnd():Object{
-			return super.pop();
+		public function popEnd():IVector{
+			var v:Vector = new Vector(this, _meta);
+			v.pop();
+			return v;
 		}
 
 
@@ -109,8 +110,9 @@ package com.las3r.runtime{
 		}
 
 		public function assocN(i:int, val:Object):IVector{
-			this[i] = val;
-			return this;
+			var v:Vector = new Vector(this, _meta);
+			v[i] = val;
+			return v;
 		}
 
 		public function count():int{
@@ -118,8 +120,9 @@ package com.las3r.runtime{
 		}
 
 		public function cons(val:Object):IVector{
-			this.push(val);
-			return this;
+			var v:Vector = new Vector(this, _meta);
+			v.push(val);
+			return v;
 		}
 
 		public function empty():Vector{

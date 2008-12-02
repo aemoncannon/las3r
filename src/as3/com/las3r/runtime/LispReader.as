@@ -13,6 +13,7 @@ package com.las3r.runtime{
 
     import com.las3r.jdk.io.PushbackReader;
     import com.las3r.jdk.io.Reader;
+    import com.las3r.io.LineNumberingPushbackReader;
     import com.las3r.util.*;
     import com.las3r.errors.ReaderError;
 
@@ -28,6 +29,8 @@ package com.las3r.runtime{
 		public var macros:IMap;
 		public var dispatchMacros:IMap;
 		public var _gensymEnvStack:IVector;
+
+		public var GENSYM_ENV:Var;
 
 		//symbol->gensymbol
 		//sorted-map num->gensymbol
@@ -60,17 +63,7 @@ package com.las3r.runtime{
 				CharUtil.LBRACE, new SetReader(this)
 			);
 
-			_gensymEnvStack = RT.vector();
-		}
-
-		public function pushGensymEnv(env:IMap):void{
-			_gensymEnvStack.cons(env);
-		}
-		public function popGensymEnv():void{
-			_gensymEnvStack.popEnd();
-		}
-		public function get currentGensymEnv():IMap{
-			return IMap(_gensymEnvStack.peek());
+			GENSYM_ENV = new Var(_rt, null, null, null);
 		}
 
 		public function isWhitespace(ch:int):Boolean{
@@ -134,10 +127,8 @@ package com.las3r.runtime{
 			}
 			catch(e:Error)
 			{
-				// if(isRecursive || !(r instanceof LineNumberingPushbackReader))
-				//throw e;
-				// 				LineNumberingPushbackReader rdr = (LineNumberingPushbackReader) r;
-				var lineNumber:int = 0; //TODO: Aemon, get this from the reader..
+				if(r is LineNumberingPushbackReader)
+				var lineNumber = LineNumberingPushbackReader(r).getLineNumber();
 				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber + ": " + e.message, e);
 				throw lispError;
 			}
@@ -348,7 +339,7 @@ package com.las3r.runtime{
 	}
 }
 
-
+import com.las3r.io.LineNumberingPushbackReader;
 import com.las3r.jdk.io.PushbackReader;
 import com.las3r.jdk.io.Reader;
 import com.las3r.runtime.*;
@@ -374,6 +365,7 @@ class StringReader implements IReaderMacro{
 		{
 			if(ch == -1)
 			throw new Error("EOF while reading string");
+
 			if(ch == CharUtil.BACK_SLASH)	//escape
 			{
 				ch = r.readOne();
@@ -461,9 +453,8 @@ class MetaReader implements IReaderMacro{
 	public function invoke(reader:Object, semicolon:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
 		var line:int = -1;
-		// TODO: Aemon do this..		
-		// 		if(r is LineNumberingPushbackReader)
-		// 		line = ((LineNumberingPushbackReader) r).getLineNumber();
+		if(r is LineNumberingPushbackReader)
+		line = LineNumberingPushbackReader(r).getLineNumber();
 
 		var meta:Object = _reader.read(r, true, null)
 		if(meta is Symbol || meta is Keyword || meta is String)
@@ -474,8 +465,9 @@ class MetaReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is IObj)
 		{
-			// 			if(line != -1 && o instanceof ISeq)
-			// 			meta = ((IPersistentMap) meta).assoc(RT.LINE_KEY, line);
+			if(line != -1 && o is ISeq){
+				meta = IMap(meta).assoc(_reader.rt.LINE_KEY, line);
+			}
 			return (IObj(o).withMeta(IMap(meta)));
 		}
 		else
@@ -515,11 +507,21 @@ class ListReader implements IReaderMacro{
 
 	public function invoke(reader:Object, leftparen:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
+
+		var line:int = -1;
+		if(r is LineNumberingPushbackReader)
+		line = LineNumberingPushbackReader(r).getLineNumber();
+
 		var list:Array = _reader.readDelimitedList(CharUtil.RPAREN, r);
 		if(list.length == 0)
 		return List.EMPTY;
 		var s:IObj = IObj(List.createFromArray(list));
-		return s;
+		if(line != -1){
+			return s.withMeta(RT.map(_reader.rt.LINE_KEY, line));
+		}
+		else{
+			return s;
+		}
 	}
 }
 
@@ -674,12 +676,12 @@ class SyntaxQuoteReader implements IReaderMacro{
 	
 	public function invoke(reader:Object, backquote:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
-
-		_reader.pushGensymEnv(RT.map());
+		Var.pushBindings(_rt, RT.map(
+				_reader.GENSYM_ENV, RT.map()
+			));
 		var form:Object = _reader.read(r, true, null);
 		var result:Object = syntaxQuote(_rt, _reader, form)
-		_reader.popGensymEnv();
-
+		Var.popBindings(_rt);
 		return result;
 	}
 
@@ -693,15 +695,16 @@ class SyntaxQuoteReader implements IReaderMacro{
 			var sym:Symbol = Symbol(form);
 			if(sym.ns == null && sym.name.match(/\#$/))
 			{
-				var gmap:IMap = reader.currentGensymEnv;
+				var gmap:IMap = IMap(reader.GENSYM_ENV.get());
 				if(gmap == null){
 					throw new Error("IllegalStateException: Gensym literal not in syntax-quote");
 				}
 				var gs:Symbol = Symbol(gmap.valAt(sym));
 				if(gs == null){
 					gs = rt.sym2(null, sym.name.substring(0, sym.name.length - 1) + "__" + rt.nextID());
-					gmap.assoc(sym, gs);
+					gmap = gmap.assoc(sym, gs);
 				}
+				reader.GENSYM_ENV.set(gmap);
 				sym = gs;
 			}
 			else{
@@ -767,10 +770,10 @@ class SyntaxQuoteReader implements IReaderMacro{
 	}
 
 	private static function flattenMap(form:Object):IVector{
-		var keyvals:IVector = RT.vector();
+		var keyvals:Vector = Vector(RT.vector());
 		form.each(function(key:Object, val:Object):void{
-				keyvals = keyvals.cons(key);
-				keyvals = keyvals.cons(val);				
+				keyvals.push(key);
+				keyvals.push(val);				
 			});
 		return keyvals;
 	}

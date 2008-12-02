@@ -40,6 +40,10 @@ package com.las3r.runtime{
 			return "#<Var: " + (sym != null ? sym.toString() : "--unnamed--") + ">";
 		}
 
+		override public function hashCode():*{
+			return toString();
+		}
+
 		public static function create(rt):Var{
 			return new Var(rt, null, null);
 		}
@@ -120,10 +124,9 @@ package com.las3r.runtime{
 		public static function pushBindings(rt:RT, bindings:IMap):void{
 			var f:Frame = rt.dvals;
 			var newMap:IMap = new Map();
-
 			bindings.each(function(v:Var, val:*):void{
 					v.count += 1;
-					newMap.assoc(v, new Box(val));
+					newMap = newMap.assoc(v, new Box(val));
 				});
 			rt.dvals = new Frame(newMap, f);
 		}
@@ -132,11 +135,9 @@ package com.las3r.runtime{
 			var f:Frame = rt.dvals;
 			if(f.prev == null)
 			throw new Error("IllegalStateException: Pop without matching push");
-
 			f.bindings.each(function(v:Var, val:Box):void{
 					v.count -= 1;
 				});
-
 			rt.dvals = f.prev;
 		}
 

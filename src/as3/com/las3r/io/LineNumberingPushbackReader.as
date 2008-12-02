@@ -9,34 +9,22 @@
 *   You must not remove this notice, or any other, from this software.
 **/
 
+package com.las3r.io{
 
+	import com.las3r.jdk.io.*;
 
-package com.las3r.runtime{
-	/*abstract*/ public class Obj implements IObj, IHashable{
-		protected var _meta:IMap;
+	public class LineNumberingPushbackReader extends PushbackReader{
 
-		public function Obj(meta:IMap = null){
-			this._meta = meta;
+		public function LineNumberingPushbackReader(r:Reader, size:int = 2){
+			super(new LineNumberReader(r), size);
 		}
 
-		public function get meta():IMap{
-			return _meta;
+		public function getLineNumber():int{
+			return LineNumberReader(_in).getLineNumber() + 1;
 		}
 
-		public function withMeta(meta:IMap):IObj{ 
-			throw "Subclass responsibility";
-			return null;
+		public function readLine():String{
+			return LineNumberReader(_in).readLine();
 		}
-
-		public function hashCode():*{
-			throw "Subclass responsibility. " + this + " is not hashable.";
-			return -1;
-		}
-
-		public function equals(o:*):Boolean{
-			return o === this;
-		}
-
-
 	}
 }

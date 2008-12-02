@@ -48,7 +48,7 @@ package com.las3r.runtime{
 			return "<set: " + count() + " items>";
 		}
 
-		public function equals(obj:Object):Boolean{
+		override public function equals(obj:*):Boolean{
 			if(!(obj is ISet)){
 				return false;
 			}
@@ -137,6 +137,12 @@ class SetSeq extends ASeq implements ISeq{
 	public function SetSeq(entries:Array, i:int){
 		this.entries = entries;
 		this.i = i;
+	}
+
+	override public function withMeta(meta:IMap):IObj{
+		var s:SetSeq = new SetSeq(entries, i);
+		s._meta = meta;
+		return s;
 	}
 
 	override public function first():Object{

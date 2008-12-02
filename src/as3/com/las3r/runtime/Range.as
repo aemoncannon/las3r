@@ -20,6 +20,12 @@ package com.las3r.runtime{
 			this.n = start;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			var r:Range = new Range(n, end);
+			r._meta = meta;
+			return r;
+		}
+
 		override public function first():Object{
 			return n;
 		}

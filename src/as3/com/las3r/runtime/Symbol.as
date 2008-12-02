@@ -20,6 +20,7 @@ package com.las3r.runtime{
 		//these must be interned strings!
 		public var ns:String;
 		public var name:String;
+		private var hash:String;
 
 		public function toString():String{
 			if(ns != null)
@@ -62,9 +63,20 @@ package com.las3r.runtime{
 			super(null);
 			this.name = nameInterned;
 			this.ns = nsInterned;
+			this.hash = this.ns + "/" + this.name;
 		}
 
-		public function equals(o:Object):Boolean{
+		override public function hashCode():*{
+			return this.hash;
+		}
+
+		override public function withMeta(meta:IMap):IObj{
+			var s:Symbol = this;//new Symbol(ns, name, new Lock());
+			s._meta = meta;
+			return s;
+		}
+
+		override public function equals(o:*):Boolean{
 			if(this == o)
 			return true;
 

@@ -17,8 +17,8 @@ package com.hurlant.eval.gen
 
         /* All functions are in some sense global because the
            methodinfo and methodbody are both global. */
-        public function newFunction(formals:Array, needRest:Boolean, needArguments:Boolean, initScopeDepth:int) {
-            return new Method(e, formals, needRest, needArguments, initScopeDepth, null, false);
+        public function newFunction(formals:Array, needRest:Boolean, needArguments:Boolean, initScopeDepth:int, name:String) {
+            return new Method(e, formals, needRest, needArguments, initScopeDepth, name, false);
         }
 
         public function addException(e) {

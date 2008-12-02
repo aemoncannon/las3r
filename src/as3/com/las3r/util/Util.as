@@ -12,6 +12,8 @@
 
 package com.las3r.util{
 
+	import com.las3r.runtime.IHashable;
+
 	public class Util{
 
 		static public function equal(k1:Object, k2:Object):Boolean{
@@ -40,6 +42,27 @@ package com.las3r.util{
 				return k1.compareTo(k2);
 			}
 			return -1;
+		}
+
+		static public function hash(o:*):*{
+			if(o == null){
+				return 0;
+			}
+			else if(o is String || o is Number || o is Boolean || !(o is Object)){
+				return o;
+			}
+			else if(o is IHashable){
+				return o.hashCode();
+			}
+			else{
+				throw o + " is not hashable."
+			}
+		}
+
+		static public function hashCombine(seed:int, hash:int):int{
+			//a la boost
+			seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			return seed;
 		}
 
 	}

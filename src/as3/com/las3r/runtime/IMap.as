@@ -16,11 +16,13 @@ package com.las3r.runtime{
 
 		function valAt(key:Object, notFound:Object = null):Object;
 
+		function entryAt(key:Object):MapEntry;
+
 		function assoc(key:Object, val:Object):IMap;
 
-		function cons(o:Object):IMap;
+		function without(key:Object):IMap;
 
-		function remove(key:Object):IMap;
+		function cons(o:Object):IMap;
 
 		function count():int;
 

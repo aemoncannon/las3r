@@ -44,8 +44,8 @@ package com.las3r.runtime{
 		public var specials:Vector;
 		public var dvals:Frame = new Frame();
 
-		public var vars:IMap;
-		public var keywords:IMap;
+		public var vars:Dictionary;
+		public var keywords:Dictionary;
 		public var constants:Array;
 
 		public var stdout:OutputStream;
@@ -147,8 +147,8 @@ package com.las3r.runtime{
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
-			keywords = RT.map();
-			vars = RT.map();
+			keywords = new Dictionary();
+			vars = new Dictionary();
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
@@ -238,6 +238,11 @@ package com.las3r.runtime{
 			LIST = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "list");
 
 
+			WITH_META = sym1("with-meta");
+			Var.internWithRoot(LAS3R_NAMESPACE, WITH_META,
+				function(x:Object, m:Object):Object{
+					return x.withMeta(m);
+				});
 			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
 
 			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
@@ -320,7 +325,7 @@ package com.las3r.runtime{
 		*/		
 		public function evalStr(src:String, onComplete:Function = null, progress:Function = null, onFailure:Function = null):void{
 			var workUnit:Object = {};
-			workUnit.reader = new PushbackReader(new StringReader(src));
+			workUnit.reader = new LineNumberingPushbackReader(new StringReader(src));
 			workUnit.start = function():void{
 				Var.pushBindings(_this, 
 					RT.map(
@@ -763,8 +768,11 @@ package com.las3r.runtime{
 		}
 
 		public static function assoc(map:IMap, key:Object, val:Object):IMap{
-			map.assoc(key, val);
-			return map;
+			return map.assoc(key, val);
+		}
+
+		public static function dissoc(map:IMap, key:Object):IMap{
+			return map.without(key);
 		}
 
 		public static function map(...init:Array):IMap{

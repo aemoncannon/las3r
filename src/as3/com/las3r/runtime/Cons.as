@@ -22,6 +22,12 @@ package com.las3r.runtime{
 			_rest = rest;
 		}
 
+		override public function withMeta(meta:IMap):IObj{
+			var c:Cons = new Cons(_first, _rest);
+			c._meta = meta;
+			return c;
+		}
+
 
 		override public function first():Object{
 			return _first;

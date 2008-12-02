@@ -19,9 +19,11 @@ package com.las3r.runtime{
 			return null;
 		}
 
-		public function ASeq(){}
+		public function ASeq(meta:IMap = null){
+			super(meta);
+		}
 
-		public function equals(obj:Object):Boolean{
+		override public function equals(obj:*):Boolean{
 			if(!(obj is ISeq)) return false;
 			var ms:ISeq = ISeq(obj);
 			for(var s:ISeq = seq(); s != null; s = s.rest(), ms = ms.rest())

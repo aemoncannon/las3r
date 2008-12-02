@@ -16,6 +16,7 @@ package com.las3r.runtime{
 	import com.las3r.errors.CompilerError;
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	import flash.events.*;
 	import com.hurlant.eval.gen.Script;
 	import com.hurlant.eval.gen.ABCEmitter;
@@ -42,8 +43,8 @@ package com.las3r.runtime{
 
 		public function get rt():RT{ return _rt; }
 		public function get constants():Array{ return _rt.constants; }
-		public function get keywords():IMap{ return _rt.keywords; }
-		public function get vars():IMap{ return _rt.vars; }
+		public function get keywords():Dictionary{ return _rt.keywords; }
+		public function get vars():Dictionary{ return _rt.vars; }
 
 		public function Compiler(rt:RT){
 			_rt = rt;
@@ -104,7 +105,7 @@ package com.las3r.runtime{
 
 			try{
 				for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
-					forms.cons(form);
+					forms = Vector(forms.cons(form));
 				}
 			}
 			catch(e:LispError){
@@ -255,17 +256,17 @@ package com.las3r.runtime{
 		}
 
 		public function registerVar(v:Var):void{
-			var id:Object = RT.get(vars, v);
+			var id:Object = vars[v];
 			if(id == null){
-				RT.assoc(vars, v, registerConstant(v));
+				vars[v] =  registerConstant(v);
 			}
 		}
 
 		public function registerKeyword(keyword:Keyword):KeywordExpr{
-			var id:Object = RT.get(keywords, keyword);
+			var id:Object = keywords[keyword];
 			if(id == null)
 			{
-				RT.assoc(keywords, keyword, registerConstant(keyword));
+				keywords[keyword] = registerConstant(keyword);
 			}
 			return new KeywordExpr(this, keyword);
 		}
@@ -285,12 +286,12 @@ package com.las3r.runtime{
 		}
 
 		public function emitVar(gen:CodeGen, aVar:Var):void{
-			var i:int = int(vars.valAt(aVar));
+			var i:int = int(vars[aVar]);
 			emitConstant(gen, i);
 		}
 
 		public function emitKeyword(gen:CodeGen, k:Keyword):void {
-			var i:int = int(keywords.valAt(k));
+			var i:int = int(keywords[k]);
 			emitConstant(gen, i);
 		}
 
@@ -305,7 +306,6 @@ package com.las3r.runtime{
 				line = int(RT.meta(form).valAt(_rt.LINE_KEY));
 			}
 			Var.pushBindings(_rt, RT.map(LINE, line));
-
 			try{
 				//todo symbol macro expansion?
 				if(form === null)
@@ -460,7 +460,7 @@ package com.las3r.runtime{
 
 		public function pushLocalBindingSet(set:LocalBindingSet):void{
 			var prevStack:Vector = Vector(BINDING_SET_STACK.get());
-			var newStack:IVector = (new Vector(prevStack)).cons(set); // We do a full copy here :(
+			var newStack:IVector = prevStack.cons(set);
 			Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
 		}
 
@@ -527,8 +527,8 @@ class CodeGen{
 
 
 
-	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int):CodeGen{
-		return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth));
+	public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
+		return new CodeGen(_compiler, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
 	}
 
 
@@ -561,7 +561,7 @@ class CodeGen{
 		currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
 		var i:int = asm.getTemp();
 		asm.I_setlocal(i);
-		this.scopeToLocalMap.cons(i);
+		scopeToLocalMap = Vector(scopeToLocalMap.cons(i));
 	}
 
 
@@ -576,7 +576,7 @@ class CodeGen{
 		asm.I_getlocal_0();
 		asm.I_pushscope();
 		asm.useTemp(0)
-		this.scopeToLocalMap.cons(0);
+		scopeToLocalMap = Vector(scopeToLocalMap.cons(0));
 	}
 
 
@@ -628,7 +628,7 @@ class CodeGen{
 		asm.I_pushscope();
 		var i:int = asm.getTemp()
 		asm.I_setlocal(i);
-		scopeToLocalMap.cons(i);
+		scopeToLocalMap = Vector(scopeToLocalMap.cons(i));
 	}
 
 	/*
@@ -639,7 +639,8 @@ class CodeGen{
 	*/
 	public function popScope():void{
 		asm.I_popscope();
-		asm.freeTemp(scopeToLocalMap.popEnd());
+		asm.freeTemp(scopeToLocalMap.peek());
+		scopeToLocalMap = Vector(scopeToLocalMap.popEnd());
 	}
 
 
@@ -679,13 +680,13 @@ class CodeGen{
 	*   ... => ...
 	*/
 	public function cacheRTInstance():void{
-			getRTClass();
-			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_pushint(emitter.constants.int32(_compiler.rt.instanceId + 1));
-			asm.I_nextvalue();
-			var i:int = asm.getTemp();
-			asm.I_setlocal(i);
-			cachedRTTempIndex = i;
+		getRTClass();
+		asm.I_getproperty(emitter.nameFromIdent("instances"));
+		asm.I_pushint(emitter.constants.int32(_compiler.rt.instanceId + 1));
+		asm.I_nextvalue();
+		var i:int = asm.getTemp();
+		asm.I_setlocal(i);
+		cachedRTTempIndex = i;
 	}
 
 
@@ -1338,11 +1339,11 @@ class FnMethod{
 				switch(state)
 				{
 					case PSTATE.REQ:
-					meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym));
+					meth.reqParams = Vector(meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym)));
 					break;
 
 					case PSTATE.OPT:
-					meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
+					meth.optionalParams = Vector(meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param)))));
 					break;
 
 					case PSTATE.REST:
@@ -1439,6 +1440,7 @@ class PSTATE{
 	public static var DONE:PSTATE = new PSTATE();
 }
 class FnExpr implements Expr{
+	public var line:int;
 	public var nameSym:Symbol;
 	public var methods:IVector;
 
@@ -1454,6 +1456,7 @@ class FnExpr implements Expr{
 
 	public static function parse(c:Compiler, context:C, form:ISeq):Expr{
 		var f:FnExpr = new FnExpr(c);
+		f.line = int(c.LINE.get()); 
 		//arglist might be preceded by symbol naming this fn
 		if(RT.second(form) is Symbol)
 		{
@@ -1469,7 +1472,7 @@ class FnExpr implements Expr{
 
 		f.methods = Vector.empty();
 		for(var s:ISeq = RT.rest(form); s != null; s = RT.rest(s)){
-			f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
+			f.methods = f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
 		}
 
 		return f;
@@ -1482,6 +1485,7 @@ class FnExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
+		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + this.line;
 		var methGen:CodeGen;
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
@@ -1492,7 +1496,7 @@ class FnExpr implements Expr{
 			meth.optionalParams.each(function(ea:Object):void{
 					formalsTypes.push(0/*'*'*/);
 				});
-			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth);
+			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth, name);
 			if(meth.optionalParams.count() > 0){
 				var defaults:Array = meth.optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
 				methGen.meth.setDefaults(defaults);
@@ -1502,7 +1506,7 @@ class FnExpr implements Expr{
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 
-			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth);
+			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth, name);
 			var argsIndex:int = 1;
 
 			// Initialize all the jump labels
@@ -1677,9 +1681,9 @@ class InvokeExpr implements Expr{
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-			// 			FnMethod method = (FnMethod) METHOD.get();
-			// 			method.emitClearLocals(gen);
-			// 		}
+		// 			FnMethod method = (FnMethod) METHOD.get();
+		// 			method.emitClearLocals(gen);
+		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1704,11 +1708,9 @@ class InvokeExpr implements Expr{
 
 class LocalBindingSet{
 
-	public var bindings:IMap;
 	private var _lbs:IVector;
 	
 	public function LocalBindingSet(){
-		bindings = RT.map();
 		_lbs = RT.vector();
 	}
 
@@ -1717,13 +1719,18 @@ class LocalBindingSet{
 	}
 
 	public function bindingFor(sym:Symbol):LocalBinding{
-		return LocalBinding(bindings.valAt(sym));
+		for(var i:int = _lbs.length - 1; i > -1; i--){
+			var lb:LocalBinding = _lbs[i];
+			if(Util.equal(lb.sym, sym)){
+				return lb;
+			}
+		}
+		return null;
 	}
 
 	public function registerLocal(num:int, sym:Symbol, init:Expr = null):LocalBinding{
 		var lb:LocalBinding = new LocalBinding(num, sym, init);
-		_lbs.cons(lb);
-		bindings = bindings.assoc(sym, lb);
+		_lbs = _lbs.cons(lb);
 		return lb;
 	}
 
@@ -1865,7 +1872,7 @@ class MapExpr implements Expr{
 		for(var i:int = 0; i < keyvals.count(); i += 2){
 			var key:Object = Expr(keyvals.nth(i)).interpret();
 			var val:Object = Expr(keyvals.nth(i + 1)).interpret();
-			m.assoc(key, val);
+			m = m.assoc(key, val);
 		}
 		return m;
 	}
@@ -1880,10 +1887,10 @@ class MapExpr implements Expr{
 	}
 
 	public static function parse(c:Compiler, context:C, form:IMap):Expr{
-		var keyvals:IVector = Vector.empty();
+		var keyvals:Vector = new Vector([]);
 		form.each(function(key:Object, val:Object):void{
-				keyvals.cons(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, key));
-				keyvals.cons(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, val));
+				keyvals.push(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, key));
+				keyvals.push(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, val));
 			});
 		return new MapExpr(keyvals);
 	}
@@ -2226,7 +2233,7 @@ class HostExpr implements Expr{
 		override public function emit(context:C, gen:CodeGen):void{
 			// So there's a nil on the stack after the exception is thrown,
 			// required so that in the event that the try is prematurely aborted (because of
-				// this throw) there will still be something on the stack to match the catch's
+			// this throw) there will still be something on the stack to match the catch's
 			// result.
 			gen.asm.I_pushnull();
 			// Then, reconcile with type of ensuing catch expr...
