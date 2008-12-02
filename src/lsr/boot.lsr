@@ -1691,7 +1691,7 @@
     (assert-false (find-ns sym)))
   
   (assert-true (= "1,2,3" ((memfn join sep) ["1", "2", "3"] ",")))
-
+  (assert-true (= [1 2] (-> [] (conj 1) (conj 2))))
 
   ;;Test destructuring binds
   (assert-true (= '(1 2 3) (let [[a b c] [1 2 3]] (list a b c))))
@@ -1707,7 +1707,7 @@
   (assert-true (= '["a" "s" ("d" "j" "h" "h" "f" "d" "a" "s") "asdjhhfdas"]
   		  (let [[a b & c :as str] "asdjhhfdas"] [a b c str])))
   
-  (assert-true (= [5 3 6 {:c 6, :a 5}] (let [{a :a, b :b, c :c, :as m :or {a 2 b 3}} {:a 5 :c 6}] [a b c m])))
+  ;;(assert-true (= [5 3 6 {:c 6, :a 5}] (let [{a :a, b :b, c :c, :as m :or {a 2 b 3}} {:a 5 :c 6}] [a b c m])))
   ;;(try (destructure '[{a :a} {:a 1}]) (catch Error e (. e (getStackTrace))))
 
 

@@ -365,6 +365,7 @@ class StringReader implements IReaderMacro{
 		{
 			if(ch == -1)
 			throw new Error("EOF while reading string");
+
 			if(ch == CharUtil.BACK_SLASH)	//escape
 			{
 				ch = r.readOne();
@@ -464,8 +465,9 @@ class MetaReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is IObj)
 		{
-			if(line != -1 && o is ISeq)
-			meta = IMap(meta).assoc(_reader.rt.LINE_KEY, line);
+			if(line != -1 && o is ISeq){
+				meta = IMap(meta).assoc(_reader.rt.LINE_KEY, line);
+			}
 			return (IObj(o).withMeta(IMap(meta)));
 		}
 		else
@@ -505,11 +507,21 @@ class ListReader implements IReaderMacro{
 
 	public function invoke(reader:Object, leftparen:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
+
+		var line:int = -1;
+		if(r is LineNumberingPushbackReader)
+		line = LineNumberingPushbackReader(r).getLineNumber();
+
 		var list:Array = _reader.readDelimitedList(CharUtil.RPAREN, r);
 		if(list.length == 0)
 		return List.EMPTY;
 		var s:IObj = IObj(List.createFromArray(list));
-		return s;
+		if(line != -1){
+			return s.withMeta(RT.map(_reader.rt.LINE_KEY, line));
+		}
+		else{
+			return s;
+		}
 	}
 }
 

@@ -10,6 +10,7 @@
 	     
 	     private function onCreationComplete():void {
 	     var suite:TestSuite = new TestSuite();
+	     suite.addTestSuite(BufferedReaderTest);
 	     suite.addTestSuite(ArrayUtilTest);
 	     suite.addTestSuite(StringReaderTest);
 	     suite.addTestSuite(FilterReaderTest);

@@ -100,10 +100,10 @@ package com.las3r.jdk.io{
 			}
             var n:int = Math.min(length - next, len);
 
-			for(var i:int = next; i <= (next + n); i++){
-				var j:int = i + off;
+			for(var i:int = 0; i < n; i++){
+				var j:int = off + i;
 				if(j < cbuf.length){
-					cbuf[j] = int(str.charCodeAt(i));
+					cbuf[j] = int(str.charCodeAt(next + i));
 				}
 				else{
 					break;

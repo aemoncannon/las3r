@@ -306,7 +306,6 @@ package com.las3r.runtime{
 				line = int(RT.meta(form).valAt(_rt.LINE_KEY));
 			}
 			Var.pushBindings(_rt, RT.map(LINE, line));
-
 			try{
 				//todo symbol macro expansion?
 				if(form === null)
@@ -1441,6 +1440,7 @@ class PSTATE{
 	public static var DONE:PSTATE = new PSTATE();
 }
 class FnExpr implements Expr{
+	public var line:int;
 	public var nameSym:Symbol;
 	public var methods:IVector;
 
@@ -1456,6 +1456,7 @@ class FnExpr implements Expr{
 
 	public static function parse(c:Compiler, context:C, form:ISeq):Expr{
 		var f:FnExpr = new FnExpr(c);
+		f.line = int(c.LINE.get()); 
 		//arglist might be preceded by symbol naming this fn
 		if(RT.second(form) is Symbol)
 		{
@@ -1484,8 +1485,7 @@ class FnExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		var line:int = int(_compiler.LINE.get());
-		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + line;
+		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + this.line;
 		var methGen:CodeGen;
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));

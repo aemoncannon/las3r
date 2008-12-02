@@ -73,7 +73,7 @@ package com.las3r.jdk.io{
 
 		// The JCL book specifies the default buffer size as 8K characters.
 		// This is package-private because it is used by LineNumberReader.
-		public static const DEFAULT_BUFFER_SIZE:int = 8192;
+		public static const DEFAULT_BUFFER_SIZE:int = 8000;
 
 
 		public static var LF:int = "\n".charCodeAt(0);
@@ -81,6 +81,7 @@ package com.las3r.jdk.io{
 
 		protected var _in:Reader;
 		protected var buffer:Array;
+
 		/* Index of current read position.  Must be >= 0 and <= limit. */
 		/* There is a special case where pos may be equal to limit+1; this
 		* is used as an indicator that a readLine was done with a '\r' was
@@ -91,6 +92,7 @@ package com.las3r.jdk.io{
 		* that it is self-clearing on things like mark/reset.
 		*/
 		protected var pos:int;
+
 		/* Limit of valid data in buffer.  Must be >= pos and <= buffer.length. */
 		/* This can be < pos in the one special case described above. */
 		protected var limit:int;
@@ -384,7 +386,7 @@ package com.las3r.jdk.io{
 		override public function readOne():int
 		{
 			checkStatus();
-			if (pos >= limit && fill () <= 0)
+			if (pos >= limit && fill() <= 0)
 			return -1;
 			return buffer[pos++];
 		}
@@ -451,7 +453,6 @@ package com.las3r.jdk.io{
 				return str;
 			}
 
-			// AEMON
 			sbuf = new StringBuffer();
 			sbuf.appendBytesFromArray(buffer, pos, i - pos);
 			pos = i;
