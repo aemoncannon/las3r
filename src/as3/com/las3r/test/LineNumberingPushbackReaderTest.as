@@ -57,7 +57,7 @@ package com.las3r.test{
 			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
 			s.readOne();//a
 			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
-			s.readOne();//\r\n reads both
+			s.readOne();//\r\n Reads both.
 			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
 			s.readOne();//\b
 			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
