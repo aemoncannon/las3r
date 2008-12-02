@@ -1054,13 +1054,11 @@
 
 
 (defn eval
-  "Evaluates the form data structure (not text!) and calls back with the result
+  "Evaluates the form data structure (provided as a string!) and calls back with the result
    if callback is provided."
   ([form] (. *runtime* (evalStr form)))
   ([form callback] (. *runtime* (evalStr form callback)))
-  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback)))
-  )
-
+  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback))))
 
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
@@ -1615,6 +1613,25 @@
        (. socket (connect "localhost" port))
        socket
        )))
+
+(defn load-url [url on-complete on-error]
+  "Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners."
+  (let [request (new flash.net.URLRequest url)
+	loader (new flash.net.URLLoader)]
+    (. loader (addEventListener "complete" on-complete))
+    (. loader (addEventListener "ioError" on-error))
+    (. loader (addEventListener "securityError" on-error))
+    (. loader (load request))))
+
+(defn eval-url
+  "Evaluate the code in the provided URL and call back with the result or error if callbacks are provided."
+  ([url] (eval-url url (fn [e] nil) (fn [e] nil)))
+  ([url callback] (eval-url url callback (fn [e] nil)))
+  ([url callback err-callback]
+     (load-url url
+	       (fn [e] 
+		 (eval (.. e target data) callback err-callback))
+	       err-callback)))
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
