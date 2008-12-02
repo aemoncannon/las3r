@@ -238,6 +238,11 @@ package com.las3r.runtime{
 			LIST = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "list");
 
 
+			WITH_META = sym1("with-meta");
+			Var.internWithRoot(LAS3R_NAMESPACE, WITH_META,
+				function(x:Object, m:Object):Object{
+					return x.withMeta(m);
+				});
 			WITH_META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "with-meta");
 
 			META = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "meta");
