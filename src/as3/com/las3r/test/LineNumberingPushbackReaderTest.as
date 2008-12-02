@@ -28,6 +28,7 @@ package com.las3r.test{
 			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("hello"));
 		}
 
+
 		public function testReadStringWithNewline():void{
 			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("a\nb"));
 			assertTrue("first character should be a 'a'", String.fromCharCode(s.readOne()) == "a");
@@ -35,6 +36,35 @@ package com.las3r.test{
 			assertTrue("next character should be 'b'", String.fromCharCode(s.readOne()) == "b");
 			assertTrue("next character should be -1", s.readOne() == -1);
 		}
+
+
+		public function testReadingStringWithNewlinesCheckingLineNumbers():void{
+			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("a\nb"));
+			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
+			s.readOne();
+			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
+			s.readOne();
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+			s.readOne();
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+			s.readOne(); // -1
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+		}
+
+
+		public function testReadingStringWithCarriageReturnsAndNewlinesCheckingLineNumbers():void{
+			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("a\r\nb"));
+			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
+			s.readOne();//a
+			assertTrue("should be on line 1 now", s.getLineNumber() == 1);
+			s.readOne();//\r\n reads both
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+			s.readOne();//\b
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+			s.readOne(); // -1
+			assertTrue("should be on line 2 now", s.getLineNumber() == 2);
+		}
+
 
 		public function testReadQuotedStringCharByChar():void{
 			var s:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader("\"hello\""));
