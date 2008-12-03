@@ -1,0 +1,1741 @@
+;;   Copyright (c) Rich Hickey. All rights reserved.
+;;   Copyright (c) Aemon Cannon. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+;;   which can be found in the file CPL.TXT at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
+
+(in-ns 'cuttlefish)
+
+
+(def
+ #^{:arglists '([& items])
+    :doc "Creates a new list containing the items."}
+ list (. com.cuttlefish.runtime.List creator))
+
+(def
+ #^{:arglists '([x seq])
+    :doc "Returns a new seq where x is the first element and seq is
+    the rest."}
+
+ cons (fn* cons [x seq] (. com.cuttlefish.runtime.RT (cons x seq))))
+
+;;during bootstrap we don't have destructuring let, loop or fn, will redefine later
+(def
+ #^{:macro true}
+ let (fn* let [& decl] (cons 'let* decl)))
+
+(def
+ #^{:macro true}
+ fn (fn* fn [& decl] (cons 'fn* decl)))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Returns the first item in the collection. Calls seq on its
+    argument. If coll is nil, returns nil."}
+ first (fn first [coll] (. com.cuttlefish.runtime.RT (first coll))))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Returns a seq of the items after the first. Calls seq on its
+  argument.  If there are no more items, returns nil."}  
+ rest (fn rest [x] (. com.cuttlefish.runtime.RT (rest x))))
+
+(def
+ #^{:doc "Same as (first (rest x))"
+    :arglists '([x])}
+ second (fn second [x] (first (rest x))))
+
+(def
+ #^{:doc "Same as (first (first x))"
+    :arglists '([x])}
+ ffirst (fn ffirst [x] (first (first x))))
+
+(def
+ #^{:doc "Same as (rest (first x))"
+    :arglists '([x])}
+ rfirst (fn rfirst [x] (rest (first x))))
+
+(def
+ #^{:doc "Same as (first (rest x))"
+    :arglists '([x])}
+ frest (fn frest [x] (first (rest x))))
+
+(def
+ #^{:doc "Same as (rest (rest x))"
+    :arglists '([x])}
+ rrest (fn rrest [x] (rest (rest x))))
+
+(def
+ #^{:arglists '([coll x])
+    :doc "conj[oin]. Returns a new collection with the xs
+    'added'. (conj nil item) returns (item).  The 'addition' may
+    happen at different 'places' depending on the concrete type."}
+ conj (fn conj [coll x] (. com.cuttlefish.runtime.RT (conj coll x))))
+
+(def
+ #^{:arglists '([coll])
+    :doc "Sequence. Returns a new ISeq on the collection. If the
+    collection is empty, returns nil.  (seq nil) returns nil. seq also
+    works on Strings and native arrays."
+    :tag com.cuttlefish.runtime.ISeq}
+ seq (fn seq [coll] (. com.cuttlefish.runtime.RT (seq coll))))
+
+(def
+ #^{:arglists '([c x])
+    :doc "Evaluates x and tests if it is an instance of the class
+    c. Returns true or false"}
+ instance? (fn instance? [c x] (. com.cuttlefish.runtime.RT (isInstance c x))))
+
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements ISeq"}
+ seq? (fn seq? [x] (instance? com.cuttlefish.runtime.ISeq x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x is a String"}
+ string? (fn string? [x] (instance? String x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements IMap"}
+ map? (fn map? [x] (instance? com.cuttlefish.runtime.IMap x)))
+
+(def
+ #^{:arglists '([x])
+    :doc "Return true if x implements IVector "}
+ vector? (fn vector? [x] (instance? com.cuttlefish.runtime.IVector x)))
+
+
+(def
+ #^{:arglists '([map key val])
+    :doc "assoc[iate]. When applied to a map, returns a new map of the
+    same (hashed/sorted) type, that contains the mapping of key(s) to
+    val(s). When applied to a vector, returns a new vector that
+    contains val at index. Note - index must be <= (count vector)."}
+ assoc
+ (fn assoc [map key val] (. com.cuttlefish.runtime.RT (assoc map key val))))
+
+
+;;;;;;;;;;;;;;;; loop ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def
+ #^{:macro true
+    :doc "Loop macro that expands into a let expression with a body that
+          applies a function to the bound locals."}
+ loop* (fn* loop* [bindings & body]
+	    (let [names-vals (. com.cuttlefish.runtime.RT (unzip (seq bindings)))
+		  names (. com.cuttlefish.runtime.Vector (createFromSeq (seq (first names-vals))))
+		  vals (seq (second names-vals))]
+	      (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
+ )
+
+;;;;;;;;;;;;;;;;; metadata ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def
+ #^{:arglists '([obj])
+    :doc "Returns the metadata of obj, returns nil if there is no metadata."}
+ meta (fn meta [x]
+        (if (instance? com.cuttlefish.runtime.IObj x)
+          (. #^com.cuttlefish.runtime.IObj x meta))))
+
+(def
+ #^{:arglists '([#^com.cuttlefish.runtime.IObj obj m])
+    :doc "Returns an object of the same type and value as obj, with
+    map m as its metadata."}
+ with-meta (fn with-meta [#^com.cuttlefish.runtime.IObj x m]
+             (. x (withMeta m))))
+
+
+(def 
+ #^{:arglists '([coll])
+    :doc "Return the last item in coll, in linear time"}
+ last (fn last [s]
+        (if (rest s)
+          (recur (rest s))
+          (first s))))
+
+(def 
+ #^{:arglists '([coll])
+    :doc "Return a sequence of all but the last item in coll, in linear time"}
+ butlast (fn butlast [s]
+           (loop* [ret [] s s]
+		  (if (rest s)
+		    (recur (conj ret (first s)) (rest s))
+		    (seq ret)))))
+
+
+
+(def
+ #^{:private true}
+ sigs
+ (fn [fdecl]
+   (if (seq? (first fdecl))
+     (loop* [ret [] fdecl fdecl]
+	    (if fdecl
+	      (recur (conj ret (first (first fdecl))) (rest fdecl))
+	      (seq ret)))
+     (list (first fdecl)))))
+
+(def 
+
+ #^{:doc "Same as (def name (fn [params* ] exprs*)) with any doc-string or attrs added
+    to the var metadata"
+    :arglists '([name doc-string? attr-map? [params*] body]
+		  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+ defn (fn defn [name & fdecl]
+        (let [
+	      m (if (string? (first fdecl))
+                  {:doc (first fdecl)}
+                  {})
+              fdecl (if (string? (first fdecl))
+                      (rest fdecl)
+                      fdecl)
+              m (if (map? (first fdecl))
+                  (conj m (first fdecl))
+                  m)
+              fdecl (if (map? (first fdecl))
+                      (rest fdecl)
+                      fdecl)
+              fdecl (if (vector? (first fdecl))
+                      (list fdecl)
+                      fdecl)
+              m (if (map? (last fdecl))
+                  (conj m (last fdecl))
+                  m)
+              fdecl (if (map? (last fdecl))
+                      (butlast fdecl)
+                      fdecl)
+              m (conj {:arglists (list 'quote (sigs fdecl))} m)
+	      ]
+          `(def ~(with-meta name (conj (if (meta name) (meta name) {}) m)) (fn ~@fdecl)))))
+
+
+(. (var defn) (setMacro))
+
+
+
+(defn cast
+  "Throws an Error if x is not a c, else returns x."
+  [c x] (. com.cuttlefish.runtime.RT (cast c x)))
+
+
+(defn vector
+  "Creates a new vector containing the args."
+  [& args]
+  (. com.cuttlefish.runtime.Vector (createFromSeq args)))
+
+
+(defn hash-map
+  "keyval => key val
+  Returns a new hash map with supplied mappings."
+  [& keyvals]
+  (. com.cuttlefish.runtime.Map (createFromSeq keyvals)))
+
+(defn hash-set
+  "Returns a new hash set with supplied values."
+  [& vals]
+  (. com.cuttlefish.runtime.Set (createFromSeq vals)))
+
+
+(def
+
+ #^{:doc "Like defn, but the resulting function name is declared as a
+  macro and will be used as a macro by the compiler when it is
+  called."
+    :arglists '([name doc-string? attr-map? [params*] body]
+		  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+ defmacro (fn [name & args]
+            (list 'do
+                  (cons `defn (cons name args))
+                  (list '. (list 'var name) '(setMacro)))))
+
+(. (var defmacro) (setMacro))
+
+(defmacro when
+  "Evaluates test. If logical true, evaluates body in an implicit do."
+  [test & body]
+  (list 'if test (cons 'do body)))
+
+(defmacro when-not
+  "Evaluates test. If logical false, evaluates body in an implicit do."
+  [test & body]
+  (list 'if test nil (cons 'do body)))
+
+(defn nil?
+  "Returns true if x is nil, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x nil))
+
+(defn false?
+  "Returns true if x is the value false, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x false))
+
+(defn true?
+  "Returns true if x is the value true, false otherwise."
+  {:tag Boolean}
+  [x] (identical? x true))
+
+(defn not
+  "Returns true if x is logical false, false otherwise."
+  {:tag Boolean}
+  [x] (if x false true))
+
+
+(defn str
+  "With no args, returns the empty string. With one arg x, returns
+  x.toString().  (str nil) returns the empty string. With more than
+  one arg, returns the concatenation of the str values of the args."
+  {:tag String}
+  ([] "")
+  ([x]
+     (if (nil? x) "" (cast String x )))
+  ([x & ys]
+     (loop* [sb (str x) 
+	     more ys]
+	    (if more
+	      (recur (. sb  (concat (str (first more)))) (rest more))
+	      (str sb)))))
+
+(defn char-code->str 
+  "Return the string corresponding to the numeric code."
+  [code]
+  (. String (fromCharCode code)))
+
+(defn symbol
+  "Returns a Symbol with the given namespace and name."
+  ([name] (. com.cuttlefish.runtime.Symbol (intern1 *runtime* name)))
+  ([ns name] (. com.cuttlefish.runtime.Symbol (intern2 *runtime* ns name))))
+
+
+(defn keyword
+  "Returns a Keyword with the given namespace and name.  Do not use :
+  in the keyword strings, it will be added automatically."
+  ([name] (. com.cuttlefish.runtime.Keyword (intern2 *runtime* nil name)))
+  ([ns name] (. com.cuttlefish.runtime.Keyword (intern2 *runtime* ns name))))
+
+(defn gensym
+  "Returns a new symbol with a unique name. If a prefix string is
+  supplied, the name is prefix# where # is some unique number. If
+  prefix is not supplied, the prefix is 'G'."
+  ([] (gensym "G__"))
+  ([prefix-string] (. com.cuttlefish.runtime.Symbol (intern1 *runtime* (str prefix-string (str (. *runtime* (nextID))))))))
+
+(defmacro cond
+  "Takes a set of test/expr pairs. It evaluates each test one at a
+  time.  If a test returns logical true, cond evaluates and returns
+  the value of the corresponding expr and doesn't evaluate any of the
+  other tests or exprs. (cond) returns nil."
+  [& clauses]
+  (when clauses
+    (list 'if (first clauses)
+	  (second clauses)
+	  (cons 'cond (rest (rest clauses))))))
+
+(defn spread
+  {:private true}
+  [arglist]
+  (cond
+   (nil? arglist) nil
+   (nil? (rest arglist)) (seq (first arglist))
+   :else (cons (first arglist) (spread (rest arglist)))))
+
+(defn apply
+  "Applies fn f to the argument list formed by prepending args to argseq."
+  {:arglists '([f args* argseq])}
+  [f & args]
+  (apply* f (spread args)))
+
+(defn list*
+  "Creates a new list containing the item prepended to more."
+  [item & more]
+  (spread (cons item more)))
+
+
+(defmacro lazy-cons
+  "Expands to code which produces a seq object whose first is
+  first-expr and whose rest is rest-expr, neither of which is
+  evaluated until first/rest is called. Each expr will be evaluated at most
+  once per step in the sequence, e.g. calling first/rest repeatedly on the
+  same node of the seq evaluates first/rest-expr once - the values they yield are
+  cached."
+  [first-expr & rest-expr]
+  (list 'new 'com.cuttlefish.runtime.LazyCons (list `fn (list [] first-expr) (list* [(gensym)] rest-expr))))
+
+
+(defn concat
+  "Returns a lazy seq representing the concatenation of	the elements in the supplied colls."
+  ([] nil)
+  ([x] (seq x))
+  ([x y] 
+     (if (seq x) 
+       (lazy-cons (first x) (concat (rest x) y))
+       (seq y)))
+  ([x y & zs]
+     (let [cat (fn cat [xys zs]
+		 (if (seq xys)
+		   (lazy-cons (first xys) (cat (rest xys) zs))
+		   (when zs
+		     (recur (first zs) (rest zs)))))]
+       (cat (concat x y) zs))))
+
+
+
+;;;;;;;;;;;;;;;;at this point all the support for syntax-quote exists;;;;;;;;;;;;;;;;;;;;;;
+
+(defn =
+  "Equality. Returns true if x equals y, false if not. Same as
+  Java x.equals(y) except it also works for nil, and compares
+  numbers in a type-independent manner.  Clojure's immutable data
+  structures define equals() (and thus =) as a value, not an identity,
+  comparison."
+  {:tag Boolean} 
+  ([x] true)
+  ([x y] (. com.cuttlefish.util.Util (equal x y)))
+  ([x y & more]
+     (if (= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (= y (first more)))
+       false)))
+
+(defn not=
+  "Same as (not (= obj1 obj2))"
+  {:tag Boolean}
+  ([x] false)
+  ([x y] (not (= x y)))
+  ([x y & more]
+     (not (apply = x y more))))
+
+
+(defn compare
+  "Comparator. Returns 0 if x equals y, -1 if x is logically 'less
+  than' y, else 1. Same as Java x.compareTo(y) except it also works
+  for nil, and compares numbers in a type-independent manner. x must
+  implement Comparable"
+  {:tag Number
+   :inline (fn [x y] `(. com.cuttlefish.util.Util compare ~x ~y))} 
+  [x y] (. com.cuttlefish.util.Util (compare x y)))
+
+(defmacro and
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns logical false (nil or false), and returns that value and
+  doesn't evaluate any of the other expressions, otherwise it returns
+  the value of the last expr. (and) returns true."
+  ([] true)
+  ([x] x)
+  ([x & rest]
+     `(let [and# ~x]
+	(if and# (and ~@rest) and#))))
+
+(defmacro or
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns a logical true value, or returns that value and doesn't
+  evaluate any of the other expressions, otherwise it returns the
+  value of the last expression. (or) returns nil."
+  ([] nil)
+  ([x] x)
+  ([x & rest]
+     `(let [or# ~x]
+	(if or# or# (or ~@rest)))))
+
+
+
+
+;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn reduce
+  "f should be a function of 2 arguments. If val is not supplied,
+  returns the result of applying f to the first 2 items in coll, then
+  applying f to that result and the 3rd item, etc. If coll contains no
+  items, f must accept no arguments as well, and reduce returns the
+  result of calling f with no arguments.  If coll has only 1 item, it
+  is returned and f is not called.  If val is supplied, returns the
+  result of applying f to val and the first item in coll, then
+  applying f to that result and the 2nd item, etc. If coll contains no
+  items, returns val and f is not called."
+  ([f coll]
+     (let [s (seq coll)]
+       (if s
+	 (reduce f (first s) (rest s))
+	 (f))))
+  ([f val coll]
+     (let [s (seq coll)]
+       (if (instance? com.cuttlefish.runtime.IReduce s)
+         (. #^com.cuttlefish.runtime.IReduce s (reduce f val))
+         ((fn [f val s]
+            (if s
+              (recur f (f val (first s)) (rest s))
+              val))
+          f val s)))))
+
+(defn reverse
+  "Returns a seq of the items in coll in reverse order. Not lazy."
+  [coll]
+  (reduce conj nil coll))
+
+
+;; Special functions
+
+(defn complement
+  "Takes a fn f and returns a fn that takes the same arguments as f,
+  has the same effects, if any, and returns the opposite truth value."  
+  [f] (fn [& args]
+        (not (apply f args))))
+
+
+(defn constantly
+  "Returns a function that takes any number of arguments and returns x."
+  [x] (fn [& args] x))
+
+
+(defn identity
+  "Returns its argument."
+  [x] x)
+
+
+(defn comp
+  "Takes a set of functions and returns a fn that is the composition
+  of those fns.  The returned fn takes a variable number of args,
+  applies the rightmost of fns to the args, the next
+  fn (right-to-left) to the result, etc."
+  [& fs]
+  (let [fs (reverse fs)]
+    (fn [& args]
+      (loop* [ret (apply (first fs) args) fs (rest fs)]
+	     (if fs
+	       (recur ((first fs) ret) (rest fs))
+	       ret)))))
+
+
+(defn partial
+  "Takes a function f and fewer than the normal arguments to f, and
+  returns a fn that takes a variable number of additional args. When
+  called, the returned function calls f with args + additional args."
+  ([f arg1]
+     (fn [& args] (apply f arg1 args)))
+  ([f arg1 arg2]
+     (fn [& args] (apply f arg1 arg2 args)))
+  ([f arg1 arg2 arg3]
+     (fn [& args] (apply f arg1 arg2 arg3 args)))
+  ([f arg1 arg2 arg3 & more]
+     (fn [& args] (apply f arg1 arg2 arg3 (concat more args)))))
+
+
+
+
+;;map stuff
+
+(defn contains?
+  "Returns true if key is present, else false."
+  [map key] (. com.cuttlefish.runtime.RT (contains map key)))
+
+(defn get
+  "Returns the value mapped to key, not-found or nil if key not present."
+  ([map key]
+     (. com.cuttlefish.runtime.RT (get map key)))
+  ([map key not-found]
+     (. com.cuttlefish.runtime.RT (get map key not-found))))
+
+(defn dissoc
+  "dissoc[iate]. Returns a new map of the same (hashed/sorted) type,
+  that does not contain a mapping for key(s)."
+  ([map] map)
+  ([map key]
+     (. com.cuttlefish.runtime.RT (dissoc map key)))
+  ([map key & ks]
+     (let [ret (dissoc map key)]
+       (if ks
+	 (recur ret (first ks) (rest ks))
+	 ret))))
+
+(defn find
+  "Returns the map entry for key, or nil if key not present."
+  [map key] (. com.cuttlefish.runtime.RT (find map key)))
+
+(defn select-keys
+  "Returns a map containing only those entries in map whose key is in keys"
+  [map keyseq]
+  (loop* [ret {} keys (seq keyseq)]
+	 (if keys
+	   (let [entry (. com.cuttlefish.runtime.RT (find map (first keys)))]
+	     (recur
+	      (if entry
+		(conj ret entry)
+		ret)
+	      (rest keys)))
+	   ret)))
+
+(defn keys
+  "Returns a sequence of the map's keys."
+  [map] (. com.cuttlefish.runtime.RT (keys map)))
+
+(defn vals
+  "Returns a sequence of the map's values."
+  [map] (. com.cuttlefish.runtime.RT (vals map)))
+
+(defn key
+  "Returns the key of the map entry."
+  [#^com.cuttlefish.runtime.MapEntry e]
+  (. e key))
+
+(defn val
+  "Returns the value in the map entry."
+  [#^com.cuttlefish.runtime.MapEntry e]
+  (. e value))
+
+
+(defn name
+  "Returns the name String of a symbol or keyword."
+  [x]
+  (. x (getName)))
+
+(defn namespace
+  "Returns the namespace String of a symbol or keyword, or nil if not present."
+  [x]
+  (. x (getNamespace)))
+
+
+;;math stuff
+
+(defn +
+  "Returns the sum of nums. (+) returns 0."
+  ([] 0)
+  ([x] (cast Number x))
+  ([x y] (. com.cuttlefish.runtime.Numbers (add x y)))
+  ([x y & more]
+     (reduce + (+ x y) more)))
+
+(defn *
+  "Returns the product of nums. (*) returns 1."
+  ([] 1)
+  ([x] (cast Number x))
+  ([x y] (. com.cuttlefish.runtime.Numbers (multiply x y)))
+  ([x y & more]
+     (reduce * (* x y) more)))
+
+(defn /
+  "If no denominators are supplied, returns 1/numerator,
+  else returns numerator divided by all of the denominators."
+  ([x] (/ 1 x))
+  ([x y] (. com.cuttlefish.runtime.Numbers (divide x y)))
+  ([x y & more]
+     (reduce / (/ x y) more)))
+
+(defn -
+  "If no ys are supplied, returns the negation of x, else subtracts
+  the ys from x and returns the result."
+  ([x] (. com.cuttlefish.runtime.Numbers (minus x)))
+  ([x y] (. com.cuttlefish.runtime.Numbers (minus x y)))
+  ([x y & more]
+     (reduce - (- x y) more)))
+
+(defn <
+  "Returns non-nil if nums are in monotonically increasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.cuttlefish.runtime.Numbers (lt x y)))
+  ([x y & more]
+     (if (< x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (< y (first more)))
+       false)))
+
+(defn <=
+  "Returns non-nil if nums are in monotonically non-decreasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.cuttlefish.runtime.Numbers (lte x y)))
+  ([x y & more]
+     (if (<= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (<= y (first more)))
+       false)))
+
+(defn >
+  "Returns non-nil if nums are in monotonically decreasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.cuttlefish.runtime.Numbers (gt x y)))
+  ([x y & more]
+     (if (> x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (> y (first more)))
+       false)))
+
+(defn >=
+  "Returns non-nil if nums are in monotonically non-increasing order,
+  otherwise false."
+  ([x] true)
+  ([x y] (. com.cuttlefish.runtime.Numbers (gte x y)))
+  ([x y & more]
+     (if (>= x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (>= y (first more)))
+       false)))
+
+(defn ==
+  "Returns non-nil if nums all have the same value, otherwise false"
+  ([x] true)
+  ([x y] (. com.cuttlefish.runtime.Numbers (equiv x y)))
+  ([x y & more]
+     (if (== x y)
+       (if (rest more)
+	 (recur y (first more) (rest more))
+	 (== y (first more)))
+       false)))
+
+(defn max
+  "Returns the greatest of the nums."
+  ([x] x)
+  ([x y] (if (> x y) x y))
+  ([x y & more]
+     (reduce max (max x y) more)))
+
+(defn min
+  "Returns the least of the nums."
+  ([x] x)
+  ([x y] (if (< x y) x y))
+  ([x y & more]
+     (reduce min (min x y) more)))
+
+(defn inc
+  "Returns a number one greater than num."
+  [x] (. com.cuttlefish.runtime.Numbers (inc x)))
+
+(defn dec
+  "Returns a number one less than num."
+  [x] (. com.cuttlefish.runtime.Numbers (dec x)))
+
+(defn pos?
+  "Returns true if num is greater than zero, else false"
+  [x] (> x 0))
+
+(defn neg?
+  "Returns true if num is less than zero, else false"
+  [x] (< x 0))
+
+(defn zero?
+  "Returns true if num is zero, else false"
+  [x] (= x 0))
+
+(defn rem
+  "rem[ainder] of dividing numerator by denominator."
+  [num div]
+  (. com.cuttlefish.runtime.Numbers (remainder num div)))
+
+;;Bit ops
+
+(defn bit-not
+  "Bitwise complement"
+  [x] (. com.cuttlefish.runtime.Numbers (not x)))
+
+
+(defn bit-and
+  "Bitwise and"
+  ([x] x)
+  ([x y] (. com.cuttlefish.runtime.Numbers (and x y)))
+  ([x y & more]
+     (reduce bit-and (bit-and x y) more)))
+
+(defn bit-or
+  "Bitwise or"
+  ([x] x)
+  ([x y] (. com.cuttlefish.runtime.Numbers (or x y)))
+  ([x y & more]
+     (reduce bit-or (bit-or x y) more)))
+
+(defn bit-xor
+  "Bitwise exclusive or"
+  ([x] x)
+  ([x y] (. com.cuttlefish.runtime.Numbers (xor x y)))
+  ([x y & more]
+     (reduce bit-and (bit-and x y) more)))
+
+(defn bit-shl
+  "Bitwise shift left"
+  ([x n] (. com.cuttlefish.runtime.Numbers (shl x n))))
+
+(defn bit-shr
+  "Bitwise shift right"
+  ([x n] (. com.cuttlefish.runtime.Numbers (shr x n))))
+
+(defn bit-sar
+  "Bitwise shift arithmetic right"
+  ([x n] (. com.cuttlefish.runtime.Numbers (sar x n))))
+
+;; clojury aliases
+(def bit-shift-left bit-shl)
+(def bit-shift-right bit-sar)
+
+;;;;;;;;; var stuff      
+
+
+(defmacro binding
+  "binding => var-symbol init-expr 
+
+  Creates new bindings for the (already-existing) vars, with the
+  supplied initial values, executes the exprs in an implicit do, then
+  re-establishes the bindings that existed before."  
+  [bindings & body]
+  (let [var-ize (fn [var-vals]
+		  (loop* [ret [] vvs (seq var-vals)]
+			 (if vvs
+			   (recur  (conj (conj ret `(var ~(first vvs))) (second vvs))
+				   (rest (rest vvs)))
+			   (seq ret))))]
+    `(do
+       (. com.cuttlefish.runtime.Var (pushBindings *runtime* (hash-map ~@(var-ize bindings))))
+       (try
+	~@body
+	(finally
+	 (. com.cuttlefish.runtime.Var (popBindings *runtime*)))))))
+
+
+(defn find-var
+  "Returns the global var named by the namespace-qualified symbol, or
+  nil if no var with that name."
+  [sym] (. com.cuttlefish.runtime.Var (find *runtime* sym)))
+
+
+
+;; Collection stuff
+
+(defn count
+  "Returns the number of items in the collection. (count nil) returns
+  0.  Also works on strings, arrays and maps"
+  [coll] (. com.cuttlefish.runtime.RT (count coll)))
+
+
+;;list stuff
+
+(defn nth
+  "Returns the value at the index. get returns nil if index out of
+  bounds, nth throws an exception unless not-found is supplied.  nth
+  also works for strings, Java arrays, regex Matchers and Lists, and,
+  in O(n) time, for sequences."
+  ([coll index] (. com.cuttlefish.runtime.RT (nth coll index)))
+  ([coll index not-found] (. com.cuttlefish.runtime.RT (nth coll index not-found))))
+
+
+;;;;;;;;;;;;;;;;; Tracing to console...
+
+(defn pr
+  "Trace out the object. By default, pr and prn print in a way that objects
+  can be read by the reader"
+  ([] nil)
+  ([x]
+     (. *runtime* (print x *out*))
+     nil)
+  ([x & more]
+     (pr x)
+     (. *out* (write \space))
+     (apply pr more)))
+
+
+(defn newline 
+  "Writes a newline to the output stream that is the current value of
+  *out*" 
+  []
+  (. *out* (write \newline))
+  nil)
+
+
+(defn prn
+  "Same as pr followed by (newline)."
+  [& more]
+  (apply pr more)
+  (newline))
+
+
+(defn print
+  "Trace out the object(s). print and println produce output for human consumption."
+  [& more]
+  (binding [*print-readably* nil]
+    (apply pr more)))
+
+
+(defn println
+  "Same as print followed by (newline)"
+  [& more]
+  (binding [*print-readably* nil]
+    (apply prn more)))
+
+
+
+;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
+  
+(defn every?
+  "Returns true if (pred x) is logical true for every x in coll, else
+  false."  
+  [pred coll]
+  (if (seq coll)
+    (and (pred (first coll))
+	 (recur pred (rest coll)))
+    true))
+
+(def
+ #^{:tag Boolean
+    :doc "Returns false if (pred x) is logical true for every x in 
+  coll, else true."
+    :arglists '([pred coll])}
+ not-every? (comp not every?))
+
+(defn some
+  "Returns the first logical true value of (pred x) for any x in coll,
+  else nil."
+  [pred coll]
+  (when (seq coll)
+    (or (pred (first coll)) (recur pred (rest coll)))))
+
+
+(def 
+ #^{:tag Boolean
+    :doc "Returns false if (pred x) is logical true for any x in coll,
+  else true."
+    :arglists '([pred coll])}
+ not-any? (comp not some))
+
+
+(defn map
+  "Returns a lazy seq consisting of the result of applying f to the
+  set of first items of each coll, followed by applying f to the set
+  of second items in each coll, until any one of the colls is
+  exhausted.  Any remaining items in other colls are ignored. Function
+  f should accept number-of-colls arguments."
+  ([f coll]
+     (when (seq coll)
+       (lazy-cons (f (first coll)) (map f (rest coll)))))
+  ([f coll & colls]
+     (when (and (seq coll) (every? seq colls))
+       (lazy-cons (apply f (first coll) (map first colls))
+		  (apply map f (rest coll) (map rest colls))))))
+
+(defn mapcat
+  "Returns the result of applying concat to the result of applying map
+  to f and colls.  Thus function f should return a collection."
+  [f & colls]
+  (apply concat (apply map f colls)))
+
+(defn filter
+  "Returns a lazy seq of the items in coll for which
+  (pred item) returns true. pred must be free of side-effects."
+  [pred coll]
+  (when (seq coll)
+    (if (pred (first coll))
+      (lazy-cons (first coll) (filter pred (rest coll)))
+      (recur pred (rest coll)))))
+
+(defn take
+  "Returns a lazy seq of the first n items in coll, or all items if
+  there are fewer than n."  
+  [n coll]
+  (when (and (pos? n) (seq coll))
+    (lazy-cons (first coll) (take (dec n) (rest coll)))))
+
+(defn take-while
+  "Returns a lazy seq of successive items from coll while
+  (pred item) returns true. pred must be free of side-effects."
+  [pred coll]
+  (when (and (seq coll) (pred (first coll)))
+    (lazy-cons (first coll) (take-while pred (rest coll)))))
+
+(defn drop
+  "Returns a lazy seq of all but the first n items in coll."
+  [n coll]
+  (if (and (pos? n) (seq coll))
+    (recur (dec n) (rest coll))
+    (seq coll)))
+
+(defn drop-last
+  "Return a lazy seq of all but the last n (default 1) items in coll"
+  ([s] (drop-last 1 s))
+  ([n s] (map (fn [x _] x) (seq s) (drop n s))))
+
+(defn drop-while
+  "Returns a lazy seq of the items in coll starting from the first
+  item for which (pred item) returns nil."
+  [pred coll]
+  (if (and (seq coll) (pred (first coll)))
+    (recur pred (rest coll))
+    (seq coll)))
+
+(defn cycle
+  "Returns a lazy (infinite!) seq of repetitions of the items in
+  coll."  
+  [coll]
+  (when (seq coll)
+    (let [rep (fn thisfn [xs]
+		(if xs
+		  (lazy-cons (first xs) (thisfn (rest xs)))
+		  (recur (seq coll))))]
+      (rep (seq coll)))))
+
+(defn split-at
+  "Returns a vector of [(take n coll) (drop n coll)]"
+  [n coll]
+  [(take n coll) (drop n coll)])
+
+(defn split-with
+  "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"
+  [pred coll]
+  [(take-while pred coll) (drop-while pred coll)])
+
+(defn repeat
+  "Returns a lazy (infinite!) seq of xs."
+  [x] (lazy-cons x (repeat x)))
+
+(defn replicate
+  "Returns a lazy seq of n xs."
+  [n x] (take n (repeat x)))
+  
+(defn iterate
+  "Returns a lazy seq of x, (f x), (f (f x)) etc. f must be free of side-effects"
+  [f x] (lazy-cons x (iterate f (f x))))
+
+(defn range
+  "Returns a lazy seq of nums from start (inclusive) to end
+  (exclusive), by step, where start defaults to 0 and step to 1."
+  ([end] (if (> end 0)
+           (new com.cuttlefish.runtime.Range 0 end)
+           (take end (iterate inc 0))))
+  ([start end] (if (< start end)
+                 (new com.cuttlefish.runtime.Range start end)
+                 (take (- end start) (iterate inc start))))
+  ([start end step]
+     (take-while (partial (if (pos? step) > <) end) (iterate (partial + step) start))))
+
+
+(defn merge
+  "Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping from
+  the latter (left-to-right) will be the mapping in the result."
+  [& maps] (reduce conj maps))
+
+
+(defn merge-with
+  "Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping(s)
+  from the latter (left-to-right) will be combined with the mapping in
+  the result by calling (f val-in-result val-in-latter)."
+  [f & maps]
+  (let [merge-entry (fn [m e]
+		      (let [k (key e) v (val e)]
+			(if (contains? m k)
+			  (assoc m k (f (m k) v))
+			  (assoc m k v))))
+	merge2 (fn [m1 m2]
+		 (reduce merge-entry m1 (seq m2)))]
+    (reduce merge2 maps)))
+
+
+
+
+(defn zipmap
+  "Returns a map with the keys mapped to the corresponding vals."
+  [keys vals]
+  (loop* [map {}
+	  ks (seq keys)
+	  vs (seq vals)]
+	 (if (and ks vs)
+	   (recur (assoc map (first ks) (first vs))
+		  (rest ks)
+		  (rest vs))
+	   map)))
+
+
+(defn eval
+  "Evaluates the form data structure (provided as a string!) and calls back with the result
+   if callback is provided."
+  ([form] (. *runtime* (evalStr form)))
+  ([form callback] (. *runtime* (evalStr form callback)))
+  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback))))
+
+(defmacro doseq
+  "Repeatedly executes body (presumably for side-effects) with
+  binding-form bound to successive items from coll.  Does not retain
+  the head of the sequence. Returns nil."
+  [item list & body]
+  `(loop* [list# (seq ~list)]
+	  (when list#
+	    (let [~item (first list#)]
+	      ~@body)
+	    (recur (rest list#)))))
+
+(defn dorun
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. dorun can
+  be used to force any effects. Walks through the successive rests of
+  the seq, does not retain the head and returns nil."
+  ([coll]
+     (when (and (seq coll) (or (first coll) true))
+       (recur (rest coll))))
+  ([n coll]
+     (when (and (seq coll) (pos? n) (or (first coll) true))
+       (recur (dec n) (rest coll)))))
+
+(defn doall
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. doall can
+  be used to force any effects. Walks through the successive rests of
+  the seq, retains the head and returns it, thus causing the entire
+  seq to reside in memory at one time."
+  ([coll]
+     (dorun coll)
+     coll)
+  ([n coll]
+     (dorun n coll)
+     coll))
+
+(defmacro dotimes
+  "Repeatedly executes body (presumably for side-effects) with name
+  bound to integers from 0 through n-1."
+  [i n & body]
+  `(let [n# ~n]
+     (loop* [~i 0]
+	    (when (< ~i n#)
+	      ~@body
+	      (recur (inc ~i))))))
+
+
+(defn import
+  "import-list => (package-symbol class-name-symbols*)
+
+  For each name in class-name-symbols, adds a mapping from name to the
+  class named by package.name to the current namespace. Use :import in the ns
+  macro in preference to calling this directly."
+  [& import-lists]
+  (when import-lists
+    (let [#^com.cuttlefish.runtime.LispNamespace ns *ns*
+	  pkg (ffirst import-lists)
+	  classes (rfirst import-lists)]
+      
+      (doseq c classes
+	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
+    (apply import (rest import-lists))))
+
+
+(defn into
+  "Returns a new coll consisting of to-coll with all of the items of
+  from-coll conjoined."
+  [to from]
+  (let [ret to items (seq from)]
+    (if items
+      (recur (conj ret (first items)) (rest items))
+      ret)))
+
+(defn macroexpand-1
+  "If form represents a macro form, returns its expansion,
+  else returns form."
+  [form]
+  (. (. *runtime* compiler) (macroexpand1 form)))
+
+
+
+(defn macroexpand
+  "Repeatedly calls macroexpand-1 on form until it no longer
+  represents a macro form, then returns it.  Note neither
+  macroexpand-1 nor macroexpand expand macros in subforms."
+  [form]
+  (let [ex (macroexpand-1 form)]
+    (if (identical? ex form)
+      form
+      (macroexpand ex))))
+
+
+(defn #^{:private true}
+  filter-key [keyfn pred amap]
+  (loop* [ret {} es (seq amap)]
+	 (if es
+	   (if (pred (keyfn (first es)))
+	     (recur (assoc ret (key (first es)) (val (first es))) (rest es))
+	     (recur ret (rest es)))
+	   ret)))
+
+
+(defmacro time
+  "Evaluates expr and prints the time it took.  Returns the value of
+   expr."  
+  [expr]
+  `(let [start# (. com.cuttlefish.runtime.RT (sysTime))
+         ret# ~expr]
+     (prn (str "Elapsed time: " (/ (- (. com.cuttlefish.runtime.RT (sysTime)) start#) 1000000.0) " msecs"))
+     ret#))
+
+(defn set 
+  "Returns a set of the distinct elements of coll."
+  [coll] (apply hash-set coll))
+
+(defn find-ns
+  "Returns the namespace named by the symbol or nil if it doesn't exist."
+  [sym] (. com.cuttlefish.runtime.LispNamespace (find *runtime* sym)))
+
+
+(defn create-ns
+  "Create a new namespace named by the symbol if one doesn't already
+  exist, returns it or the already-existing namespace of the same
+  name."
+  [sym] (. com.cuttlefish.runtime.LispNamespace (findOrCreate *runtime* sym)))
+
+
+(defn remove-ns
+  "Removes the namespace named by the symbol. Use with caution.
+  Cannot be used to remove the clojure namespace."
+  [sym] (. com.cuttlefish.runtime.LispNamespace (remove *runtime* sym)))
+
+
+(defn all-ns
+  "Returns a sequence of all namespaces."
+  [] (. com.cuttlefish.runtime.LispNamespace (all *runtime*)))
+
+
+(defn ns-name
+  "Returns the name of the namespace, a symbol."
+  [#^com.cuttlefish.runtime.LispNamespace ns]
+  (. ns (getName)))
+
+
+(defn ns-map
+  "Returns a map of all the mappings for the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns]
+  (. ns (getMappings)))
+
+
+(defn ns-unmap
+  "Removes the mappings for the symbol from the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns sym]
+  (. ns (unmap sym)))
+
+(defn ns-publics
+  "Returns a map of the public intern mappings for the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns]
+  (filter-key val (fn [#^com.cuttlefish.runtime.Var v] (and (instance? com.cuttlefish.runtime.Var v)
+						       (= ns (. v ns))
+						       (. v (isPublic))))
+	      (ns-map ns)))
+
+(defn ns-imports
+  "Returns a map of the import mappings for the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns]
+  (filter-key val (partial instance? Class) (ns-map ns)))
+
+
+(defn refer
+  "refers to all public vars of ns, subject to filters.
+  filters can include at most one each of:
+
+  :exclude list-of-symbols
+  :only list-of-symbols
+  :rename map-of-fromsymbol-tosymbol
+
+  For each public interned var in the namespace named by the symbol,
+  adds a mapping from the name of the var to the var to the current
+  namespace.  Throws an exception if name is already mapped to
+  something else in the current namespace. Filters can be used to
+  select a subset, via inclusion or exclusion, or to provide a mapping
+  to a symbol different from the var's name, in order to prevent
+  clashes. Use :use in the ns macro in preference to calling this directly."
+  [ns-sym & filters]
+  (let [ns (or (find-ns ns-sym) (throw (new Error (str "No namespace: " ns-sym))))
+	fs (apply hash-map filters)
+	nspublics (ns-publics ns)
+	rename (or (get fs :rename) {})
+	exclude (hash-set (get fs :exclude))
+	to-do (or (get fs :only) (keys nspublics))]
+    (doseq sym to-do
+      (when-not (contains? exclude sym)
+	(let [v (get nspublics sym)]
+	  (when-not v
+	    (throw (new Error (str sym " is not public"))))
+	  (. *ns* (refer (or (get rename sym) sym) v)))))))
+
+(defn ns-refers
+  "Returns a map of the refer mappings for the namespace."
+  [#^com.cuttlefish.runtime.Namespace ns]
+  (filter-key val (fn [#^com.cuttlefish.runtime.Var v] (and (instance? com.cuttlefish.runtime.Var v)
+						       (not= ns (. v ns))))
+	      (ns-map ns)))
+
+(defn ns-interns
+  "Returns a map of the intern mappings for the namespace."
+  [#^com.cuttlefish.runtime.Namespace ns]
+  (filter-key val (fn [#^com.cuttlefish.runtime.Var v] (and (instance? com.cuttlefish.runtime.Var v)
+						       (= ns (. v ns))))
+	      (ns-map ns)))
+
+
+(defn alias
+  "Add an alias in the current namespace to another
+  namespace. Arguments are two symbols: the alias to be used, and
+  the symbolic name of the target namespace. Use :as in the ns macro in preference 
+  to calling this directly."
+  [alias namespace-sym]
+  (. *ns* (addAlias alias (find-ns namespace-sym))))
+
+(defn ns-aliases
+  "Returns a map of the aliases for the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns]  (. ns (getAliases)))
+
+(defn ns-unalias
+  "Removes the alias for the symbol from the namespace."
+  [#^com.cuttlefish.runtime.LispNamespace ns sym]
+  (. ns (removeAlias sym)))
+
+(defn take-nth
+  "Returns a lazy seq of every nth item in coll."
+  [n coll]
+  (when (seq coll)
+    (lazy-cons (first coll) (take-nth n (drop n coll)))))
+
+(defn interleave
+  "Returns a lazy seq of the first item in each coll, then the second
+  etc."
+  [& colls]
+  (apply concat (apply map list colls)))
+
+
+(defn nthrest
+  "Returns the nth rest of coll, (seq coll) when n is 0."
+  [coll n]
+  (loop* [n n xs (seq coll)]
+	 (if (and xs (pos? n))
+	   (recur (dec n) (rest xs))
+	   xs)))
+
+(defn var-get
+  "Gets the value in the var object"
+  [#^com.cuttlefish.runtime.Var x] (. x (get)))
+
+(defn var-set
+  "Sets the value in the var object to val. The var must be
+ thread-locally bound."  
+  [#^com.cuttlefish.runtime.Var x val] (. x (set val)))
+
+(defmacro with-local-vars
+  "varbinding=> symbol init-expr
+
+  Executes the exprs in a context in which the symbols are bound to
+  vars with per-thread bindings to the init-exprs.  The symbols refer
+  to the var objects themselves, and must be accessed with var-get and
+  var-set"
+  [name-vals-vec & body]
+  `(let [~@(interleave (take-nth 2 name-vals-vec)
+                       (repeat '(. com.cuttlefish.runtime.Var (create *runtime*))))]
+     (. com.cuttlefish.runtime.Var (pushThreadBindings *runtime* (hash-map ~@name-vals-vec)))
+     (try
+      ~@body
+      (finally (. com.cuttlefish.runtime.Var (popThreadBindings *runtime*))))))
+
+(defmacro doto
+  "Evaluates x then calls all of the methods with the supplied
+  arguments in succession on the resulting object, returning it.
+
+  (doto (new java.util.HashMap) (put \"a\" 1) (put \"b\" 2))"
+  [x & members]
+  (let [gx (gensym)]
+    `(let [~gx ~x]
+       (do
+	 ~@(map (fn [m] (list '. gx m))
+		members))
+       ~gx)))
+
+(defmacro memfn
+  "Expands into code that creates a fn that expects to be passed an
+  object and any args and calls the named instance method on the
+  object passing the args. Use when you want to treat a Java method as
+  a first-class fn."
+  [name & args]
+  `(fn [target# ~@args]
+     (. target# (~name ~@args))))
+
+(defmacro ..
+  "form => fieldName-symbol or (instanceMethodName-symbol args*)
+
+  Expands into a member access (.) of the first member on the first
+  argument, followed by the next member on the result, etc. For
+  instance:
+
+  (.. System (getProperties) (get \"os.name\"))
+
+  expands to:
+
+  (. (. System (getProperties)) (get \"os.name\"))
+
+  but is easier to write, read, and understand."
+  ([x form] `(. ~x ~form))
+  ([x form & more] `(.. (. ~x ~form) ~@more)))
+
+(defmacro ->
+  "Macro. Threads the expr through the forms. Inserts x as the
+  second item in the first form, making a list of it if it is not a
+  list already. If there are more forms, inserts the first form as the
+  second item in second form, etc."
+  ([x form] (if (seq? form)
+              `(~(first form) ~x ~@(rest form))
+              (list form x)))
+  ([x form & more] `(-> (-> ~x ~form) ~@more)))
+
+(defn symbol?
+  "Return true if x is a Symbol"
+  [x] (instance? com.cuttlefish.runtime.Symbol x))
+
+
+(defn keyword?
+  "Return true if x is a Keyword"
+  [x] (instance? com.cuttlefish.runtime.Keyword x))
+
+
+(defn num
+  "Coerce to Number"
+  {:tag Number}
+  [x] (. com.cuttlefish.runtime.RT (numCast x)))
+
+
+(defn int
+  "Coerce to int"
+  [x] (. com.cuttlefish.runtime.RT (intCast x)))
+
+
+(defn rand
+  "Returns a random floating point number between 0 (inclusive) and
+  1 (exclusive)."
+  ([] (. Math (random)))
+  ([n] (* n (rand))))
+
+(defn rand-int
+  "Returns a random integer between 0 (inclusive) and n (exclusive)."
+  [n] (int (rand n)))
+
+(defmacro defn-
+  "same as defn, yielding non-public def"
+  [name & decls]
+  (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
+
+
+(defn destructure [bindings]
+  (let [bmap (apply hash-map bindings)
+        pb (fn pb [bvec b v]
+	     (let [pvec
+		   (fn [bvec b val]
+		     (let [gvec (gensym "vec__")]
+		       (loop* [ret (-> bvec (conj gvec) (conj val))
+			       n 0
+			       bs b
+			       seen-rest? false]
+			      (if bs
+				(let [firstb (first bs)]
+				  (cond
+				   (= firstb '&) (recur (pb ret (second bs) (list `nthrest gvec n))
+							n
+							(rrest bs)
+							true)
+				   (= firstb :as) (pb ret (second bs) gvec)
+				   :else (if seen-rest?
+					   (throw (new Error "Unsupported binding form, only :as can follow & parameter"))
+					   (recur (pb ret firstb  (list `nth gvec n nil))
+						  (inc n)
+						  (rest bs)
+						  seen-rest?))))
+				ret))))
+		   pmap
+		   (fn pmap [bvec b v]
+		     (let [gmap (or (get b :as) (gensym "map__"))
+			   defaults (get b :or)]
+		       (loop* [ret (-> bvec (conj gmap) (conj v))
+			       bes (reduce
+				    (fn [bes entry]
+				      (reduce (fn [a b] (assoc a b (get b (val entry))))
+					      (dissoc bes (key entry))
+					      (get bes (key entry))))
+				    (dissoc b :as :or)
+				    {:keys (fn [a] (keyword (str a))), :strs str, :syms (fn [a] (list `quote a))})]
+			      (if bes
+				(let [bb (key (first bes))
+				      bk (val (first bes))
+				      has-default (contains? defaults bb)]
+				  (recur (pb ret bb (if has-default
+						      (list `get gmap bk (get defaults bb))
+						      (list `get gmap bk)))
+					 (rest bes)))
+				ret)
+			      )))]
+	       (cond
+		(symbol? b) (-> bvec (conj b) (conj v))
+		(vector? b) (pvec bvec b v)
+		(map? b) (pmap bvec b v)
+		:else (throw (new Error (str "Unsupported binding form: " b))))))
+        process-entry (fn [bvec b] (pb bvec (key b) (val b)))]
+    (if (every? symbol? (keys bmap))
+      bindings
+      (reduce process-entry [] bmap))))
+;; (try (destructure '[{a :a} {:a 1}]) (catch Error e (. e (getStackTrace))))
+;; {:a}
+
+
+;; (let [[a b c] [1 2 3]] a)
+;; (let [[a b c & d] [1 2 3 4 5 6 7]] d)
+(defmacro let
+  "Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein."
+  [bindings & body]
+  `(let* ~(destructure bindings) ~@body))
+
+
+;; ((fn [[x y z] a b c & d] x) [1 2 3] 2 3 4 5 6 7)
+(defmacro fn
+  "(fn name? [params* ] exprs*)
+  (fn name? ([params* ] exprs*)+)
+
+  params => positional-params* , or positional-params* & rest-param
+  positional-param => binding-form
+  rest-param => binding-form
+  name => symbol
+
+  Defines a function"
+  [& sigs]
+  (let [name (if (symbol? (first sigs)) (first sigs) nil)
+	sigs (if name (rest sigs) sigs)
+	sigs (if (vector? (first sigs)) (list sigs) sigs)
+	psig (fn [sig]
+	       (let [[params & body] sig]
+		 (if (every? symbol? params)
+		   sig
+		   (loop* [params params
+			   new-params []
+			   lets []]
+			  (if params
+			    (if (symbol? (first params))
+			      (recur (rest params) (conj new-params (first params)) lets)
+			      (let [gparam (gensym "p__")]
+				(recur (rest params) (conj new-params gparam) 
+				       (-> lets (conj (first params)) (conj gparam)))))
+			    `(~new-params
+			      (let ~lets
+				~@body)))))))
+	new-sigs (map psig sigs)]
+    (with-meta
+     (if name
+       (list* 'fn* name new-sigs)
+       (cons 'fn* new-sigs))
+     {}	;;*macro-meta*
+     )))
+
+
+;; (vec '(1 2 3))
+(defn vec
+  "Creates a new vector containing the contents of coll."
+  [coll]
+  (into [] (seq coll)))
+
+
+(defmacro loop
+  "Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein. Acts as a recur target."
+  [bindings & body]
+  (let [db (destructure bindings)]
+    (if (= db bindings)
+      `(loop* ~bindings ~@body)
+      (let [vs (take-nth 2 (drop 1 bindings))
+	    bs (take-nth 2 bindings)
+	    gs (map (fn [b] (if (symbol? b) b (gensym))) bs)
+	    bfs (reduce (fn [ret [b v g]]
+			  (if (symbol? b)
+			    (conj ret g v)
+			    (conj ret g v b g)))
+			[] (map vector bs vs gs))]
+	`(let ~bfs
+	   (loop* ~(vec (interleave gs gs))
+		  (let ~(vec (interleave bs gs))
+		    ~@body)))))))
+
+
+
+;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
+
+(import '(flash.net URLLoader URLRequest))
+(import '(flash.events Event IOErrorEvent TimerEvent ProgressEvent))
+(import '(flash.utils Timer))
+(import '(flash.net Socket))
+(import '(com.cuttlefish.util StringBuffer))
+
+
+(defn- read-bytes
+  "Helper function for reading 0-terminated strings from eval_pipe."
+  [socket buffer]
+  (let [to-eval []
+	term 0]
+    (loop* []
+	   (if (> (. socket bytesAvailable) 0)
+	     (let [byte (. socket (readUnsignedByte))]
+	       (if (= byte term)
+		 (do
+		   (. to-eval (push (str buffer)))
+		   (. buffer (clear)))
+		 (do
+		   (. buffer (append (char-code->str byte)))))
+	       (recur)
+	       )))
+    to-eval
+    ))
+
+
+(defn connect-to-eval-pipe
+  "Connect to eval_pipe, reading and evaluating strings as they arrive."
+  ([] (connect-to-eval-pipe 9877))
+  ([port]
+     (let [socket (new Socket)
+	   buffer (new StringBuffer)]
+       (. socket (addEventListener (. Event CONNECT) (fn [e] (println "Connected to eval_pipe."))))
+       (. socket (addEventListener (. Event CLOSE) (fn [e] (println "Disconnected from eval_pipe."))))
+       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (println "Error on eval_pipe."))))
+       (. socket (addEventListener 
+		  (. ProgressEvent SOCKET_DATA)
+		  (fn [e]
+		    (doseq src (read-bytes socket buffer)
+		      (eval src 
+			    (fn [val] (println val))
+			    (fn [err] (binding [*out* *err*]
+					(println err)))))
+		    )))
+       (. socket (connect "localhost" port))
+       socket
+       )))
+
+(defn load-url [url on-complete on-error]
+  "Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners."
+  (let [request (new flash.net.URLRequest url)
+	loader (new flash.net.URLLoader)]
+    (. loader (addEventListener "complete" on-complete))
+    (. loader (addEventListener "ioError" on-error))
+    (. loader (addEventListener "securityError" on-error))
+    (. loader (load request))))
+
+(defn eval-url
+  "Evaluate the code in the provided URL and call back with the result or error if callbacks are provided."
+  ([url] (eval-url url (fn [e] nil) (fn [e] nil)))
+  ([url callback] (eval-url url callback (fn [e] nil)))
+  ([url callback err-callback]
+     (load-url url
+	       (fn [e] 
+		 (eval (.. e target data) callback err-callback))
+	       err-callback)))
+
+;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
+
+(defmacro assert-true
+  [form]
+  `(try (if ~form
+	  (print ".")
+	  (println (list "Failure:  " '~form "   Expecting truthy")))
+	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+
+
+(defmacro assert-false
+  [form]
+  `(try (if (not ~form)
+	  (print ".")
+	  (println (list "Failure:  " '~form "   Expecting falsy")))
+	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+
+
+(defn run-tests []
+  (assert-true (= (reduce + '(1 2 3)) 6))
+  (assert-true (= (reduce + 0 '(1 2 3)) 6))
+  (assert-true (= (reverse '(0 1 2 3)) '(3 2 1 0)))
+
+  (assert-true (and true 1 2 :horse))
+  (assert-false (and true nil))
+
+  (assert-true (= :unicorn (cond nil :horse
+				 nil :dog
+				 :else :unicorn)))
+
+  (assert-true (every? pos? '(1 2 3 4)))
+  (assert-false (every? pos? '(1 -1 3 4)))
+
+  (assert-true (not-every? pos? '(1 -1 3 4)))
+  (assert-false (not-every? pos? '(1 2 3 4)))
+
+  (assert-true (not-any? neg? '(1 1 3 4)))
+
+  (assert-true (= (some neg? '(1 1 -2 4)) true))
+
+  (assert-true (= (map (fn [ea] (+ ea 1)) '(0 1 2 3)) '(1 2 3 4)))
+
+  (assert-true (= (take 2 '(1 2 2)) '(1 2)))
+  (assert-true (= (drop 2 '(1 2 2)) '(2)))
+
+  (assert-true (= (zipmap '(:a :b :c) '(1 2 3)) { :a 1 :b 2 :c 3}))
+
+  (assert-true (= (merge {:a 1 :b 2} {:c 3}) { :a 1 :b 2 :c 3}))
+
+  (assert-true (= #{:a :b :c} (set (keys {:a 1 :b 2 :c 3}))))
+  (assert-true (= #{1 2 3} (set (vals {:a 1 :b 2 :c 3}))))
+
+  ;; This was failing verification because the 'do' was being emitted as a statement..
+  (assert-true (= 1 (if true (do (doseq a (quote (1 2)) a) 1))))
+
+  (assert-true (let [obj (new Object)]
+  		 (set! (. obj nums) [])
+  		 (set! (. obj funcs) [])
+  		 (doseq ea '[1 2 3 4 5]
+  		   (set! (. obj funcs) (conj
+  					(. obj funcs)
+  					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
+  					)))
+  		 (doseq ea (. obj funcs) (ea))
+  		 (= [1 2 3 4 5] (. obj nums))
+  		 ))
+  
+  ;;namespace stuff
+  (let [sym (gensym)]
+    (assert-false (find-ns sym))
+    (create-ns sym)
+    (assert-true (find-ns sym))
+    (remove-ns sym)
+    (assert-false (find-ns sym)))
+  
+  (assert-true (= "1,2,3" ((memfn join sep) ["1", "2", "3"] ",")))
+  (assert-true (= [1 2] (-> [] (conj 1) (conj 2))))
+
+  ;;Test destructuring binds
+  (assert-true (= '(1 2 3) (let [[a b c] [1 2 3]] (list a b c))))
+  
+  (assert-true (= '(4 5) (let [[a b c & d] [1 2 3 4 5]] d)))
+  
+  (assert-true (= '[1 2 3 4 5] (let [[a b c & d :as e] [1 2 3 4 5]] e)))
+  
+  (assert-true (= '(1 2 3 4 5) (let [[a b c & d :as e] '(1 2 3 4 5)] e)))
+  
+  (assert-true (= '[1 2 3 4] (let [[[x1 y1][x2 y2]] [[1 2] [3 4]]] [x1 y1 x2 y2])))
+  
+  (assert-true (= '["a" "s" ("d" "j" "h" "h" "f" "d" "a" "s") "asdjhhfdas"]
+  		  (let [[a b & c :as str] "asdjhhfdas"] [a b c str])))
+  
+  ;; "Map binding forms"
+  (assert-true (= [5 3 6 {:c 6, :a 5}] (let [{a :a, b :b, c :c, :as m :or {a 2 b 3}} {:a 5 :c 6}] [a b c m])))
+
+  ;; "pull apart just about anything"
+  (assert-true (= (let [{j :j, k :k, i :i, [r s & t :as v] :ivec, :or {i 12 j 13}}
+			{:j 15 :k 16 :ivec [22 23 24 25]}]
+		    [i j k r s t v])
+		  '[12 15 16 22 23 (24 25) [22 23 24 25]]))
+
+  )
+
+;;(run-tests)
+
+;;(connect-to-eval-pipe)

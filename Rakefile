@@ -31,7 +31,7 @@ COMPILE_OPTIONS = [
                   ]
 
 SWC_OPTIONS = [
-               "-include-classes com.las3r.repl.App",
+               "-include-classes com.cuttlefish.repl.App",
                "-directory=false",
                "-debug=false",
                "-compiler.warn-no-type-decl=false",
@@ -41,38 +41,38 @@ SWC_OPTIONS = [
 
 
 SHARED_SOURCES = FileList["./src/as3/**/*"]
-LAS3R_STDLIB = FileList["./src/lsr/**/*"]
+CUTTLEFISH_STDLIB = FileList["./src/lsr/**/*"]
 THIS_RAKEFILE = FileList["./Rakefile"]
-TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
+TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/cuttlefish/test/demos/*.as"]
 TEST_DEMO_SWF_TARGETS = TEST_DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
-file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + CUTTLEFISH_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/cuttlefish/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
 DEMO_GARDEN_TARGET = "./bin/garden.swf"
-file DEMO_GARDEN_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file DEMO_GARDEN_TARGET => SHARED_SOURCES + CUTTLEFISH_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 700 600"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/cuttlefish/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
 end
 
 REPL_TARGET = "./bin/repl.swf"
-file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file REPL_TARGET => SHARED_SOURCES + CUTTLEFISH_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/cuttlefish/repl/App.as -output=#{REPL_TARGET}"
 end
 
-SWC_TARGET = "./bin/las3r.swc"
-file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+SWC_TARGET = "./bin/cuttlefish.swc"
+file SWC_TARGET => SHARED_SOURCES + CUTTLEFISH_STDLIB do
   sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
 end
 
 LISP_UNITS_TARGET = "./bin/lisp_units.swf"
-file LISP_UNITS_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file LISP_UNITS_TARGET => SHARED_SOURCES + CUTTLEFISH_STDLIB do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/LispTestRunner.as -output=#{LISP_UNITS_TARGET}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/cuttlefish/repl/LispTestRunner.as -output=#{LISP_UNITS_TARGET}"
 end
 
 task :dist => [REPL_TARGET, UNIT_TEST_RUNNER_TARGET] do
@@ -83,7 +83,7 @@ end
 TRACE_SWF = "./bin/trace_swf.swf"
 file TRACE_SWF => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/util/TraceSwf.as -output=#{TRACE_SWF}"
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/cuttlefish/util/TraceSwf.as -output=#{TRACE_SWF}"
 end
 
 TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
