@@ -16,7 +16,7 @@ package com.las3r.runtime{
 
 	public class Set extends Obj implements ISet, IReduce{
 
-		private var _dict:Dictionary;
+		private var _map:IMap;
 
 		public static function createFromMany(...init:Array):Set{
 			return createFromArray(init);
@@ -31,17 +31,17 @@ package com.las3r.runtime{
 		}
 
 		public static function createFromArray(init:Array):Set{
-			var ret:Set = new Set();
+			var ret:ISet = new Set();
 			var len:int = init.length;
 			for(var i:int = 0; i < len; i ++){
-				var o:Object  = init[i];				
-				ret.add(o);
+				var o:Object  = init[i];
+				ret = ret.add(o);
 			}
-			return ret;
+			return Set(ret);
 		}
 
 		public function Set(){
-			_dict = new Dictionary();
+			_map = RT.map();
 		}
 
 		public function toString():String {
@@ -49,6 +49,10 @@ package com.las3r.runtime{
 		}
 
 		override public function equals(obj:*):Boolean{
+			if(obj == this){
+				return true;
+			}
+
 			if(!(obj is ISet)){
 				return false;
 			}
@@ -57,118 +61,77 @@ package com.las3r.runtime{
 			if(m.count() != count()){
 				return false;
 			}
-			
-			for(var key:* in _dict){
-				if(!m.contains(key)){
-					return false;
-				}
-			}
-			return true;
+
+			var ret:Boolean = true;
+			_map.each(function(key:*, val:*):void{
+					if(!m.contains(key)){
+						ret = false;
+					}
+				});
+			return ret;
 		}
 
 		public function count():int{
-			var i:int = 0;
-			for(var key:* in _dict){ i++; }
-			return i;
+			return _map.count();
 		}
 
 		public function contains(obj:Object):Boolean{
-			return _dict[obj] != null;
+			return _map.containsKey(obj);
+		}
+
+		public function cons(obj:Object):ISet{
+			return add(obj);
 		}
 
 		public function add(obj:Object):ISet{
-			_dict[obj] = obj;
-			return this;
+			var s:Set = new Set();
+			s._map = _map.assoc(obj, obj);
+			return s;
 		}
 
 		public function remove(obj:Object):ISet{
-			delete _dict[obj];
-			return this;
+			var s:Set = new Set();
+			s._map = _map.without(obj);
+			return s;
 		}
 
 		public function union(s:ISet):ISet{
-			var ret:Set = new Set();
-			each(function(ea:Object):void{ ret.add(ea); })
-			s.each(function(ea:Object):void{ ret.add(ea); })
+			var ret:ISet = new Set();
+			each(function(ea:Object):void{ 
+					ret = ret.add(ea); 
+				})
+			s.each(function(ea:Object):void{ 
+					ret = ret.add(ea); 
+				})
 			return ret;
 		}
 
 		public function subtract(s:ISet):ISet{
-			var ret:Set = new Set();
-			each(function(ea:Object):void{ if(!s.contains(ea)) ret.add(ea); });
+			var ret:ISet = new Set();
+			each(function(ea:Object):void{ if(!s.contains(ea)) ret = ret.add(ea); });
 			return ret;
 		}
 
 		public function intersect(s:ISet):ISet{
-			var ret:Set = new Set();
-			each(function(ea:Object):void{ if(s.contains(ea)) ret.add(ea); });
+			var ret:ISet = new Set();
+			each(function(ea:Object):void{ if(s.contains(ea)) ret = ret.add(ea); });
 			return ret;
 		}
 
 		public function seq():ISeq{
-			//TODO This is too slow
-			var entries:Array = [];
-			for each(var obj:Object in _dict){ entries.push(obj); }
-			if(entries.length > 0){
-				return new SetSeq(entries, 0);
-			}
-			else{
-				return null;
-			}
+			return _map.keys();
 		}
 
 		public function each(iterator:Function):void{
-			for(var obj:* in _dict){ iterator(obj); }
+			_map.each(function(key:*, val:*):void{
+					iterator(key);
+				});
 		}
 
 		public function reduce(f:Function, start:Object):Object {
-			return SetSeq(seq()).reduce(f, start);
+			return IReduce(seq()).reduce(f, start);
 		}
 
 	}
 }
 
-import com.las3r.runtime.*;
-
-class SetSeq extends ASeq implements ISeq{
-	private var entries:Array;
-	private var i:int;
-
-	public function SetSeq(entries:Array, i:int){
-		this.entries = entries;
-		this.i = i;
-	}
-
-	override public function withMeta(meta:IMap):IObj{
-		var s:SetSeq = new SetSeq(entries, i);
-		s._meta = meta;
-		return s;
-	}
-
-	override public function first():Object{
-		return entries[i];
-	}
-
-	override public function rest():ISeq{
-		if(i + 1 < entries.length)
-		return new SetSeq(entries, i + 1);
-		return null;
-	}
-
-	public function index():int{
-		return i;
-	}
-
-	override public function count():int{
-		return entries.length - i;
-	}
-
-	override public function reduce(f:Function, start:Object):Object {
-		var ret:Object = f(start, entries[i]);
-		var len:int = count();
-		for(var x:int = i + 1; x < len; x++){
-			ret = f(ret, entries[x]);
-		}
-		return ret;
-	}
-}

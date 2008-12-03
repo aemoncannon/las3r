@@ -871,6 +871,71 @@
     (apply prn more)))
 
 
+;;;;;;;;;;;; regex ;;;;;;;;;;;;;;;;;
+
+
+;;(defn re-pattern
+;;  "Returns an instance of java.util.regex.Pattern, for use, e.g. in
+;;  re-matcher."  
+;;  {:tag java.util.regex.Pattern}
+;;  [s] (. java.util.regex.Pattern (compile s)))
+;;  
+;;(defn re-matcher
+;;  "Returns an instance of java.util.regex.Matcher, for use, e.g. in
+;;  re-find."  
+;;  {:tag java.util.regex.Matcher}
+;;  [#^java.util.regex.Pattern re s]
+;;  (. re (matcher s)))
+;;
+;;(defn re-groups
+;;  "Returns the groups from the most recent match/find. If there are no
+;;  nested groups, returns a string of the entire match. If there are
+;;  nested groups, returns a vector of the groups, the first element
+;;  being the entire match."
+;;  [#^java.util.regex.Matcher m]
+;;  (let [gc  (. m (groupCount))]
+;;    (if (zero? gc)
+;;      (. m (group))
+;;      (loop [ret [] c 0]
+;;	(if (<= c gc)
+;;	  (recur (conj ret (. m (group c))) (inc c))
+;;	  ret)))))
+;;
+;;(defn re-seq
+;;  "Returns a lazy sequence of successive matches of pattern in string,
+;;  using java.util.regex.Matcher.find(), each such match processed with
+;;  re-groups."
+;;  [#^java.util.regex.Pattern re s]
+;;  (let [m (re-matcher re s)]
+;;    ((fn step []
+;;       (when (. m (find))
+;;	 (lazy-cons (re-groups m) (step)))))))
+;;
+;;(defn re-matches
+;;  "Returns the match, if any, of string to pattern, using
+;;  java.util.regex.Matcher.matches().  Uses re-groups to return the
+;;  groups."
+;;  [#^java.util.regex.Pattern re s]
+;;  (let [m (re-matcher re s)]
+;;    (when (. m (matches))
+;;      (re-groups m))))
+;;
+;;
+;;(defn re-find
+;;  "Returns the next regex match, if any, of string to pattern, using
+;;  java.util.regex.Matcher.find().  Uses re-groups to return the
+;;  groups."
+;;  ([#^java.util.regex.Matcher m]
+;;     (when (. m (find))
+;;       (re-groups m)))
+;;  ([#^java.util.regex.Pattern re s]
+;;     (let [m (re-matcher re s)]
+;;       (re-find m))))
+
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -1423,6 +1488,7 @@
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
 
+
 (defn destructure [bindings]
   (let [bmap (apply hash-map bindings)
         pb (fn pb [bvec b v]
@@ -1561,6 +1627,61 @@
 		  (let ~(vec (interleave bs gs))
 		    ~@body)))))))
 
+
+(defn special-symbol?
+  "Returns true if s names a special form"
+  [s]
+  (. *runtime* (isSpecial s)))
+
+(defn subs
+  "Returns the substring of s beginning at start inclusive, and ending
+  at end (defaults to length of string), exclusive."
+  ([#^String s start] (. s (substring start)))
+  ([#^String s start end] (. s (substring start end))))
+
+(defn max-key
+  "Returns the x for which (k x), a number, is greatest."
+  ([k x] x)
+  ([k x y] (if (> (k x) (k y)) x y))
+  ([k x y & more]
+     (reduce (fn [a b] (max-key k a b)) (max-key k x y) more)))
+
+(defn min-key
+  "Returns the x for which (k x), a number, is least."
+  ([k x] x)
+  ([k x y] (if (< (k x) (k y)) x y))
+  ([k x y & more]
+     (reduce (fn [a b] (min-key k a b)) (min-key k x y) more)))
+
+
+(defn distinct
+  "Returns a lazy sequence of the elements of coll with duplicates removed"
+  [coll] 
+    (let [step (fn step [[f & r :as xs] seen]
+                   (when xs
+                     (if (contains? seen f) (recur r seen)
+                         (lazy-cons f (step r (conj seen f))))))]
+      (step (seq coll) #{})))
+;;(distinct '(1 1 4 3 4 2 ))
+
+(defmacro if-let 
+  "if test is true, evaluates then with binding-form bound to the value of test, if not, yields else"
+  ([binding-form test then]
+   `(if-let ~binding-form ~test ~then nil))
+  ([binding-form test then else]
+   `(let [temp# ~test]
+      (if temp# 
+        (let [~binding-form temp#]
+          ~then)
+        ~else))))
+
+(defmacro when-let 
+  "when test is true, evaluates body with binding-form bound to the value of test"
+  [binding-form test & body]
+  `(let [temp# ~test]
+     (when temp#
+       (let [~binding-form temp#]
+         ~@body))))
 
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
@@ -1733,6 +1854,10 @@
 			{:j 15 :k 16 :ivec [22 23 24 25]}]
 		    [i j k r s t v])
 		  '[12 15 16 22 23 (24 25) [22 23 24 25]]))
+
+  ;; Test ranges
+  (assert-true (= '(0 1 2 3 4 5) (range 6)))
+  (assert-true (= '(1 2 3 4 5) (range 1 6)))
 
   )
 
