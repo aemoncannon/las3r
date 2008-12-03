@@ -1,4 +1,4 @@
- *   cuttlefish - A lisp for the AVM2
+ *   las3r - A lisp for the AVM2
  * 
  *   Copyright (c) Rich Hickey. All rights reserved.
  *   Copyright (c) Aemon Cannon. All rights reserved.
@@ -14,7 +14,7 @@
 
 --------------------------------------------------------------------------
 This program uses source ported from java to AS3 from the openjdk project, 
-located in this distribution under src/as3/com/cuttlefish/jdk, provided under the following license.
+located in this distribution under src/as3/com/las3r/jdk, provided under the following license.
 
 
 
