@@ -1692,10 +1692,15 @@
   [obj]
   (. *runtime* (propertyNamesList obj)))
 
-(defn get-property-by-name
+(defn get-property
   "Return an instance's property value using the array access [] operator."
   [instance property]
   (. *runtime* (getPropertyByName instance property)))
+
+(defn set-property!
+  "Set an instance's property to value using the array access [] operator."
+  [instance property value]
+  (. *runtime* (setPropertyByName instance property value)))
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
 
