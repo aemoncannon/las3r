@@ -24,9 +24,9 @@ SHARED_CLASS_PATH = [
 COMPILE_OPTIONS = [
                    "+configname=flex",
                    "-default-frame-rate=60",
+                   # ABCDump has tons of warnings unless we disable these:
                    "-compiler.warn-no-type-decl=false",
                    "-compiler.optimize=true",
-                   # ABCDump has tons of warnings unless we disable these:
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}"
                   ]
 
