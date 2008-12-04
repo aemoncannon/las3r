@@ -1,0 +1,71 @@
+(def XML (. *runtime* (classForName "XML")))
+(def XMLList (. *runtime* (classForName "XMLList")))
+
+(set! (. XML ignoreComments) true)
+(set! (. XML ignoreProcessingInstructions) true)
+
+(defn parse-xml [node]
+  "Return a sequence representing the XML node (like clojure.xml/parse)."
+  (let [kind (. node (nodeKind))
+
+	qname->keyword
+	(fn [qn]
+	   (keyword (. qn uri) (. qn localName)))
+
+	parse-attributes
+	(fn [attributes]
+	  (if (= 0 (. attributes (length)))
+	    nil
+	    (reduce (fn [x y] (conj y x))
+		    (map (fn [attr]
+			     (hash-map (qname->keyword (. attr (name)))
+				       (cast String attr)))
+			 (get-property-values attributes)))))
+	  
+	parse-content 
+	(fn [content]
+	  (if (= 0 (. (. content (children)) (length)))
+	    nil
+	    (vec (map parse-xml (get-property-values (. content (children)))))))]
+
+    (cond (= kind "text")
+	  (cast String node)
+
+	  (= kind "element")
+	  (hash-map :tag (qname->keyword (. node (name)))
+		    :attrs (parse-attributes (. node (attributes)))
+		    :content (parse-content node))
+
+	  (:else (throw (new Error "Unspupported XML element (comment or processing instruction?)"))))))
+
+(defn xml-qname [obj
+
+(defn emit-element [e]
+  (if (instance? String e)
+    (println e)
+    (do
+      (print (str "<" (name (get e :tag))))
+      (when (get e :attrs)
+	(doseq attr (get e :attrs)
+	  (print (str " " (name (key attr)) "='" (val attr)"'"))))
+      (if (get e :content)
+	(do
+	  (println ">")
+	  (doseq c (get e :content)
+	    (emit-element c))
+	  (println (str "</" (name (get e :tag)) ">")))
+	(println "/>")))))
+
+(defn emit [x]
+  (println "<?xml version='1.0' encoding='UTF-8'?>")
+  (emit-element x))
+
+
+(emit (parse-xml (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
+;; (assert-true (= (parse-xml (new XML "hello")) "hello"))
+;; (assert-true (= (parse-xml (new XML "<a><b a1='1' a2='2'/>text<c/></a>")) {:tag :a, :attrs nil, :content [{:tag :b, :attrs {:a1 "1", :a2 "2"}, :content nil} "text" {:tag :c, :attrs nil, :content nil}]})
+
+;; (def QName (. *runtime* (classForName "QName")))
+;; (set! (. (. QName prototype) getName) (fn [this] (. this localName)))
+;; (def q (new QName))
+;; (. q (getName))
