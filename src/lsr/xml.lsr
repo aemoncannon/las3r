@@ -1,10 +1,17 @@
+;; This is a port of clojure/xml.clj
+;;
+;; The original parse function is replaced by xml->seq which 
+;; converts a flash XML object to it's sexpr equivalent.
+;;
+;; TODO: Write seq->xml.
+
 (def XML (. *runtime* (classForName "XML")))
 (def XMLList (. *runtime* (classForName "XMLList")))
 
 (set! (. XML ignoreComments) true)
 (set! (. XML ignoreProcessingInstructions) true)
 
-(defn parse-xml [node]
+(defn xml->seq [node]
   "Return a sequence representing the XML node (like clojure.xml/parse)."
   (let [kind (. node (nodeKind))
 
@@ -21,12 +28,12 @@
 			     (hash-map (qname->keyword (. attr (name)))
 				       (cast String attr)))
 			 (get-property-values attributes)))))
-	  
+
 	parse-content 
 	(fn [content]
 	  (if (= 0 (. (. content (children)) (length)))
 	    nil
-	    (vec (map parse-xml (get-property-values (. content (children)))))))]
+	    (vec (map xml->seq (get-property-values (. content (children)))))))]
 
     (cond (= kind "text")
 	  (cast String node)
@@ -37,8 +44,6 @@
 		    :content (parse-content node))
 
 	  (:else (throw (new Error "Unspupported XML element (comment or processing instruction?)"))))))
-
-(defn xml-qname [obj
 
 (defn emit-element [e]
   (if (instance? String e)
@@ -61,9 +66,18 @@
   (emit-element x))
 
 
-(emit (parse-xml (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
-;; (assert-true (= (parse-xml (new XML "hello")) "hello"))
-;; (assert-true (= (parse-xml (new XML "<a><b a1='1' a2='2'/>text<c/></a>")) {:tag :a, :attrs nil, :content [{:tag :b, :attrs {:a1 "1", :a2 "2"}, :content nil} "text" {:tag :c, :attrs nil, :content nil}]})
+;; (emit (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
+
+
+;; (xml-zip (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
+
+;; (def data '[[a * b] + [c * d]])
+;; (def dz (vector-zip data))
+;; ;find the second * 
+;; (-> dz down )
+
+;; (assert-true (= (xml->seq (new XML "hello")) "hello"))
+;; (assert-true (= (xml->seq (new XML "<a><b a1='1' a2='2'/>text<c/></a>")) {:tag :a, :attrs nil, :content [{:tag :b, :attrs {:a1 "1", :a2 "2"}, :content nil} "text" {:tag :c, :attrs nil, :content nil}]})
 
 ;; (def QName (. *runtime* (classForName "QName")))
 ;; (set! (. (. QName prototype) getName) (fn [this] (. this localName)))

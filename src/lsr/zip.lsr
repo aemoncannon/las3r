@@ -12,14 +12,6 @@
 ;; (ns clojure.zip
 ;;     (:refer-clojure :exclude (replace remove)))
 
-;; (defn peek
-;;   "For a list or queue, same as first, for a vector, same as, but much
-;;   more efficient than, last. If the collection is empty, returns nil."
-;;   [coll]
-;;   (if (vector? coll)
-;;     (. coll (peek))
-;;     (first coll)))
-
 (def peek first)
 (def pop rest)
 
@@ -36,8 +28,10 @@
   children, returns a new branch node with the supplied children.
   root is the root node."  
   [branch? children make-node root]
-    #^{:zip/branch? branch? :zip/children children :zip/make-node make-node} 
-    [root nil])
+    (with-meta [root nil] {:zip/branch? branch? :zip/children children :zip/make-node make-node} 
+    ))
+;;    #^{:zip/branch? branch? :zip/children children :zip/make-node make-node} 
+;;    [root nil])
 
 (defn seq-zip
   "Returns a zipper for nested sequences, given a root sequence"
@@ -61,7 +55,7 @@
 
 (defn node
   "Returns the node at loc"
-  [loc] (loc 0))
+  [loc] (get loc 0))
 
 (defn branch?
   "Returns true if the node at loc is a branch"
@@ -82,17 +76,17 @@
 (defn path
   "Returns a seq of nodes leading to this loc"
   [loc]
-    (get (loc 1) :pnodes))
+    (get (get loc 1) :pnodes))
 
 (defn lefts
   "Returns a seq of the left siblings of this loc"
   [loc]
-    (seq (get (loc 1) :l)))
+    (seq (get (get loc 1) :l)))
 
 (defn rights
   "Returns a seq of the right siblings of this loc"
   [loc]
-    (get (loc 1) :r))
+    (get (get loc 1) :r))
 
 
 (defn down
@@ -124,7 +118,7 @@
   "zips all the way up and returns the root node, reflecting any
  changes."
   [loc]
-    (if (= :end (loc 1))
+    (if (= :end (get loc 1))
       (node loc)
       (let [p (up loc)]
         (if p
@@ -191,7 +185,7 @@
   the end, returns a distinguished loc detectable via end?. If already
   at the end, stays there."
   [loc]
-    (if (= :end (loc 1))
+    (if (= :end (get loc 1))
       loc
       (or 
        (and (branch? loc) (down loc))
@@ -204,7 +198,7 @@
 (defn end?
   "Returns true if loc represents the end of a depth-first walk"
   [loc]
-    (= :end (loc 1)))
+    (= :end (get loc 1)))
 
 (defn remove
   "Removes the node at loc, returning the loc that would have preceded
