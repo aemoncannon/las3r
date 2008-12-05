@@ -12,6 +12,9 @@
 ;; (ns clojure.zip
 ;;     (:refer-clojure :exclude (replace remove)))
 
+
+;; TODO: Use real peek and pop?
+
 (defn peek [x]
   (if (vector? x)
     (last x)
@@ -221,29 +224,22 @@
   
 ;;; tests
 
-(let [data '[[a * b] + [c * d]]
-      dz (vector-zip data)]
-;; find the second *
-  (assert-true (= (-> dz down right right down right node) '*))
-
-;; remove the first 2 terms
-  (assert-true (= (-> dz next remove next remove root) '[[c * d]]))
-
-;;replace * with /
-  (assert-true (= (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (replace loc '/) loc))))) '[[a / b] + [c / d]])))
-
-;remove * (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (remove loc) loc))))) -> [[a b] + [c d]]
-
-;original is intact (root dz) -> [[a * b] + [c * d]] 
-
-(def dz (vector-zip '[a b]))
-;; (loop [loc dz]
-;;   (if (not (end? loc))
-;;     (recur (next loc))))
-
-(-> dz down right)
-
-(def loc '[a {:pnodes [[a b]], :l [], :r (b), :ppath nil}])
-(let [[node {l :l  [r & rrest :as rs] :r :as path}] loc]
-      (when (and path rs)
-        (with-meta [r (assoc path :l (conj l node) :r rrest)] ^loc)))
+(defn run-tests []
+  (let [data '[[a * b] + [c * d]]
+	dz (vector-zip data)]
+    ;; find the second *
+    (assert-true (= (-> dz down right right down right node) '*))
+    
+    ;; remove the first 2 terms
+    (assert-true (= (-> dz next remove next remove root) '[[c * d]]))
+    
+    ;;replace * with /
+    (assert-true (= (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (replace loc '/) loc)))))
+		    '[[a / b] + [c / d]]))
+    
+    ;;remove * 
+    (assert-true (= (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (remove loc) loc)))))
+		    '[[a b] + [c d]]))
+    
+    ;;original is intact 
+    (assert-true (= (root dz) '[[a * b] + [c * d]]))))
