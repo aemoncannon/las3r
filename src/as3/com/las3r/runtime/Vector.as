@@ -14,9 +14,47 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	dynamic public class Vector extends Array implements IVector, IObj, IReduce{
+	public class Vector extends PersistentVector implements IReduce{
 
-		protected var _meta:IMap;
+		public static EMPTY:Vector = new Vector(0, 5, [], []);
+
+		static public function createFromSeq(items:ISeq):Vector{
+			var ret:Vector = EMPTY;
+			for(; items != null; items = items.rest())
+			ret = ret.cons(items.first());
+			return ret;
+		}
+
+		static public function createFromArray(items:Array):Vector{
+			var ret:Vector = EMPTY;
+			for(var item:* in items)
+			ret = ret.cons(item);
+			return ret;
+		}
+
+		public static function createFromArraySlice(items:Array, i:int):Vector{
+			return createFromArray(items.slice(i));
+		}
+
+		public static function createFromMany(...items:Array):Vector{
+			return createFromArray(items);
+		}
+
+		override public function empty():IVector{
+			return EMPTY;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
 
 		public function get meta():IMap{
 			return _meta;
@@ -56,25 +94,6 @@ package com.las3r.runtime{
 			return doEquals(this, obj);
 		}
 
-		public static function createFromSeq(seq:ISeq):Vector{
-			var source:Array = [];
-			for(var c:ISeq = seq; c != null; c = c.rest()){
-				source.push(c.first());
-			}
-			return createFromArray(source);
-		}
-
-		public static function createFromArray(items:Array):Vector{
-			return new Vector(items);
-		}
-
-		public static function createFromArraySlice(items:Array, i:int):Vector{
-			return new Vector(items.slice(i));
-		}
-
-		public static function createFromMany(...items:Array):Vector{
-			return createFromArray(items);
-		}
 
 		public static function empty():Vector{
 			return new Vector([]);
