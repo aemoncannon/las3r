@@ -65,21 +65,11 @@
   (println "<?xml version='1.0' encoding='UTF-8'?>")
   (emit-element x))
 
+;;; tests
 
-;; (emit (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
-
-
-;; (xml-zip (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='v'><b attr='val'/></mx:Application>")))
-
-;; (def data '[[a * b] + [c * d]])
-;; (def dz (vector-zip data))
-;; ;find the second * 
-;; (-> dz down )
-
-;; (assert-true (= (xml->seq (new XML "hello")) "hello"))
-;; (assert-true (= (xml->seq (new XML "<a><b a1='1' a2='2'/>text<c/></a>")) {:tag :a, :attrs nil, :content [{:tag :b, :attrs {:a1 "1", :a2 "2"}, :content nil} "text" {:tag :c, :attrs nil, :content nil}]})
-
-;; (def QName (. *runtime* (classForName "QName")))
-;; (set! (. (. QName prototype) getName) (fn [this] (. this localName)))
-;; (def q (new QName))
-;; (. q (getName))
+(let [s (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='val'><b attr='val'/>text</mx:Application>"))]
+  (assert-true (= (get s :tag) (keyword "http://www.adobe.com/2006/mxml" "Application")))
+  (assert-true (= (get (get s :attrs) (keyword "http://www.adobe.com/2006/mxml" "v")) "val"))
+  (assert-true (vector? (get s :content)))
+  (assert-true (= (second (get s :content)) "text"))
+)

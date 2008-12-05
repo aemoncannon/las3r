@@ -12,8 +12,15 @@
 ;; (ns clojure.zip
 ;;     (:refer-clojure :exclude (replace remove)))
 
-(def peek first)
-(def pop rest)
+(defn peek [x]
+  (if (vector? x)
+    (last x)
+    (first x)))
+
+(defn pop [x]
+  (if (vector? x)
+    (drop-last x)
+    (rest x)))
 
 (defn zipper
   "Creates a new zipper structure. 
@@ -28,10 +35,9 @@
   children, returns a new branch node with the supplied children.
   root is the root node."  
   [branch? children make-node root]
-    (with-meta [root nil] {:zip/branch? branch? :zip/children children :zip/make-node make-node} 
-    ))
-;;    #^{:zip/branch? branch? :zip/children children :zip/make-node make-node} 
-;;    [root nil])
+  (with-meta [root nil] {:zip/branch? branch? :zip/children children :zip/make-node make-node}))
+;;;     #^{:zip/branch? branch? :zip/children children :zip/make-node make-node} 
+;;;     [root nil])
 
 (defn seq-zip
   "Returns a zipper for nested sequences, given a root sequence"
@@ -112,7 +118,7 @@
                        [(make-node loc pnode (concat l (cons node r))) 
                         (and ppath (assoc ppath :changed? true))]
                        [pnode ppath])
-                     ^loc)))))
+		     ^loc)))))
 
 (defn root
   "zips all the way up and returns the root node, reflecting any
@@ -213,3 +219,31 @@
                       (and ppath (assoc ppath :changed? true))]
                      ^loc)))))
   
+;;; tests
+
+(let [data '[[a * b] + [c * d]]
+      dz (vector-zip data)]
+;; find the second *
+  (assert-true (= (-> dz down right right down right node) '*))
+
+;; remove the first 2 terms
+  (assert-true (= (-> dz next remove next remove root) '[[c * d]]))
+
+;;replace * with /
+  (assert-true (= (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (replace loc '/) loc))))) '[[a / b] + [c / d]])))
+
+;remove * (loop [loc dz] (if (end? loc) (root loc) (recur (next (if (= (node loc) '*) (remove loc) loc))))) -> [[a b] + [c d]]
+
+;original is intact (root dz) -> [[a * b] + [c * d]] 
+
+(def dz (vector-zip '[a b]))
+;; (loop [loc dz]
+;;   (if (not (end? loc))
+;;     (recur (next loc))))
+
+(-> dz down right)
+
+(def loc '[a {:pnodes [[a b]], :l [], :r (b), :ppath nil}])
+(let [[node {l :l  [r & rrest :as rs] :r :as path}] loc]
+      (when (and path rs)
+        (with-meta [r (assoc path :l (conj l node) :r rrest)] ^loc)))
