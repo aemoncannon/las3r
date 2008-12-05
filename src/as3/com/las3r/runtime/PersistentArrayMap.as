@@ -53,7 +53,8 @@ package com.las3r.runtime{
 			{
 				if(array[i + 1] == val) //no change, no op
 				return this;
-				newArray = new Array(this.array);
+				newArray = new Array(array.length);
+				ArrayUtil.arraycopy(array, 0, newArray, 0, array.length);
 				newArray[i + 1] = val;
 			}
 			else //didn't have key, grow
