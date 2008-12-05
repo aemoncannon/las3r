@@ -57,7 +57,7 @@
   given a root element"
   [root]
     (zipper (complement string?) 
-            (comp seq :content)
+            (fn [node] (seq (get node :content)))
             (fn [node children]
               (assoc node :content (and children (apply vector children))))
             root))
@@ -243,3 +243,5 @@
     
     ;;original is intact 
     (assert-true (= (root dz) '[[a * b] + [c * d]]))))
+
+(run-tests)
