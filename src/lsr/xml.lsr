@@ -1,23 +1,19 @@
-;; This is a port of clojure/xml.clj
+;; Derived from clojure/xml.clj
 ;;
-;; The original parse function is replaced by xml->seq which 
-;; converts a flash XML object to it's sexpr equivalent.
-;;
-;; TODO: Write seq->xml.
+;; TODO: Write a sequence->XML function.
 
-(def XML (. *runtime* (classForName "XML")))
-(def XMLList (. *runtime* (classForName "XMLList")))
+(in-ns 'las3r.xml)
+(las3r/refer 'las3r :exclude '(run-tests))
 
-(set! (. XML ignoreComments) true)
-(set! (. XML ignoreProcessingInstructions) true)
-
-(defn xml->seq [node]
+(defn parse [node]
   "Return a sequence representing the XML node (like clojure.xml/parse)."
   (let [kind (. node (nodeKind))
 
 	qname->keyword
 	(fn [qn]
-	   (keyword (. qn uri) (. qn localName)))
+	  (if (= (. qn uri) "")
+	    (keyword (. qn localName))
+	    (keyword (. qn uri) (. qn localName))))
 
 	parse-attributes
 	(fn [attributes]
@@ -33,7 +29,7 @@
 	(fn [content]
 	  (if (= 0 (. (. content (children)) (length)))
 	    nil
-	    (vec (map xml->seq (get-property-values (. content (children)))))))]
+	    (vec (map parse (get-property-values (. content (children)))))))]
 
     (cond (= kind "text")
 	  (cast String node)
@@ -67,9 +63,13 @@
 
 ;;; tests
 
-(let [s (xml->seq (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='val'><b attr='val'/>text</mx:Application>"))]
-  (assert-true (= (get s :tag) (keyword "http://www.adobe.com/2006/mxml" "Application")))
-  (assert-true (= (get (get s :attrs) (keyword "http://www.adobe.com/2006/mxml" "v")) "val"))
-  (assert-true (vector? (get s :content)))
-  (assert-true (= (second (get s :content)) "text"))
-)
+(defn run-tests []
+  (let [XML (. *runtime* (classForName "XML"))
+	s (parse (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='val'><b attr='val'/>text</mx:Application>"))]
+    (assert-true (= (get s :tag) (keyword "http://www.adobe.com/2006/mxml" "Application")))
+    (assert-true (= (get (get s :attrs) (keyword "http://www.adobe.com/2006/mxml" "v")) "val"))
+    (assert-true (vector? (get s :content)))
+    (assert-true (= (second (get s :content)) "text"))
+    ))
+
+;; (run-tests)
