@@ -1321,7 +1321,7 @@
 	fs (apply hash-map filters)
 	nspublics (ns-publics ns)
 	rename (or (get fs :rename) {})
-	exclude (hash-set (get fs :exclude))
+	exclude (apply hash-set (get fs :exclude))
 	to-do (or (get fs :only) (keys nspublics))]
     (doseq sym to-do
       (when-not (contains? exclude sym)
