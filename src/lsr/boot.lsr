@@ -1806,6 +1806,9 @@
   (assert-true (= #{:a :b :c} (set (keys {:a 1 :b 2 :c 3}))))
   (assert-true (= #{1 2 3} (set (vals {:a 1 :b 2 :c 3}))))
 
+  ;; Check that overwriting keys works.
+  (assert-true (= (get (assoc '{:a 2} :a 1) :a) 1))
+
   ;; This was failing verification because the 'do' was being emitted as a statement..
   (assert-true (= 1 (if true (do (doseq a (quote (1 2)) a) 1))))
 
