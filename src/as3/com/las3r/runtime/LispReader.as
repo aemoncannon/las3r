@@ -770,10 +770,10 @@ class SyntaxQuoteReader implements IReaderMacro{
 	}
 
 	private static function flattenMap(form:Object):IVector{
-		var keyvals:Vector = Vector(RT.vector());
+		var keyvals:IVector = RT.vector();
 		form.each(function(key:Object, val:Object):void{
-				keyvals.push(key);
-				keyvals.push(val);				
+				keyvals = keyvals.cons(key);
+				keyvals= keyvals.cons(val);
 			});
 		return keyvals;
 	}

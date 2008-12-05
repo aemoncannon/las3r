@@ -30,6 +30,8 @@ package com.las3r.runtime{
 
 		function seq():ISeq;
 
+		function toArray():Array;
+
 		function each(iterator:Function):void;
 
 		function collect(iterator:Function):IVector;

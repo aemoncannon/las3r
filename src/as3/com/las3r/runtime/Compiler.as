@@ -101,7 +101,7 @@ package com.las3r.runtime{
 			var progress:Function = _progress || function(i:int, j:int):void{};
 
 			var EOF:Object = new Object();
-			var forms:Vector = Vector(RT.vector());
+			var forms:IVector = Vector(RT.vector());
 
 			try{
 				for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
@@ -446,7 +446,7 @@ package com.las3r.runtime{
 
 
 		public function referenceLocal(sym:Symbol):LocalBinding{
-			var bindingSetStack:Vector = Vector(BINDING_SET_STACK.get());
+			var bindingSetStack:IVector = Vector(BINDING_SET_STACK.get());
 			var len:int = bindingSetStack.count();
 			for(var i:int = len - 1; i >= 0; i--){
 				var lbs:LocalBindingSet = LocalBindingSet(bindingSetStack.nth(i));
@@ -459,7 +459,7 @@ package com.las3r.runtime{
 		}
 
 		public function pushLocalBindingSet(set:LocalBindingSet):void{
-			var prevStack:Vector = Vector(BINDING_SET_STACK.get());
+			var prevStack:IVector = Vector(BINDING_SET_STACK.get());
 			var newStack:IVector = prevStack.cons(set);
 			Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
 		}
@@ -513,7 +513,7 @@ class CodeGen{
 	public var meth:Method;
 	public var currentActivation:Object;
 	public var cachedRTTempIndex:int = -1;
-	public var scopeToLocalMap:Vector;
+	public var scopeToLocalMap:IVector;
 	protected var _compiler:Compiler;
 
 	public function CodeGen(c:Compiler, emitter:ABCEmitter, scr:Script, meth:Method = null){
@@ -522,7 +522,7 @@ class CodeGen{
 		this.scr = scr;
 		this.asm = meth ? meth.asm : scr.init.asm;
 		this.meth = meth ? meth : scr.init;
-		this.scopeToLocalMap = Vector.empty();
+		this.scopeToLocalMap = RT.vector();
 	}
 
 
@@ -1164,7 +1164,7 @@ class BodyExpr implements Expr{
 		if(Util.equal(RT.first(forms), c.rt.DO)){
 			forms = RT.rest(forms);
 		}
-		var exprs:IVector = Vector.empty();
+		var exprs:IVector = RT.vector();
 		for(; forms != null; forms = forms.rest())
 		{
 			if(context != C.INTERPRET && (context == C.STATEMENT || forms.rest() != null)){
@@ -1279,9 +1279,9 @@ class DefExpr implements Expr{
 
 class FnMethod{
 	public var nameLb:LocalBinding;
-	public var params:Vector;
-	public var reqParams:Vector;
-	public var optionalParams:Vector;
+	public var params:IVector;
+	public var reqParams:IVector;
+	public var optionalParams:IVector;
 	public var restParam:LocalBinding;
 	public var body:BodyExpr;
 	public var paramBindings:LocalBindingSet;
@@ -1300,8 +1300,8 @@ class FnMethod{
 		if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
 			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		}
-		meth.reqParams = Vector.empty();
-		meth.optionalParams = Vector.empty();
+		meth.reqParams = RT.vector();
+		meth.optionalParams = RT.vector();
 		meth.paramBindings = new LocalBindingSet();
 		var state:PSTATE = PSTATE.REQ;
 		for(var i:int = 0; i < meth.params.count(); i++)
@@ -1470,7 +1470,7 @@ class FnExpr implements Expr{
 			form = RT.list(c.rt.FN, RT.rest(form));
 		}
 
-		f.methods = Vector.empty();
+		f.methods = RT.vector();
 		for(var s:ISeq = RT.rest(form); s != null; s = RT.rest(s)){
 			f.methods = f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
 		}
@@ -1498,7 +1498,7 @@ class FnExpr implements Expr{
 				});
 			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth, name);
 			if(meth.optionalParams.count() > 0){
-				var defaults:Array = meth.optionalParams.map(function(ea:LocalBinding, i:int, a:Array):Object{ return { val: 0, kind: 0x0c } });
+				var defaults:Array = (meth.optionalParams.collect(function(ea:LocalBinding):Object{ return { val: 0, kind: 0x0c } })).toArray();
 				methGen.meth.setDefaults(defaults);
 			}
 			meth.emit(context, methGen);
@@ -1591,7 +1591,7 @@ class LetExpr implements Expr{
 		var body:ISeq = RT.rest(RT.rest(form));
 
 		if(context == C.INTERPRET)
-		return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
 
 		var lbs:LocalBindingSet = new LocalBindingSet();
 		c.pushLocalBindingSet(lbs);
@@ -1651,7 +1651,7 @@ class InvokeExpr implements Expr{
 
 	public function interpret():Object{
 		var fn:Function = Function(fexpr.interpret());
-		var argvs:IVector = Vector.empty();
+		var argvs:IVector = RT.vector();
 		for(var i:int = 0; i < args.count(); i++){
 			argvs = argvs.cons(Expr(args.nth(i)).interpret());
 		}
@@ -1693,7 +1693,7 @@ class InvokeExpr implements Expr{
 			context = C.EXPRESSION;
 		}
 		var fexpr:Expr = c.analyze(context, form.first());
-		var args:IVector = Vector.empty();
+		var args:IVector = RT.vector();
 		for(var s:ISeq = RT.seq(form.rest()); s != null; s = s.rest())
 		{
 			args = args.cons(c.analyze(context, s.first()));
@@ -1833,7 +1833,7 @@ class VectorExpr implements Expr{
 	}
 
 	public function interpret():Object{
-		var ret:IVector = Vector.empty();
+		var ret:IVector = RT.vector();
 		for(var i:int = 0; i < args.count(); i++)
 		ret = IVector(ret.cons(Expr(args.nth(i)).interpret()));
 		return ret;
@@ -1849,7 +1849,7 @@ class VectorExpr implements Expr{
 	}
 
 	public static function parse(c:Compiler, context:C, form:IVector):Expr{
-		var args:IVector = Vector.empty();
+		var args:IVector = RT.vector();
 		for(var i:int = 0; i < form.count(); i++)
 		args = IVector(args.cons(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, form.nth(i))));
 		return new VectorExpr(args);
@@ -1887,10 +1887,10 @@ class MapExpr implements Expr{
 	}
 
 	public static function parse(c:Compiler, context:C, form:IMap):Expr{
-		var keyvals:Vector = new Vector([]);
+		var keyvals:IVector = RT.vector();
 		form.each(function(key:Object, val:Object):void{
-				keyvals.push(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, key));
-				keyvals.push(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, val));
+				keyvals = keyvals.cons(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, key));
+				keyvals= keyvals.cons(c.analyze(context == C.INTERPRET ? context : C.EXPRESSION, val));
 			});
 		return new MapExpr(keyvals);
 	}
@@ -1949,7 +1949,7 @@ class RecurExpr implements Expr{
 		throw new Error("UnsupportedOperationException: Can only recur from tail position. Found in context: " + context);
 		if(c.IN_CATCH_FINALLY.get())
 		throw new Error("UnsupportedOperationException: Cannot recur from catch/finally");
-		var args:IVector = Vector.empty();
+		var args:IVector = RT.vector();
 		for(var s:ISeq = RT.seq(form.rest()); s != null; s = s.rest())
 		{
 			args = args.cons(c.analyze(C.EXPRESSION, s.first()));
@@ -2004,7 +2004,7 @@ class HostExpr implements Expr{
 
 			sym = Symbol(RT.first(call));
 
-			var args:IVector = Vector.empty();
+			var args:IVector = RT.vector();
 			for(var s:ISeq = RT.rest(call); s != null; s = s.rest()){
 				args = args.cons(compiler.analyze(context == C.INTERPRET ? context : C.EXPRESSION, s.first()));
 			}
@@ -2210,7 +2210,7 @@ class HostExpr implements Expr{
 			if(form.count() < 2)
 			throw new Error("Wrong number of arguments, expecting: (new classExpr args...)");
 			var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
-			var args:IVector = Vector.empty();
+			var args:IVector = RT.vector();
 			for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
 				args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
 			}
@@ -2244,7 +2244,7 @@ class HostExpr implements Expr{
 
 		public static function parse(c:Compiler, context:C, form:Object):Expr{
 			if(context == C.INTERPRET)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
+			return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
 			return new ThrowExpr(c.analyze(context, RT.second(form)));
 		}
 
@@ -2380,14 +2380,14 @@ class HostExpr implements Expr{
 		public static function parse(c:Compiler, context:C, frm:Object):Expr{
 			var form:ISeq = ISeq(frm);
 			if(context != C.RETURN)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, Vector.empty(), form)));
+			return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
 
 			//(try try-expr* catch-expr* finally-expr?)
 			//catch-expr: (catch class sym expr*)
 			//finally-expr: (finally expr*)
 
-			var body:IVector = Vector.empty();
-			var catches:IVector = Vector.empty();
+			var body:IVector = RT.vector();
+			var catches:IVector = RT.vector();
 			var finallyExpr:Expr = null;
 			var caught:Boolean = false;
 

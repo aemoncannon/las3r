@@ -55,7 +55,7 @@ package com.las3r.runtime{
 		private var id:int = 1;
 		private var _this:RT;
 		private var _resultsDict:Dictionary = new Dictionary();
-		private var _evalQ:Vector = new Vector([]);
+		private var _evalQ:Vector = RT.vector();
 
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
@@ -774,7 +774,7 @@ package com.las3r.runtime{
 			}
 
 			public static function vector(...init:Array):IVector{
-				return new Vector(init);
+				return Vector.createFromArray(init);
 			}
 
 			public static function meta(x:Object):IMap{

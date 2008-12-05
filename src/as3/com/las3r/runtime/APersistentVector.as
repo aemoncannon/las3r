@@ -21,6 +21,15 @@ package com.las3r.runtime{
 			super(meta);
 		}
 
+		public function count():int{
+			throw new Error("SubclassResponsibility");
+			return null;
+		}
+
+		public function cons(o:Object):IVector{
+			throw new Error("SubclassResponsibility");
+			return null;
+		}
 
 		public function seq():ISeq{
 			if(count() > 0)
@@ -28,13 +37,23 @@ package com.las3r.runtime{
 			return null;
 		}
 
-		public function rseq():void{
+		public function rseq():ISeq{
 			if(count() > 0)
 			return new RSeq(this, count() - 1);
 			return null;
 		}
 
-		override public function equals(obj:Object):Boolean{
+		public function nth(i:int):Object{
+			throw new Error("SubclassResponsibility");
+			return null;
+		}
+		
+		public function assocN(i:int, val:Object):IVector{
+			throw new Error("SubclassResponsibility");
+			return null;
+		}
+
+		override public function equals(obj:*):Boolean{
 			if(obj === this){ return true;}
 			if(obj is IVector){
 				var v:IVector = IVector(obj);
@@ -50,7 +69,7 @@ package com.las3r.runtime{
 			return true;
 		}
 
-		override public function hashCode():int{
+		override public function hashCode():*{
 			if(_hash == -1)
 			{
 				var hash:int = 1;
@@ -67,7 +86,7 @@ package com.las3r.runtime{
 			return nth(index);
 		}
 
-		public var indexOf(o:Object):int{
+		public function indexOf(o:Object):int{
 			var len:int = count();
 			for(var i:int = 0; i < len; i++)
 			if(Util.equal(nth(i), o))
@@ -99,7 +118,7 @@ package com.las3r.runtime{
 		public function entryAt(key:Object):MapEntry{
 			if(key is Number)
 			{
-
+				var i:int = int(key);
 				if(i >= 0 && i < count())
 				return new MapEntry(key, nth(i));
 			}
@@ -127,7 +146,7 @@ package com.las3r.runtime{
 
 		public function toArray():Array{
 			var source:Array = [];
-			for(var c:ISeq = seq; c != null; c = c.rest()){
+			for(var c:ISeq = seq(); c != null; c = c.rest()){
 				source.push(c.first());
 			}
 			return source;
@@ -154,9 +173,27 @@ package com.las3r.runtime{
 			return count();
 		}
 
+		public function each(iterator:Function):void{
+			for(var s:ISeq = seq(); s != null; s = s.rest())
+			{
+				iterator(s.first());
+			}
+		}
+
+		public function collect(iterator:Function):IVector{
+			var v:IVector = empty();
+			for(var s:ISeq = seq(); s != null; s = s.rest())
+			{
+				v = v.cons(iterator(s.first()));
+			}
+			return v;
+		}
+
 	}
 }
 
+
+import com.las3r.runtime.*;
 
 class Seq extends ASeq implements IReduce{
 	//todo - something more efficient
@@ -270,13 +307,13 @@ class SubVector extends APersistentVector{
 	}
 
 	public function empty():IVector{
-		return PersistentVector.EMPTY.withMeta(meta);
+		return Vector.EMPTY.withMeta(meta);
 	}
 
 	public function pop():IVector{
 		if(end - 1 == start)
 		{
-			return PersistentVector.EMPTY;
+			return Vector.EMPTY;
 		}
 		return new SubVector(v, start, end - 1, meta);
 	}

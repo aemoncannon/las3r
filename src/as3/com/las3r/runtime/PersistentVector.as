@@ -40,14 +40,14 @@ package com.las3r.runtime{
 				if(i >= tailoff())
 				return tail[i & 0x01f];
 				var arr:Array = root;
-				for(int level = shift; level > 0; level -= 5)
+				for(var level:int = shift; level > 0; level -= 5)
 				arr = arr[(i >>> level) & 0x01f];
 				return arr[i & 0x01f];
 			}
 			throw new Error("IndexOutOfBoundsException");
 		}
 
-		override public function assocN(i:int, val:Object):PersistentVector{
+		override public function assocN(i:int, val:Object):IVector{
 			if(i >= 0 && i < cnt)
 			{
 				if(i >= tailoff())
@@ -64,7 +64,7 @@ package com.las3r.runtime{
 			throw new Error("IndexOutOfBoundsException");
 		}
 
-		private static doAssoc(level:int, arr:Array, i:int, val:Object):Array{
+		private static function doAssoc(level:int, arr:Array, i:int, val:Object):Array{
 			var ret:Array = new Array(arr.length);
 			ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
 			if(level == 0)
@@ -88,7 +88,7 @@ package com.las3r.runtime{
 		}
 
 
-		override public function cons(val:Object):PersistentVector{
+		override public function cons(val:Object):IVector{
 			if(tail.length < 32)
 			{
 				var newTail:Array = new Array(tail.length + 1);
@@ -137,46 +137,47 @@ package com.las3r.runtime{
 				expansion.val = [newchild];
 				return arr;
 			}
-			var ret:Array = new Object[arr.length + 1];
+			ret = new Array(arr.length + 1);
 			System.arraycopy(arr, 0, ret, 0, arr.length);
 			ret[arr.length] = newchild;
 			expansion.val = null;
 			return ret;
 		}
 
-		public PersistentVector pop(){
+		public function pop():PersistentVector{
 			if(cnt == 0)
-			throw new IllegalStateException("Can't pop empty vector");
+			throw new Error("IllegalStateException: Can't pop empty vector");
 			if(cnt == 1)
-			return EMPTY.withMeta(meta());
+			return empty().withMeta(meta());
 			if(tail.length > 1)
 			{
-				Object[] newTail = new Object[tail.length - 1];
-				System.arraycopy(tail, 0, newTail, 0, newTail.length);
-				return new PersistentVector(meta(), cnt - 1, shift, root, newTail);
+				var newTail:Array = new Array(tail.length - 1);
+				ArrayUtil.arraycopy(tail, 0, newTail, 0, newTail.length);
+				return new PersistentVector(cnt - 1, shift, root, newTail, meta);
 			}
-			Box ptail = new Box(null);
-			Object[] newroot = popTail(shift - 5, root, ptail);
-			int newshift = shift;
+			var ptail:Box = new Box(null);
+			var newroot:Array = popTail(shift - 5, root, ptail);
+			var newshift:int = shift;
 			if(newroot == null)
 			{
-				newroot = RT.EMPTY_ARRAY;
+				newroot = [];
 			}
 			if(shift > 5 && newroot.length == 1)
 			{
-				newroot = (Object[]) newroot[0];
+				newroot = newroot[0];
 				newshift -= 5;
 			}
-			return new PersistentVector(meta(), cnt - 1, newshift, newroot, (Object[]) ptail.val);
+			return new PersistentVector(cnt - 1, newshift, newroot, ptail.val, meta);
 		}
 
-		private Object[] popTail(int shift, Object[] arr, Box ptail){
+		private function popTail(shift:int, arr:Array, ptail:Box):Array{
 			if(shift > 0)
 			{
-				Object[] newchild = popTail(shift - 5, (Object[]) arr[arr.length - 1], ptail);
+				var newchild:Array = popTail(shift - 5, arr[arr.length - 1], ptail);
 				if(newchild != null)
 				{
-					Object[] ret = arr.clone();
+					var ret:Array = new Array(arr.length);
+					ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
 					ret[arr.length - 1] = newchild;
 					return ret;
 				}
@@ -186,81 +187,10 @@ package com.las3r.runtime{
 			//contraction
 			if(arr.length == 1)
 			return null;
-			Object[] ret = new Object[arr.length - 1];
-			System.arraycopy(arr, 0, ret, 0, ret.length);
+			var ret:Array = new Array(arr.length - 1);
+			ArrayUtil.arraycopy(arr, 0, ret, 0, ret.length);
 			return ret;
 		}
 
-		/*
-		static public void main(String[] args){
-			if(args.length != 3)
-			{
-				System.err.println("Usage: PersistentVector size writes reads");
-				return;
-			}
-			int size = Integer.parseInt(args[0]);
-			int writes = Integer.parseInt(args[1]);
-			int reads = Integer.parseInt(args[2]);
-			Vector v = new Vector(size);
-			v.setSize(size);
-			//PersistentArray p = new PersistentArray(size);
-			PersistentVector p = PersistentVector.EMPTY;
-
-			for(int i = 0; i < size; i++)
-			{
-				v.set(i, i);
-				//p = p.set(i, 0);
-				p = p.cons(i);
-			}
-
-			Random rand;
-
-			rand = new Random(42);
-			long tv = 0;
-			System.out.println("Vector");
-			long startTime = System.nanoTime();
-			for(int i = 0; i < writes; i++)
-			{
-				v.set(rand.nextInt(size), i);
-			}
-			for(int i = 0; i < reads; i++)
-			{
-				tv += (Integer) v.get(rand.nextInt(size));
-			}
-			long estimatedTime = System.nanoTime() - startTime;
-			System.out.println("time: " + estimatedTime / 1000000);
-			System.out.println("PersistentVector");
-			rand = new Random(42);
-			startTime = System.nanoTime();
-			long tp = 0;
-
-			//	PersistentVector oldp = p;
-			//Random rand2 = new Random(42);
-
-			for(int i = 0; i < writes; i++)
-			{
-				p = p.assocN(rand.nextInt(size), i);
-				//dummy set to force perverse branching
-				//oldp =	oldp.assocN(rand2.nextInt(size), i);
-			}
-			for(int i = 0; i < reads; i++)
-			{
-				tp += (Integer) p.nth(rand.nextInt(size));
-			}
-			estimatedTime = System.nanoTime() - startTime;
-			System.out.println("time: " + estimatedTime / 1000000);
-			for(int i = 0; i < size / 2; i++)
-			{
-				p = p.pop();
-				v.remove(v.size() - 1);
-			}
-			for(int i = 0; i < size / 2; i++)
-			{
-				tp += (Integer) p.nth(i);
-				tv += (Integer) v.get(i);
-			}
-			System.out.println("Done: " + tv + ", " + tp);
-
-
-
-		}
+	}
+}
