@@ -294,9 +294,8 @@ package com.las3r.runtime{
 			_compiler = new Compiler(this);
 			_lispReader = new LispReader(this);
 
-
 			// *ns* must be bound for (in-ns ...) to work..
-			Var.pushBindings(this, 
+			Var.pushBindings(this,
 				RT.map(
 					CURRENT_NS, CURRENT_NS.get(),
 					SAVE_BYTECODES, SAVE_BYTECODES.get()

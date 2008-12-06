@@ -101,7 +101,7 @@ package com.las3r.runtime{
 			var progress:Function = _progress || function(i:int, j:int):void{};
 
 			var EOF:Object = new Object();
-			var forms:IVector = Vector(RT.vector());
+			var forms:IVector = RT.vector();
 
 			try{
 				for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
@@ -118,7 +118,9 @@ package com.las3r.runtime{
 				if(forms.count() > 0){
 					progress(totalLength - forms.length + 1, totalLength);
 					try{
-						loadForm(forms.shift(), loadAllForms, onFailure);
+						var f:Object = forms.peek();
+						forms = forms.pop();
+						loadForm(f, loadAllForms, onFailure);
 					}
 					catch(e:LispError){
 						// Suppress exceptions. We can't handle them for async code anyhow. Just pass back to the toplevel.
@@ -640,7 +642,7 @@ class CodeGen{
 	public function popScope():void{
 		asm.I_popscope();
 		asm.freeTemp(scopeToLocalMap.peek());
-		scopeToLocalMap = Vector(scopeToLocalMap.popEnd());
+		scopeToLocalMap = Vector(scopeToLocalMap.pop());
 	}
 
 

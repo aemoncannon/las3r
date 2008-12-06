@@ -24,7 +24,7 @@ package com.las3r.runtime{
 
 		function cons(o:Object):IVector;
 
-		function popEnd():IVector;
+		function pop():IVector;
 
 		function peek():Object;
 
