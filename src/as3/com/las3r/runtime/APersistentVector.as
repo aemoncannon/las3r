@@ -26,6 +26,11 @@ package com.las3r.runtime{
 			return null;
 		}
 
+		public function pop():IVector{
+			throw new Error("SubclassResponsibility");
+			return null;
+		}
+
 		public function cons(o:Object):IVector{
 			throw new Error("SubclassResponsibility");
 			return null;
@@ -180,6 +185,10 @@ package com.las3r.runtime{
 			}
 		}
 
+		public function empty():IVector{
+			return Vector.EMPTY;
+		}
+
 		public function collect(iterator:Function):IVector{
 			var v:IVector = empty();
 			for(var s:ISeq = seq(); s != null; s = s.rest())
@@ -306,11 +315,11 @@ class SubVector extends APersistentVector{
 		return new SubVector(v.assocN(end, o), start, end + 1, meta);
 	}
 
-	public function empty():IVector{
-		return Vector.EMPTY.withMeta(meta);
+	override public function empty():IVector{
+		return IVector(Vector.EMPTY.withMeta(meta));
 	}
 
-	public function pop():IVector{
+	override public function pop():IVector{
 		if(end - 1 == start)
 		{
 			return Vector.EMPTY;

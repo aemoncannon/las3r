@@ -14,21 +14,21 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	public class Vector extends PersistentVector implements IReduce{
+	public class Vector extends PersistentVector{
 
 		public static var EMPTY:Vector = new Vector(0, 5, [], []);
 
 		static public function createFromSeq(items:ISeq):Vector{
-			var ret:Vector = empty();
+			var ret:Vector = EMPTY;
 			for(; items != null; items = items.rest())
-			ret = ret.cons(items.first());
+			ret = Vector(ret.cons(items.first()));
 			return ret;
 		}
 
 		static public function createFromArray(items:Array):Vector{
-			var ret:Vector = empty();
+			var ret:Vector = EMPTY;
 			for(var item:* in items)
-			ret = ret.cons(item);
+			ret = Vector(ret.cons(item));
 			return ret;
 		}
 
@@ -38,10 +38,6 @@ package com.las3r.runtime{
 
 		public static function createFromMany(...items:Array):Vector{
 			return createFromArray(items);
-		}
-
-		override public function empty():IVector{
-			return EMPTY;
 		}
 
 		public function Vector(cnt:int, shift:int, root:Array, tail:Array, meta:IMap = null){

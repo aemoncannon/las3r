@@ -14,7 +14,6 @@ package com.las3r.runtime{
 
     public interface IVector  {
 
-		function get length():uint;
 
 		function nth(i:int):Object;
 
@@ -32,9 +31,13 @@ package com.las3r.runtime{
 
 		function toArray():Array;
 
+		function containsKey(key:Object):Boolean;
+
 		function each(iterator:Function):void;
 
 		function collect(iterator:Function):IVector;
+
+		function indexOf(o:Object):int;
 
     }
 }

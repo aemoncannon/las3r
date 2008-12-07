@@ -113,10 +113,10 @@ package com.las3r.runtime{
 				return;
 			}
 
-			var totalLength:int = forms.length;
+			var totalLength:int = forms.count();
 			var loadAllForms:Function = function(result:*):void{
 				if(forms.count() > 0){
-					progress(totalLength - forms.length + 1, totalLength);
+					progress(totalLength - forms.count() + 1, totalLength);
 					try{
 						var f:Object = forms.peek();
 						forms = forms.pop();
@@ -598,7 +598,7 @@ class CodeGen{
 		asm.I_newactivation();
 		asm.I_dup();
 		asm.I_pushscope();
-		var i:int = int(this.scopeToLocalMap.nth(this.scopeToLocalMap.length - 1));
+		var i:int = int(this.scopeToLocalMap.nth(this.scopeToLocalMap.count() - 1));
 		asm.I_setlocal(i);
 	}
 
@@ -1721,7 +1721,7 @@ class LocalBindingSet{
 	}
 
 	public function bindingFor(sym:Symbol):LocalBinding{
-		for(var i:int = _lbs.length - 1; i > -1; i--){
+		for(var i:int = _lbs.count() - 1; i > -1; i--){
 			var lb:LocalBinding = _lbs[i];
 			if(Util.equal(lb.sym, sym)){
 				return lb;
@@ -1751,7 +1751,7 @@ class LocalBindingSet{
 	}
 
 	public function eachReversedWithIndex(iterator:Function):void{
-		for(var i:int = _lbs.length - 1; i > -1; i--){
+		for(var i:int = _lbs.count() - 1; i > -1; i--){
 			var lb:LocalBinding = _lbs[i];
 			iterator(lb.sym, lb, i);
 		}

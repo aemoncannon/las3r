@@ -41,7 +41,7 @@ package com.las3r.runtime{
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
 		public var namespaces:IMap = new Map();
-		public var specials:Vector;
+		public var specials:IVector;
 		public var dvals:Frame = new Frame();
 
 		public var vars:Dictionary;
@@ -55,7 +55,7 @@ package com.las3r.runtime{
 		private var id:int = 1;
 		private var _this:RT;
 		private var _resultsDict:Dictionary = new Dictionary();
-		private var _evalQ:Vector = RT.vector();
+		private var _evalQ:IVector = RT.vector();
 
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
@@ -350,7 +350,7 @@ package com.las3r.runtime{
 				removeFromEvalQ(workUnit);
 				if(_evalQ.count() > 0) evalNextInQ();
 			}
-			_evalQ.push(workUnit);
+			_evalQ = _evalQ.cons(workUnit);
 			if(_evalQ.count() == 1) evalNextInQ();
 		}
 
@@ -396,7 +396,7 @@ package com.las3r.runtime{
 
 
 		public function isSpecial(sym:Object):Boolean{
-			return specials.includes(sym);
+			return specials.containsKey(sym);
 		}
 
 		public function sym1(name:String):Symbol{
@@ -792,7 +792,11 @@ package com.las3r.runtime{
 			}
 
 			public static function seqToArray(seq:ISeq):Array{
-
+				var ret:Array = [];
+				var items:ISeq = seq;
+				for(; items != null; items = items.rest())
+				ret.push(items.first());
+				return ret;
 			}
 
 			public function propertyNamesList(object:Object):List{
@@ -835,8 +839,8 @@ package com.las3r.runtime{
 				else if(x is ISeq || x is IList)
 				{
 					w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+						printInnerSeq(seq(x), w);
+						w.write(')');
 				}
 				else if(x is String)
 				{
@@ -883,53 +887,53 @@ package com.las3r.runtime{
 				else if(x is IMap)
 				{
 					w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:MapEntry = MapEntry(sq.first());
-						print(v.key, w);
-						w.write(' ');
-						print(v.value, w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+						for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+						{
+							var v:MapEntry = MapEntry(sq.first());
+							print(v.key, w);
+							w.write(' ');
+							print(v.value, w);
+							if(sq.rest() != null)
+							w.write(", ");
+						}
+						w.write('}');
 				}
 				else if(x is IVector)
 				{
 					var a:IVector = IVector(x);
 					w.write('[');
-					for(i = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+						for(i = 0; i < a.count(); i++)
+						{
+							print(a.nth(i), w);
+							if(i < a.count() - 1)
+							w.write(' ');
+						}
+						w.write(']');
 				}
 				else if(x is ISet)
 				{
 					w.write("#{");
-					for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-					{
-						print(setSq.first(), w);
-						if(setSq.rest() != null)
-						w.write(" ");
-					}
-					w.write('}');
+						for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+						{
+							print(setSq.first(), w);
+							if(setSq.rest() != null)
+							w.write(" ");
+						}
+						w.write('}');
+				}
+				else w.write(x.toString());
 			}
-			else w.write(x.toString());
-		}
 
 
-		private function printInnerSeq(x:ISeq, w:OutputStream):void{
-			for(var sq:ISeq = x; sq != null; sq = sq.rest())
-			{
-				print(sq.first(), w);
-				if(sq.rest() != null)
-				w.write(' ');
+			private function printInnerSeq(x:ISeq, w:OutputStream):void{
+				for(var sq:ISeq = x; sq != null; sq = sq.rest())
+				{
+					print(sq.first(), w);
+					if(sq.rest() != null)
+					w.write(' ');
+				}
 			}
+
+
 		}
-
-
 	}
-}

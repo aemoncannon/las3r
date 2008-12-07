@@ -13,7 +13,7 @@
 package com.las3r.runtime{
 
 	import com.las3r.util.Util;
-	import com.las3r.jdk.util.ArrayUtils;
+	import com.las3r.jdk.util.ArrayUtil;
 
 	public class PersistentVector extends APersistentVector{
 		private var cnt:int;
@@ -53,7 +53,7 @@ package com.las3r.runtime{
 				if(i >= tailoff())
 				{
 					var newTail:Array = new Array(tail.length);
-					ArrayUtils.arraycopy(tail, 0, newTail, 0, tail.length);
+					ArrayUtil.arraycopy(tail, 0, newTail, 0, tail.length);
 					newTail[i & 0x01f] = val;
 					return new PersistentVector(cnt, shift, root, newTail, meta);
 				}
@@ -107,11 +107,6 @@ package com.las3r.runtime{
 			return new PersistentVector(cnt + 1, newshift, newroot, [val], meta);
 		}
 
-		public /*abstract*/ function empty():IVector{
-			throw new Error("Subclass responsibility")
-			return null;
-		}
-
 		private function pushTail(level:int, arr:Array, tailNode:Array, expansion:Box):Array{
 			var newchild:Object;
 			if(level == 0)
@@ -138,17 +133,17 @@ package com.las3r.runtime{
 				return arr;
 			}
 			ret = new Array(arr.length + 1);
-			System.arraycopy(arr, 0, ret, 0, arr.length);
+			ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
 			ret[arr.length] = newchild;
 			expansion.val = null;
 			return ret;
 		}
 
-		public function pop():PersistentVector{
+		override public function pop():IVector{
 			if(cnt == 0)
 			throw new Error("IllegalStateException: Can't pop empty vector");
 			if(cnt == 1)
-			return empty().withMeta(meta());
+			return IVector(IObj(empty()).withMeta(meta));
 			if(tail.length > 1)
 			{
 				var newTail:Array = new Array(tail.length - 1);
@@ -187,7 +182,7 @@ package com.las3r.runtime{
 			//contraction
 			if(arr.length == 1)
 			return null;
-			var ret:Array = new Array(arr.length - 1);
+			ret = new Array(arr.length - 1);
 			ArrayUtil.arraycopy(arr, 0, ret, 0, ret.length);
 			return ret;
 		}
