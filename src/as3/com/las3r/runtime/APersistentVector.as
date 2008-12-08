@@ -198,6 +198,10 @@ package com.las3r.runtime{
 			return v;
 		}
 
+		public function subvec(start:int, end:int):IVector{
+			return new SubVector(this, start, end, meta);
+		}
+
 	}
 }
 

@@ -41,7 +41,7 @@ package com.las3r.runtime{
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
 		public var namespaces:IMap = new Map();
-		public var specials:IVector;
+		private var specials:IMap;
 		public var dvals:Frame = new Frame();
 
 		public var vars:Dictionary;
@@ -272,24 +272,24 @@ package com.las3r.runtime{
 			_AMP_ = sym1("&");
 			ISEQ = sym1("com.las3r.runtime.ISeq");
 
-			specials = RT.vector(
-					DEF,
-					RECUR,
-					IF,
-					LET,
-					DO,
-					FN,
-					QUOTE,
-					THE_VAR,
-					DOT,
-					ASSIGN,
-					TRY,
-					CATCH, 
-					FINALLY, 
-					THROW,
-					NEW,
-					_AMP_
-				);
+			specials = RT.map(
+				DEF,T,
+				RECUR,T,
+				IF,T,
+				LET,T,
+				DO,T,
+				FN,T,
+				QUOTE,T,
+				THE_VAR,T,
+				DOT,T,
+				ASSIGN,T,
+				TRY,T,
+				CATCH,T, 
+				FINALLY,T, 
+				THROW,T,
+				NEW,T,
+				_AMP_,T
+			);
 
 			_compiler = new Compiler(this);
 			_lispReader = new LispReader(this);
@@ -356,7 +356,7 @@ package com.las3r.runtime{
 
 		protected function evalNextInQ():void{
 			if(_evalQ.length > 0){
-				var next:Object = _evalQ[0];
+				var next:Object = _evalQ[_evalQ.length - 1];
 				next.start();
 				_compiler.load(next.reader, next.complete, next.failure, next.progress);
 			}
@@ -393,10 +393,8 @@ package com.las3r.runtime{
 
 
 
-
-
 		public function isSpecial(sym:Object):Boolean{
-			return specials.containsKey(sym);
+			return specials.valAt(sym) === T;
 		}
 
 		public function sym1(name:String):Symbol{
@@ -470,456 +468,469 @@ package com.las3r.runtime{
 				return v;
 			}
 			else if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '[')
-				{
-					return classForName(sym.name);
+			{
+				return classForName(sym.name);
+			}
+			else
+			{
+				var o:Object = n.getMapping(sym);
+				if(o == null){
+					throw new Error("Unable to resolve symbol: " + sym + " in this context");
 				}
-				else
-				{
-					var o:Object = n.getMapping(sym);
-					if(o == null){
-						throw new Error("Unable to resolve symbol: " + sym + " in this context");
-					}
-					return o;
-				}
+				return o;
 			}
+		}
 
 
 
-			public function currentNS():LispNamespace{
-				return LispNamespace(CURRENT_NS.get());
+		public function currentNS():LispNamespace{
+			return LispNamespace(CURRENT_NS.get());
+		}
+
+		public function classForName(name:String):Class{
+			return (getDefinitionByName(name) as Class);
+		}
+
+		public function writeToStdout(str:String):void{
+			stdout.write(str);
+		}
+
+		public function writeToStderr(str:String):void{
+			stderr.write(str);
+		}
+
+		public static function boundedLength(list:ISeq, limit:int):int{
+			var i:int = 0;
+			for(var c:ISeq = list; c != null && i <= limit; c = c.rest()){
+				i++;
 			}
+			return i;
+		}
 
-			public function classForName(name:String):Class{
-				return (getDefinitionByName(name) as Class);
+		public static function count(o:Object):int{
+			if(o == null)
+			return 0;
+			else if(o is ASeq)
+			return (ASeq(o)).count();
+			else if(o is String)
+			return (String(o)).length;
+			else if(o is Array)
+			return o.length;
+			throw new Error("UnsupportedOperationException: count not supported on this type.");
+		}
+
+		public static function length(list:ISeq):int{
+			var i:int = 0;
+			for(var c:ISeq = list; c != null; c = c.rest()){
+				i++;
 			}
+			return i;
+		}
 
-			public function writeToStdout(str:String):void{
-				stdout.write(str);
+
+		public function nextID():int{
+			this.id += 1;
+			return this.id;
+		}
+
+		public static function list(...rest:Array):ISeq{
+			return List.createFromArray(rest);
+		}
+
+		public static function isInstance(c:Class, x:Object):Boolean{
+			return x is c;
+		}
+
+		public static function cast(c:Class, x:Object):*{
+			return c(x);
+		}
+
+		public static function numCast(x:Object):Number{
+			return Number(x);
+		}
+
+		public static function sysTime():int { 
+			return getTimer();
+		}
+
+		public static function intCast(x:Object):int{
+			return int(x);
+		}
+
+		public static function conj(coll:Object, x:Object):Object{
+			if(coll == null)
+			return new List(x);
+			return coll.cons(x);
+		}
+
+		public static function get(coll:Object, key:Object, notFound:Object = null):Object{
+			if(coll == null){
+				return notFound;
 			}
-
-			public function writeToStderr(str:String):void{
-				stderr.write(str);
-			}
-
-			public static function boundedLength(list:ISeq, limit:int):int{
-				var i:int = 0;
-				for(var c:ISeq = list; c != null && i <= limit; c = c.rest()){
-					i++;
-				}
-				return i;
-			}
-
-			public static function count(o:Object):int{
-				if(o == null)
-				return 0;
-				else if(o is ASeq)
-				return (ASeq(o)).count();
-				else if(o is String)
-				return (String(o)).length;
-				else if(o is Array)
-				return o.length;
-				throw new Error("UnsupportedOperationException: count not supported on this type.");
-			}
-
-			public static function length(list:ISeq):int{
-				var i:int = 0;
-				for(var c:ISeq = list; c != null; c = c.rest()){
-					i++;
-				}
-				return i;
-			}
-
-
-			public function nextID():int{
-				this.id += 1;
-				return this.id;
-			}
-
-			public static function list(...rest:Array):ISeq{
-				return List.createFromArray(rest);
-			}
-
-			public static function isInstance(c:Class, x:Object):Boolean{
-				return x is c;
-			}
-
-			public static function cast(c:Class, x:Object):*{
-				return c(x);
-			}
-
-			public static function numCast(x:Object):Number{
-				return Number(x);
-			}
-
-			public static function sysTime():int { 
-				return getTimer();
-			}
-
-			public static function intCast(x:Object):int{
-				return int(x);
-			}
-
-			public static function conj(coll:Object, x:Object):Object{
-				if(coll == null)
-				return new List(x);
-				return coll.cons(x);
-			}
-
-			public static function get(coll:Object, key:Object, notFound:Object = null):Object{
-				if(coll == null){
-					return notFound;
-				}
-				else if(coll is IMap)
-				{
-					var m:IMap = IMap(coll);
-					if(m.containsKey(key)){
-						return m.valAt(key);
-					}
-					return notFound;
-				}
-				else if(key is Number && (coll is String || coll is Array || coll is IVector))
-				{
-					var n:int = int(key);
-					return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
+			else if(coll is IMap)
+			{
+				var m:IMap = IMap(coll);
+				if(m.containsKey(key)){
+					return m.valAt(key);
 				}
 				return notFound;
 			}
-
-			public static function keys(map:IMap):ISeq{
-				return map.keys();
+			else if(key is Number && (coll is String || coll is Array || coll is IVector))
+			{
+				var n:int = int(key);
+				return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
 			}
+			return notFound;
+		}
 
-			public static function vals(map:IMap):ISeq{
-				return map.vals();
+		public static function keys(map:IMap):ISeq{
+			return map.keys();
+		}
+
+		public static function vals(map:IMap):ISeq{
+			return map.vals();
+		}
+
+		public static function nth(coll:Object, n:int, notFound:Object = null):Object{
+			if(coll == null){
+				return notFound;
 			}
-
-			public static function nth(coll:Object, n:int, notFound:Object = null):Object{
-				if(coll == null){
-					return notFound;
+			else if(coll is IVector){
+				return IVector(coll).nth(n) || notFound;
+			}
+			else if(coll is String){
+				if(String(coll).length > n){
+					return String(coll).charAt(n);
 				}
-				else if(coll is IVector){
-					return IVector(coll).nth(n) || notFound;
-				}
-				else if(coll is String){
-					if(String(coll).length > n){
-						return String(coll).charAt(n);
-					}
-					return notFound;
-				}
-				else if(coll is Array){
-					return coll[n] || notFound;
-				}
-				else if(coll is ISeq)
+				return notFound;
+			}
+			else if(coll is Array){
+				return coll[n] || notFound;
+			}
+			else if(coll is ISeq)
+			{
+				var seq:ISeq = ISeq(coll);
+				for(var i:int = 0; i <= n && seq != null; ++i, seq = seq.rest())
 				{
-					var seq:ISeq = ISeq(coll);
-					for(var i:int = 0; i <= n && seq != null; ++i, seq = seq.rest())
-					{
-						if(i == n)
-						return seq.first();
-					}
-					return notFound;
+					if(i == n)
+					return seq.first();
 				}
-				else
-				throw new ("UnsupportedOperationException: nth not supported on this object: " + coll);
+				return notFound;
+			}
+			else
+			throw new ("UnsupportedOperationException: nth not supported on this object: " + coll);
+		}
+
+
+		public static function cons(x:Object, coll:Object):ISeq{
+			var y:ISeq = seq(coll);
+			if(y == null)
+			return new List(x);
+			return y.cons(x);
+		}
+
+		public static function unzip(seq:ISeq):ISeq{
+			var a:Array = [];
+			var b:Array = [];
+
+			var count:int = count(seq);
+			if((count % 2) != 0)
+			throw new Error("IllegalArgumentException: Bad argument to unzip, expected even number of args.");
+
+			for(var sq:ISeq = seq; sq != null; sq = sq.rest().rest())
+			{
+				a.push(sq.first());
+				b.push(sq.rest().first());
 			}
 
+			return RT.list(List.createFromArray(a), List.createFromArray(b));
+		}
 
-			public static function cons(x:Object, coll:Object):ISeq{
-				var y:ISeq = seq(coll);
-				if(y == null)
-				return new List(x);
-				return y.cons(x);
+		public static function concat(...all:Array):ISeq{
+			var len:int = all.length;
+			var x:Object = all[0];
+			var y:Object = all[1];
+			if(len == 0){
+				return null;
 			}
-
-			public static function unzip(seq:ISeq):ISeq{
-				var a:Array = [];
-				var b:Array = [];
-
-				var count:int = count(seq);
-				if((count % 2) != 0)
-				throw new Error("IllegalArgumentException: Bad argument to unzip, expected even number of args.");
-
-				for(var sq:ISeq = seq; sq != null; sq = sq.rest().rest())
-				{
-					a.push(sq.first());
-					b.push(sq.rest().first());
-				}
-
-				return RT.list(List.createFromArray(a), List.createFromArray(b));
+			else if(len == 1){
+				return seq(x);
 			}
-
-			public static function concat(...all:Array):ISeq{
-				var len:int = all.length;
-				var x:Object = all[0];
-				var y:Object = all[1];
-				if(len == 0){
-					return null;
+			else if(len == 2){
+				if(x){
+					return cons(first(x), concat(rest(x), y));
 				}
-				else if(len == 1){
-					return seq(x);
+				else{
+					return seq(y);
 				}
-				else if(len == 2){
-					if(x){
-						return cons(first(x), concat(rest(x), y));
+			}
+			else{
+				var cat:Function = function(x:Object, y:Object, rest:Array):ISeq{
+					var xy:ISeq = concat(x, y);
+					if(rest.length == 0){
+						return xy;
 					}
 					else{
-						return seq(y);
+						return cat(xy, rest[0], rest.slice(1));
 					}
-				}
-				else{
-					var cat:Function = function(x:Object, y:Object, rest:Array):ISeq{
-						var xy:ISeq = concat(x, y);
-						if(rest.length == 0){
-							return xy;
-						}
-						else{
-							return cat(xy, rest[0], rest.slice(1));
-						}
-					};
-					return cat(x, y, all.slice(2));
-				}
+				};
+				return cat(x, y, all.slice(2));
 			}
+		}
 
-			public static function first(x:Object):Object{
-				var seq:ISeq = seq(x);
-				if(seq == null)
-				return null;
-				return seq.first();
-			}
+		public static function first(x:Object):Object{
+			var seq:ISeq = seq(x);
+			if(seq == null)
+			return null;
+			return seq.first();
+		}
 
-			public static function second(x:Object):Object{
-				return first(rest(x));
-			}
+		public static function second(x:Object):Object{
+			return first(rest(x));
+		}
 
-			public static function third(x:Object):Object{
-				return first(rest(rest(x)));
-			}
+		public static function third(x:Object):Object{
+			return first(rest(rest(x)));
+		}
 
-			public static function fourth(x:Object):Object{
-				return first(rest(rest(rest(x))));
-			}
+		public static function fourth(x:Object):Object{
+			return first(rest(rest(rest(x))));
+		}
 
-			public static function rest(x:Object):ISeq{
-				var seq:ISeq = seq(x);
-				if(seq == null)
-				return null;
-				return seq.rest();
-			}
+		public static function rest(x:Object):ISeq{
+			var seq:ISeq = seq(x);
+			if(seq == null)
+			return null;
+			return seq.rest();
+		}
 
-			public static function rrest(x:Object):ISeq{
-				return rest(rest(x));
-			}
+		public static function rrest(x:Object):ISeq{
+			return rest(rest(x));
+		}
 
-			public static function seq(coll:Object):ISeq{
-				if(coll == null){
-					return null;
-				}
-				else if(coll is ISeq){
-					return (ISeq(coll)).seq();
-				}
-				else if(coll is IVector){
-					return IVector(coll).seq();
-				}
-				else if(coll is IMap){
-					return IMap(coll).seq();
-				}
-				else if(coll is ISet){
-					return ISet(coll).seq();
-				}
-				else if(coll is String){
-					return new StringSeq(String(coll), 0);
-				}
-				else if(coll is Array){
-					return PersistentVector.createFromArray(coll as Array).seq();
-				}
-				else{
-					throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
-				}
-			}
-
-			public static function contains(coll:Object, key:Object):Boolean{
-				if(coll == null){
-					return F;
-				}
-				else if(coll is IMap){
-					return (IMap(coll).containsKey(key)) ? T : F;
-				}
-				else if(coll is ISet){
-					return (ISet(coll).contains(key)) ? T : F;
-				}
-				else if(key is String && (coll is String))
-				{
-					return (String(coll).indexOf(String(key)) != -1) ? T : F;
-				}
-				else if((coll is Array))
-				{
-					return (((coll as Array).indexOf(key)) != -1) ? T : F;
-				}
-				else{
-					return F;
-				}
-			}
-
-			public static function assoc(map:IMap, key:Object, val:Object):IMap{
-				return map.assoc(key, val);
-			}
-
-			public static function dissoc(map:IMap, key:Object):IMap{
-				return map.without(key);
-			}
-
-			public static function map(...init:Array):IMap{
-				return Map.createFromArray(init);
-			}
-
-			public static function vector(...init:Array):IVector{
-				return PersistentVector.createFromArray(init);
-			}
-
-			public static function meta(x:Object):IMap{
-				if(x is IObj)
-				return IObj(x).meta;
+		public static function seq(coll:Object):ISeq{
+			if(coll == null){
 				return null;
 			}
-
-			public function getVar(ns:String, name:String):Var{
-				return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
+			else if(coll is ISeq){
+				return (ISeq(coll)).seq();
 			}
-
-			public static function restFromArguments(a:Array, i:int):List{
-				if(i > (a.length - 1)) return null;
-				return List.createFromArray(a.slice(i));
+			else if(coll is IVector){
+				return IVector(coll).seq();
 			}
-
-			public static function seqToArray(seq:ISeq):Array{
-				var ret:Array = [];
-				var items:ISeq = seq;
-				for(; items != null; items = items.rest())
-				ret.push(items.first());
-				return ret;
+			else if(coll is IMap){
+				return IMap(coll).seq();
 			}
-
-			public function propertyNamesList(object:Object):List{
-				var result:Array = [];
-
-				for(var iterant:String in object){
-					result.push(iterant);
-				}
-				return List.createFromArray(result);
+			else if(coll is ISet){
+				return ISet(coll).seq();
 			}
-
-			public function propertyValuesList(object:Object):List{
-				var result:Array = [];
-				
-				for each(var iterant:* in object){
-					result.push(iterant);
-				}
-				return List.createFromArray(result);
+			else if(coll is String){
+				return new StringSeq(String(coll), 0);
 			}
-
-			public function getPropertyByName(instance:Object, property:String) {
-				return instance[property];
+			else if(coll is Array){
+				return PersistentVector.createFromArray(coll as Array).seq();
 			}
-
-			public function setPropertyByName(instance:Object, property:String, value:*) {
-				return instance[property] = value;
+			else{
+				throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
 			}
+		}
 
-			public function printToString(x:Object):String {
-				var w:NaiveStringWriter = new NaiveStringWriter();
-				print(x, w);
-				return w.toString();
+		public static function contains(coll:Object, key:Object):Boolean{
+			if(coll == null){
+				return F;
 			}
+			else if(coll is IMap){
+				return (IMap(coll).containsKey(key)) ? T : F;
+			}
+			else if(coll is ISet){
+				return (ISet(coll).contains(key)) ? T : F;
+			}
+			else if(key is String && (coll is String))
+			{
+				return (String(coll).indexOf(String(key)) != -1) ? T : F;
+			}
+			else if((coll is Array))
+			{
+				return (((coll as Array).indexOf(key)) != -1) ? T : F;
+			}
+			else{
+				return F;
+			}
+		}
 
-			public function print(x:Object, w:OutputStream):void {
-				//TODO - make extensible
-				var readably:Boolean = Boolean(PRINT_READABLY.get());
-				if(x == null)
-				w.write("nil");
-				else if(x is ISeq || x is IList)
+		public static function assoc(map:IMap, key:Object, val:Object):IMap{
+			return map.assoc(key, val);
+		}
+
+		public static function dissoc(map:IMap, key:Object):IMap{
+			return map.without(key);
+		}
+
+		public static function map(...init:Array):IMap{
+			return Map.createFromArray(init);
+		}
+
+		public static function vector(...init:Array):IVector{
+			if(init.length == 0){ return PersistentVector.EMPTY; }
+			else return PersistentVector.createFromArray(init);
+		}
+
+		public static function subvec(v:IVector, start:int, end:int):IVector{
+			if(end < start || start < 0 || end > v.count())
+			throw new Error("IndexOutOfBoundsException");
+
+			if(start == end)
+			return PersistentVector.EMPTY;
+
+			if(!v is APersistentVector)
+			throw new Error("UnsupportedOperationException");
+
+			return APersistentVector(v).subvec(start, end);
+		}
+
+		public static function meta(x:Object):IMap{
+			if(x is IObj)
+			return IObj(x).meta;
+			return null;
+		}
+
+		public function getVar(ns:String, name:String):Var{
+			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
+		}
+
+		public static function restFromArguments(a:Array, i:int):List{
+			if(i > (a.length - 1)) return null;
+			return List.createFromArray(a.slice(i));
+		}
+
+		public static function seqToArray(seq:ISeq):Array{
+			var ret:Array = [];
+			var items:ISeq = seq;
+			for(; items != null; items = items.rest())
+			ret.push(items.first());
+			return ret;
+		}
+
+		public function propertyNamesList(object:Object):List{
+			var result:Array = [];
+
+			for(var iterant:String in object){
+				result.push(iterant);
+			}
+			return List.createFromArray(result);
+		}
+
+		public function propertyValuesList(object:Object):List{
+			var result:Array = [];
+			for each(var iterant:* in object){
+				result.push(iterant);
+			}
+			return List.createFromArray(result);
+		}
+
+		public function getPropertyByName(instance:Object, property:String) {
+			return instance[property];
+		}
+
+		public function setPropertyByName(instance:Object, property:String, value:*) {
+			return instance[property] = value;
+		}
+
+		public function printToString(x:Object):String {
+			var w:NaiveStringWriter = new NaiveStringWriter();
+			print(x, w);
+			return w.toString();
+		}
+
+		public function print(x:Object, w:OutputStream):void {
+			//TODO - make extensible
+			var readably:Boolean = Boolean(PRINT_READABLY.get());
+			if(x == null)
+			w.write("nil");
+			else if(x is ISeq || x is IList)
+			{
+				w.write('(');
+				printInnerSeq(seq(x), w);
+				w.write(')');
+			}
+			else if(x is String)
+			{
+				var s:String = String(x);
+				if(!readably)
+				w.write(s);
+				else
 				{
-					w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
-				}
-				else if(x is String)
-				{
-					var s:String = String(x);
-					if(!readably)
-					w.write(s);
-					else
+					w.write('"');
+					//w.write(x.toString());
+					for(var i:int = 0; i < s.length; i++)
 					{
-						w.write('"');
-						//w.write(x.toString());
-						for(var i:int = 0; i < s.length; i++)
+						var c:String = s.charAt(i);
+						switch(c)
 						{
-							var c:String = s.charAt(i);
-							switch(c)
-							{
-								case '\n':
-								w.write("\\n");
-								break;
-								case '\t':
-								w.write("\\t");
-								break;
-								case '\r':
-								w.write("\\r");
-								break;
-								case '"':
-								w.write("\\\"");
-								break;
-								case '\\':
-								w.write("\\\\");
-								break;
-								case '\f':
-								w.write("\\f");
-								break;
-								case '\b':
-								w.write("\\b");
-								break;
-								default:
-								w.write(c);
-							}
+							case '\n':
+							w.write("\\n");
+							break;
+							case '\t':
+							w.write("\\t");
+							break;
+							case '\r':
+							w.write("\\r");
+							break;
+							case '"':
+							w.write("\\\"");
+							break;
+							case '\\':
+							w.write("\\\\");
+							break;
+							case '\f':
+							w.write("\\f");
+							break;
+							case '\b':
+							w.write("\\b");
+							break;
+							default:
+							w.write(c);
 						}
-						w.write('"');
 					}
+					w.write('"');
 				}
-				else if(x is IMap)
+			}
+			else if(x is IMap)
+			{
+				w.write('{');
+				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
 				{
-					w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:MapEntry = MapEntry(sq.first());
-						print(v.key, w);
-						w.write(' ');
-						print(v.value, w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+					var v:MapEntry = MapEntry(sq.first());
+					print(v.key, w);
+					w.write(' ');
+					print(v.value, w);
+					if(sq.rest() != null)
+					w.write(", ");
 				}
-				else if(x is IVector)
+				w.write('}');
+			}
+			else if(x is IVector)
+			{
+				var a:IVector = IVector(x);
+				w.write('[');
+				for(i = 0; i < a.count(); i++)
 				{
-					var a:IVector = IVector(x);
-					w.write('[');
-					for(i = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+					print(a.nth(i), w);
+					if(i < a.count() - 1)
+					w.write(' ');
 				}
-				else if(x is ISet)
+				w.write(']');
+			}
+			else if(x is ISet)
+			{
+				w.write("#{");
+				for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
 				{
-					w.write("#{");
-					for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-					{
-						print(setSq.first(), w);
-						if(setSq.rest() != null)
-						w.write(" ");
-					}
-					w.write('}');
+					print(setSq.first(), w);
+					if(setSq.rest() != null)
+					w.write(" ");
+				}
+				w.write('}');
 			}
 			else w.write(x.toString());
 		}

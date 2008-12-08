@@ -10,6 +10,7 @@
 	     
 	     private function onCreationComplete():void {
 	     var suite:TestSuite = new TestSuite();
+	     suite.addTestSuite(VectorTest);
 	     suite.addTestSuite(BufferedReaderTest);
 	     suite.addTestSuite(ArrayUtilTest);
 	     suite.addTestSuite(StringReaderTest);
@@ -17,14 +18,12 @@
 	     suite.addTestSuite(PushbackReaderTest);
 	     suite.addTestSuite(LineNumberingPushbackReaderTest);
 	     suite.addTestSuite(ListTest);
-	     suite.addTestSuite(VectorTest);
 	     suite.addTestSuite(MapTest);
 	     suite.addTestSuite(LispReaderTest);
 	     suite.addTestSuite(NamespaceTest);
 	     suite.addTestSuite(VarTest);
 	     suite.addTestSuite(RTTest);
 	     suite.addTestSuite(CompilerTest);
-//	     suite.addTestSuite(LibTest);
 	     testRunner.test = suite;
 	     testRunner.startTest();
 	     }

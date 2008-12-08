@@ -7,6 +7,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
+
 (in-ns 'las3r)
 
 
@@ -134,7 +135,7 @@
           applies a function to the bound locals."}
  loop* (fn* loop* [bindings & body]
 	    (let [names-vals (. com.las3r.runtime.RT (unzip (seq bindings)))
-		  names (. com.las3r.runtime.Vector (createFromSeq (seq (first names-vals))))
+		  names (. com.las3r.runtime.PersistentVector (createFromSeq (seq (first names-vals))))
 		  vals (seq (second names-vals))]
 	      (concat (list 'let bindings (concat (list (concat (list 'fn names) body)) names)))))
  )
@@ -232,7 +233,7 @@
 (defn vector
   "Creates a new vector containing the args."
   [& args]
-  (. com.las3r.runtime.Vector (createFromSeq args)))
+  (. com.las3r.runtime.PersistentVector (createFromSeq args)))
 
 
 (defn hash-map

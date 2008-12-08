@@ -28,13 +28,12 @@ package com.las3r.runtime{
 		public var floatPat:RegExp = new RegExp("^[-+]?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?[M]?$");
 		public var macros:IMap;
 		public var dispatchMacros:IMap;
-		public var _gensymEnvStack:IVector;
 
 		public var GENSYM_ENV:Var;
 
 		//symbol->gensymbol
 		//sorted-map num->gensymbol
-		//	static Var ARG_ENV = Var.create(null);
+		//static Var ARG_ENV = Var.create(null);
 
 		public function LispReader(rt:RT){
 			_rt = rt;
@@ -773,7 +772,7 @@ class SyntaxQuoteReader implements IReaderMacro{
 		var keyvals:IVector = RT.vector();
 		form.each(function(key:Object, val:Object):void{
 				keyvals = keyvals.cons(key);
-				keyvals= keyvals.cons(val);
+				keyvals = keyvals.cons(val);
 			});
 		return keyvals;
 	}

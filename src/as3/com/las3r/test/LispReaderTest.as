@@ -166,7 +166,9 @@ package com.las3r.test{
 
 		public function testSyntaxQuoteString():void{
 			var rt:RT = new RT();
-			assertTrue("objects are equal", Util.equal(readStr(rt, "`\"hello\""), readStr(rt, "\"hello\"")));
+			var a:Object = readStr(rt, "`\"hello\"");
+			var b:Object = readStr(rt, "\"hello\"");
+			assertTrue("objects are equal", Util.equal(a, b));
 		}
 
 
