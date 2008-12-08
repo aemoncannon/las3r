@@ -93,10 +93,10 @@ package com.las3r.test{
 		}
 
 		public function testBindBirdToAS3Class():void{
-			readAndLoad("(def *bird* com.las3r.runtime.Vector)",
+			readAndLoad("(def *bird* com.las3r.runtime.PersistentVector)",
 				function(rt:RT, val:*):void{
 					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be bound to the class Vector.", v.get() == Vector);
+					assertTrue("*bird* should be bound to the class Vector.", v.get() == PersistentVector);
 				});
 		}
 
