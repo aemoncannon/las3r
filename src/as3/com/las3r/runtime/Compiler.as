@@ -105,7 +105,7 @@ package com.las3r.runtime{
 
 			try{
 				for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
-					forms = Vector(forms.cons(form));
+					forms = forms.cons(form);
 				}
 			}
 			catch(e:LispError){
@@ -422,7 +422,7 @@ package com.las3r.runtime{
 				var v:Var = isMacro(op);
 				if(v != null)
 				{
-					return v.apply(Vector.createFromSeq(RT.seq(form.rest())));
+					return v.apply(PersistentVector.createFromSeq(RT.seq(form.rest())));
 				}
 			}
 			return x;
@@ -448,7 +448,7 @@ package com.las3r.runtime{
 
 
 		public function referenceLocal(sym:Symbol):LocalBinding{
-			var bindingSetStack:IVector = Vector(BINDING_SET_STACK.get());
+			var bindingSetStack:IVector = IVector(BINDING_SET_STACK.get());
 			var len:int = bindingSetStack.count();
 			for(var i:int = len - 1; i >= 0; i--){
 				var lbs:LocalBindingSet = LocalBindingSet(bindingSetStack.nth(i));
@@ -461,7 +461,7 @@ package com.las3r.runtime{
 		}
 
 		public function pushLocalBindingSet(set:LocalBindingSet):void{
-			var prevStack:IVector = Vector(BINDING_SET_STACK.get());
+			var prevStack:IVector = IVector(BINDING_SET_STACK.get());
 			var newStack:IVector = prevStack.cons(set);
 			Var.pushBindings(rt, RT.map(BINDING_SET_STACK, newStack));
 		}
@@ -471,7 +471,7 @@ package com.las3r.runtime{
 		}
 
 		public function currentLocalBindingSet():LocalBindingSet{
-			return LocalBindingSet(Vector(BINDING_SET_STACK.get()).peek());
+			return LocalBindingSet(IVector(BINDING_SET_STACK.get()).peek());
 		}
 
 
@@ -563,7 +563,7 @@ class CodeGen{
 		currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
 		var i:int = asm.getTemp();
 		asm.I_setlocal(i);
-		scopeToLocalMap = Vector(scopeToLocalMap.cons(i));
+		scopeToLocalMap = scopeToLocalMap.cons(i);
 	}
 
 
@@ -578,7 +578,7 @@ class CodeGen{
 		asm.I_getlocal_0();
 		asm.I_pushscope();
 		asm.useTemp(0)
-		scopeToLocalMap = Vector(scopeToLocalMap.cons(0));
+		scopeToLocalMap = scopeToLocalMap.cons(0);
 	}
 
 
@@ -630,7 +630,7 @@ class CodeGen{
 		asm.I_pushscope();
 		var i:int = asm.getTemp()
 		asm.I_setlocal(i);
-		scopeToLocalMap = Vector(scopeToLocalMap.cons(i));
+		scopeToLocalMap = scopeToLocalMap.cons(i);
 	}
 
 	/*
@@ -642,7 +642,7 @@ class CodeGen{
 	public function popScope():void{
 		asm.I_popscope();
 		asm.freeTemp(scopeToLocalMap.peek());
-		scopeToLocalMap = Vector(scopeToLocalMap.pop());
+		scopeToLocalMap = scopeToLocalMap.pop();
 	}
 
 
@@ -1298,7 +1298,7 @@ class FnMethod{
 
 	public static function parse(c:Compiler, context:C, form:ISeq, f:FnExpr):FnMethod{
 		var meth:FnMethod = new FnMethod(c, f);
-		meth.params = Vector(RT.first(form));
+		meth.params = IVector(RT.first(form));
 		if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
 			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		}
@@ -1341,11 +1341,11 @@ class FnMethod{
 				switch(state)
 				{
 					case PSTATE.REQ:
-					meth.reqParams = Vector(meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym)));
+					meth.reqParams = meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym));
 					break;
 
 					case PSTATE.OPT:
-					meth.optionalParams = Vector(meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param)))));
+					meth.optionalParams = meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
 					break;
 
 					case PSTATE.REST:

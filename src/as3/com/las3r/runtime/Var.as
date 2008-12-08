@@ -169,9 +169,9 @@ package com.las3r.runtime{
 			return get() as Function;
 		}
 
-		public function apply(args:Vector):Object{
+		public function apply(args:IVector):Object{
 			var f:Function = fn();
-			return f.apply(null, args);
+			return f.apply(null, args.toArray());
 		}
 
 		public function setMeta(m:IMap):void{

@@ -186,7 +186,7 @@ package com.las3r.runtime{
 		}
 
 		public function empty():IVector{
-			return Vector.EMPTY;
+			return PersistentVector.EMPTY;
 		}
 
 		public function collect(iterator:Function):IVector{
@@ -316,13 +316,13 @@ class SubVector extends APersistentVector{
 	}
 
 	override public function empty():IVector{
-		return IVector(Vector.EMPTY.withMeta(meta));
+		return IVector(PersistentVector.EMPTY.withMeta(meta));
 	}
 
 	override public function pop():IVector{
 		if(end - 1 == start)
 		{
-			return Vector.EMPTY;
+			return PersistentVector.EMPTY;
 		}
 		return new SubVector(v, start, end - 1, meta);
 	}

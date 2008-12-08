@@ -791,7 +791,7 @@ class VectorReader implements IReaderMacro{
 
 	public function invoke(reader:Object, leftparen:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
-		return Vector.createFromArray(_reader.readDelimitedList(CharUtil.RBRACK, r));
+		return PersistentVector.createFromArray(_reader.readDelimitedList(CharUtil.RBRACK, r));
 	}
 }
 

@@ -55,7 +55,7 @@ package com.las3r.runtime{
 		private var id:int = 1;
 		private var _this:RT;
 		private var _resultsDict:Dictionary = new Dictionary();
-		private var _evalQ:IVector = RT.vector();
+		private var _evalQ:Array = [];
 
 		private var _compiler:Compiler;
 		public function get compiler():Compiler { return _compiler }
@@ -219,7 +219,7 @@ package com.las3r.runtime{
 			VECTOR = sym1("vector");
 			Var.internWithRoot(LAS3R_NAMESPACE, VECTOR,
 				function(...args:Array):Object{
-					return Vector.createFromArray(args);
+					return PersistentVector.createFromArray(args);
 				});
 			VECTOR = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "vector");
 
@@ -272,7 +272,7 @@ package com.las3r.runtime{
 			_AMP_ = sym1("&");
 			ISEQ = sym1("com.las3r.runtime.ISeq");
 
-			specials = Vector(RT.vector(
+			specials = RT.vector(
 					DEF,
 					RECUR,
 					IF,
@@ -289,7 +289,7 @@ package com.las3r.runtime{
 					THROW,
 					NEW,
 					_AMP_
-				));
+				);
 
 			_compiler = new Compiler(this);
 			_lispReader = new LispReader(this);
@@ -342,21 +342,21 @@ package com.las3r.runtime{
 				Var.popBindings(_this);
 				if(onComplete != null) onComplete(val);
 				removeFromEvalQ(workUnit);
-				if(_evalQ.count() > 0) evalNextInQ();
+				if(_evalQ.length > 0) evalNextInQ();
 			};
 			workUnit.failure = function(error:*):void{
 				Var.popBindings(_this);
 				if(onFailure != null) onFailure(error);
 				removeFromEvalQ(workUnit);
-				if(_evalQ.count() > 0) evalNextInQ();
+				if(_evalQ.length > 0) evalNextInQ();
 			}
-			_evalQ = _evalQ.cons(workUnit);
-			if(_evalQ.count() == 1) evalNextInQ();
+			_evalQ.push(workUnit);
+			if(_evalQ.length == 1) evalNextInQ();
 		}
 
 		protected function evalNextInQ():void{
-			if(_evalQ.count() > 0){
-				var next:Object = _evalQ.peek();
+			if(_evalQ.length > 0){
+				var next:Object = _evalQ[0];
 				next.start();
 				_compiler.load(next.reader, next.complete, next.failure, next.progress);
 			}
@@ -730,7 +730,7 @@ package com.las3r.runtime{
 					return new StringSeq(String(coll), 0);
 				}
 				else if(coll is Array){
-					return Vector.createFromArray(coll as Array).seq();
+					return PersistentVector.createFromArray(coll as Array).seq();
 				}
 				else{
 					throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
@@ -773,7 +773,7 @@ package com.las3r.runtime{
 			}
 
 			public static function vector(...init:Array):IVector{
-				return Vector.createFromArray(init);
+				return PersistentVector.createFromArray(init);
 			}
 
 			public static function meta(x:Object):IMap{
@@ -839,8 +839,8 @@ package com.las3r.runtime{
 				else if(x is ISeq || x is IList)
 				{
 					w.write('(');
-						printInnerSeq(seq(x), w);
-						w.write(')');
+					printInnerSeq(seq(x), w);
+					w.write(')');
 				}
 				else if(x is String)
 				{
@@ -887,53 +887,53 @@ package com.las3r.runtime{
 				else if(x is IMap)
 				{
 					w.write('{');
-						for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-						{
-							var v:MapEntry = MapEntry(sq.first());
-							print(v.key, w);
-							w.write(' ');
-							print(v.value, w);
-							if(sq.rest() != null)
-							w.write(", ");
-						}
-						w.write('}');
+					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+					{
+						var v:MapEntry = MapEntry(sq.first());
+						print(v.key, w);
+						w.write(' ');
+						print(v.value, w);
+						if(sq.rest() != null)
+						w.write(", ");
+					}
+					w.write('}');
 				}
 				else if(x is IVector)
 				{
 					var a:IVector = IVector(x);
 					w.write('[');
-						for(i = 0; i < a.count(); i++)
-						{
-							print(a.nth(i), w);
-							if(i < a.count() - 1)
-							w.write(' ');
-						}
-						w.write(']');
+					for(i = 0; i < a.count(); i++)
+					{
+						print(a.nth(i), w);
+						if(i < a.count() - 1)
+						w.write(' ');
+					}
+					w.write(']');
 				}
 				else if(x is ISet)
 				{
 					w.write("#{");
-						for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-						{
-							print(setSq.first(), w);
-							if(setSq.rest() != null)
-							w.write(" ");
-						}
-						w.write('}');
-				}
-				else w.write(x.toString());
+					for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+					{
+						print(setSq.first(), w);
+						if(setSq.rest() != null)
+						w.write(" ");
+					}
+					w.write('}');
 			}
-
-
-			private function printInnerSeq(x:ISeq, w:OutputStream):void{
-				for(var sq:ISeq = x; sq != null; sq = sq.rest())
-				{
-					print(sq.first(), w);
-					if(sq.rest() != null)
-					w.write(' ');
-				}
-			}
-
-
+			else w.write(x.toString());
 		}
+
+
+		private function printInnerSeq(x:ISeq, w:OutputStream):void{
+			for(var sq:ISeq = x; sq != null; sq = sq.rest())
+			{
+				print(sq.first(), w);
+				if(sq.rest() != null)
+				w.write(' ');
+			}
+		}
+
+
 	}
+}

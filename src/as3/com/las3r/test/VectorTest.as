@@ -13,7 +13,7 @@ package com.las3r.test{
 	import flexunit.framework.TestCase;
  	import flexunit.framework.TestSuite;
 	import flash.utils.*;
-	import com.las3r.runtime.Vector;
+	import com.las3r.runtime.PersistentVector;
 	import com.las3r.runtime.ISeq;
 
 	public class VectorTest extends RichTestCase {
@@ -25,24 +25,24 @@ package com.las3r.test{
 		}
 
 		public function testSimple():void{
-			var v:Vector = Vector.createFromMany(1, 2, 3);
+			var v:PersistentVector = PersistentVector.createFromMany(1, 2, 3);
 			assertTrue("count should be 3", v.count() == 3);
 			assertTrue("first element is 1", v.nth(0) == 1);
 			assertTrue("second element is 2", v.nth(1) == 2);
 			assertTrue("third element is 3", v.nth(2) == 3);
-			assertTrue("Should equal equivalent vector", v.equals(Vector.createFromMany(1, 2, 3)))
+			assertTrue("Should equal equivalent vector", v.equals(PersistentVector.createFromMany(1, 2, 3)))
 		}
 
-		public function testVectorEquality():void{
-			assertTrue("vectors should be equal", Vector.createFromArray([1, 2, 3]).equals(Vector.createFromArray([1, 2, 3])));
-			assertFalse("vectors should NOT be equal", Vector.createFromArray([1, 2, 0]).equals(Vector.createFromArray([1, 2, 3])));
-			assertFalse("vectors should NOT be equal", Vector.createFromArray([0, 2, 3]).equals(Vector.createFromArray([1, 2, 3])));
-			assertFalse("vectors should NOT be equal", Vector.createFromArray([1, 2, 3, 4]).equals(Vector.createFromArray([1, 2, 3])));
-			assertFalse("vectors should NOT be equal", Vector.createFromArray([1, 2, 3]).equals(Vector.createFromArray([1, 2, 3, 4])));
+		public function testPersistentVectorEquality():void{
+			assertTrue("vectors should be equal", PersistentVector.createFromArray([1, 2, 3]).equals(PersistentVector.createFromArray([1, 2, 3])));
+			assertFalse("vectors should NOT be equal", PersistentVector.createFromArray([1, 2, 0]).equals(PersistentVector.createFromArray([1, 2, 3])));
+			assertFalse("vectors should NOT be equal", PersistentVector.createFromArray([0, 2, 3]).equals(PersistentVector.createFromArray([1, 2, 3])));
+			assertFalse("vectors should NOT be equal", PersistentVector.createFromArray([1, 2, 3, 4]).equals(PersistentVector.createFromArray([1, 2, 3])));
+			assertFalse("vectors should NOT be equal", PersistentVector.createFromArray([1, 2, 3]).equals(PersistentVector.createFromArray([1, 2, 3, 4])));
 		}
 
-		public function testVectorSequencing():void{
-			var l:Vector = Vector.createFromArray([1, 2, 3, 4]);
+		public function testPersistentVectorSequencing():void{
+			var l:PersistentVector = PersistentVector.createFromArray([1, 2, 3, 4]);
 			var s:ISeq = l.seq();
 			assertTrue("first is 1", s.first() == 1);
 			assertTrue("first of rest is 2", s.rest().first() == 2);

@@ -21,6 +21,29 @@ package com.las3r.runtime{
 		private var root:Array;
 		private var tail:Array;
 
+		public static var EMPTY:PersistentVector = new PersistentVector(0, 5, [], []);
+
+		static public function createFromSeq(items:ISeq):PersistentVector{
+			var ret:PersistentVector = EMPTY;
+			for(; items != null; items = items.rest())
+			ret = PersistentVector(ret.cons(items.first()));
+			return ret;
+		}
+
+		static public function createFromArray(items:Array):PersistentVector{
+			var ret:PersistentVector = EMPTY;
+			for(var item:* in items)
+			ret = PersistentVector(ret.cons(item));
+			return ret;
+		}
+
+		public static function createFromArraySlice(items:Array, i:int):PersistentVector{
+			return createFromArray(items.slice(i));
+		}
+
+		public static function createFromMany(...items:Array):PersistentVector{
+			return createFromArray(items);
+		}
 
 		public function PersistentVector(cnt:int, shift:int, root:Array, tail:Array, meta:IMap = null){
 			super(meta);

@@ -51,8 +51,8 @@ package com.las3r.test{
 		public function testVector():void{
 			var rt:RT = new RT();
 			var v:Object = readStr(rt, "[ :bird :cat ]");
-			assertTrue("result is vector", v is Vector);
-			var vec:Vector = Vector(v);
+			assertTrue("result is vector", v is PersistentVector);
+			var vec:PersistentVector = PersistentVector(v);
 			assertTrue("should be 2 items in vec", vec.count() == 2);
 			assertTrue("0th item should be :bird", vec.nth(0) == Keyword.intern2(rt, null, "bird"));
 			assertTrue("1th item should be :cat", vec.nth(1) == Keyword.intern2(rt, null, "cat"));
@@ -62,8 +62,8 @@ package com.las3r.test{
 		public function testWhiteSpace():void{
 			var rt:RT = new RT();
 			var v:Object = readStr(rt, "   [ \n ,,,,:bird, \r,,,,, :cat ]     ");
-			assertTrue("result is vector", v is Vector);
-			var vec:Vector = Vector(v);
+			assertTrue("result is vector", v is PersistentVector);
+			var vec:PersistentVector = PersistentVector(v);
 			assertTrue("should be 2 items in vec", vec.count() == 2);
 			assertTrue("0th item should be :bird", vec.nth(0) == Keyword.intern2(rt, null, "bird"));
 			assertTrue("1th item should be :cat", vec.nth(1) == Keyword.intern2(rt, null, "cat"));
