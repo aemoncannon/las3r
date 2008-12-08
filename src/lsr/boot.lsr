@@ -1856,7 +1856,6 @@
     (remove-ns sym)
     (assert-false (find-ns sym)))
   
-  (assert-true (= "1,2,3" ((memfn join sep) ["1", "2", "3"] ",")))
   (assert-true (= [1 2] (-> [] (conj 1) (conj 2))))
 
   ;;Test destructuring binds
