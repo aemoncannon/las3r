@@ -14,9 +14,7 @@ package com.las3r.runtime{
 	import flash.utils.Dictionary;
 	import com.las3r.util.Util;
 
-
 	public class PersistentHashSet extends APersistentSet{
-
 
 		private static var _empty:PersistentHashSet;
 		public static function empty():PersistentHashSet {
