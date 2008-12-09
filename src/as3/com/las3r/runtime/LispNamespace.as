@@ -17,8 +17,8 @@ package com.las3r.runtime{
 
 	public class LispNamespace implements IHashable{
 		public var name:Symbol;
-		private var _mappings:IMap = new Map();
-		private var _aliases:IMap = new Map();
+		private var _mappings:IMap = RT.map();
+		private var _aliases:IMap = RT.map();
 		private var _rt:RT;
 		private var hash:int;
 

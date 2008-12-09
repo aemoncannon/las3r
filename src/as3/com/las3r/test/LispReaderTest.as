@@ -40,8 +40,8 @@ package com.las3r.test{
 		public function testMap():void{
 			var rt:RT = new RT();
 			var m:Object = readStr(rt, "{ :bird 2 :cat 3 }");
-			assertTrue("result is map", m is Map);
-			var map:Map = Map(m);
+			assertTrue("result is map", m is IMap);
+			var map:IMap = IMap(m);
 			assertTrue("should be 3 items in map", map.count() == 2);
 			assertTrue("should be 2 at :bird", map.valAt(Keyword.intern2(rt, null, "bird")) == 2);
 			assertTrue("should be 3 at :cat", map.valAt(Keyword.intern2(rt, null, "cat")) == 3);
@@ -88,7 +88,7 @@ package com.las3r.test{
 			var list:List = List(o);
 			assertTrue("should be 2 items in list", list.count() == 2);
 			assertTrue("first item should be symbol 'ape'", list.first() == Symbol.intern1(rt, "ape"));
-			assertTrue("second item should be a map", list.rest().first() is Map);
+			assertTrue("second item should be a map", list.rest().first() is IMap);
 		}
 
 		public function testNumbers():void{

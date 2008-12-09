@@ -18,7 +18,7 @@ package com.las3r.runtime{
 		public var prev:Frame;
 
 		public function Frame(bindings:IMap = null, prev:Frame = null){
-			this.bindings = bindings || new Map();
+			this.bindings = bindings || RT.map();
 			this.prev = prev || null;
 		}
 	}
