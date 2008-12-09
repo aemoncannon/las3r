@@ -245,7 +245,7 @@
 (defn hash-set
   "Returns a new hash set with supplied values."
   [& vals]
-  (. com.las3r.runtime.Set (createFromSeq vals)))
+  (. com.las3r.runtime.PersistentHashSet (createFromSeq vals)))
 
 
 (def

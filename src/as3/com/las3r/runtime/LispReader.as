@@ -551,7 +551,7 @@ class SetReader implements IReaderMacro{
 
 	public function invoke(reader:Object, leftparen:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
-		return Set.createFromArray(_reader.readDelimitedList(CharUtil.RBRACE, r));
+		return PersistentHashSet.createFromArray(_reader.readDelimitedList(CharUtil.RBRACE, r));
 	}
 }
 
