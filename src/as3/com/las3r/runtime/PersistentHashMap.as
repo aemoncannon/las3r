@@ -17,8 +17,8 @@ package com.las3r.runtime{
 
 	public class PersistentHashMap extends APersistentMap{
 
-		private count:int;
-		private root:INode;
+		private var count:int;
+		private var root:INode;
 
 		public static EMPTY:PersistentHashMap = new PersistentHashMap(0, new EmptyNode());
 
@@ -116,6 +116,10 @@ package com.las3r.runtime{
 	}
 }
 
+
+import com.las3r.runtime.*;
+import com.las3r.util.*;
+
 interface INode{
 	function assoc(shift:int, hash:int, key:Object, val:Object, addedLeaf:Box):INode;
 
@@ -179,7 +183,7 @@ class FullNode implements INode{
 		return this;
 		else
 		{
-			var newnodes:Array = nodes.clone();
+			var newnodes:Array = ArrayUtil.clone(nodes);
 			newnodes[idx] = n;
 			return new FullNode(newnodes, shift);
 		}
@@ -199,7 +203,7 @@ class FullNode implements INode{
 				ArrayUtil.arraycopy(nodes, idx + 1, newnodes, idx, nodes.length - (idx + 1));
 				return new BitmapIndexedNode(~bitpos(hash, shift), newnodes, shift);
 			}
-			var newnodes:Array = nodes.clone();
+			var newnodes:Array = ArrayUtil.clone(nodes);
 			newnodes[idx] = n;
 			return new FullNode(newnodes, shift);
 		}
@@ -213,7 +217,7 @@ class FullNode implements INode{
 	}
 
 	public function nodeSeq():ISeq{
-		return Seq.create(this, 0);
+		return FullNodeSeq.create(this, 0);
 	}
 
 	public function getHash():int{
@@ -221,13 +225,12 @@ class FullNode implements INode{
 	}
 
 }
-
-class Seq extends ASeq{
+class FullNodeSeq extends ASeq{
 	private var s:ISeq;
 	private var i:int;
 	private var node:FullNode;
 
-	public function Seq(s:ISeq, i:int, node:FullNode, meta:IMap = null){
+	public function FullNodeSeq(s:ISeq, i:int, node:FullNode, meta:IMap = null){
 		super(meta);
 		this.s = s;
 		this.i = i;
@@ -237,7 +240,7 @@ class Seq extends ASeq{
 	public static create(node:FullNode, i:int):ISeq{
 		if(i >= node.nodes.length)
 		return null;
-		return new Seq(node.nodes[i].nodeSeq(), i, node);
+		return new FullNodeSeq(node.nodes[i].nodeSeq(), i, node);
 	}
 
 	override public function first():Object{
@@ -247,14 +250,15 @@ class Seq extends ASeq{
 	override public function rest():ISeq{
 		ISeq nexts = s.rest();
 		if(nexts != null)
-		return new Seq(nexts, i, node);
+		return new FullNodeSeq(nexts, i, node);
 		return create(node, i + 1);
 	}
 
 	override public function withMeta(meta:IMap):IObj{
-		return new Seq(meta, s, i, node);
+		return new FullNodeSeq(s, i, node, meta);
 	}
 }
+
 
 
 class BitmapIndexedNode implements INode{
@@ -268,9 +272,8 @@ class BitmapIndexedNode implements INode{
 	}
 
 	public function index(bit:int):int{
-		return Integer.bitCount(bitmap & (bit - 1));
+		return Numbers.bitCount(bitmap & (bit - 1));
 	}
-
 
 	public function BitmapIndexedNode(bitmap:int, nodes:Array, shift:int){
 		this.bitmap = bitmap;
@@ -285,7 +288,7 @@ class BitmapIndexedNode implements INode{
 		return new BitmapIndexedNode(bitmap, nodes, shift);
 	}
 
-	public static create(shift:int, branch:INode, hash:int, key:Object, val:Object, addedLeaf:Box):INode{
+	public static function create(shift:int, branch:INode, hash:int, key:Object, val:Object, addedLeaf:Box):INode{
 		//		hx:int = branch.getHash()^hash;
 		//		while(mask(hx,shift) == 0)
 		//			shift += 5;
@@ -306,7 +309,7 @@ class BitmapIndexedNode implements INode{
 			return this;
 			else
 			{
-				var newnodes:Array = nodes.clone();
+				var newnodes:Array = ArrayUtil.clone(nodes);
 				newnodes[idx] = n;
 				return new BitmapIndexedNode(bitmap, newnodes, shift);
 			}
@@ -342,7 +345,7 @@ class BitmapIndexedNode implements INode{
 					ArrayUtil.arraycopy(nodes, idx + 1, newnodes, idx, nodes.length - (idx + 1));
 					return new BitmapIndexedNode(bitmap & ~bit, newnodes, shift);
 				}
-				var newnodes:Array = nodes.clone();
+				var newnodes:Array = ArrayUtil.clone(nodes);
 				newnodes[idx] = n;
 				return new BitmapIndexedNode(bitmap, newnodes, shift);
 			}
@@ -367,65 +370,59 @@ class BitmapIndexedNode implements INode{
 	}
 
 	public function nodeSeq():ISeq{
-		return Seq.create(this, 0);
+		return BitmapIndexedNodeSeq.create(this, 0);
 	}
-
-	static class Seq extends ASeq{
-		private var ISeq s;
-		private var i:int;
-		private var BitmapIndexedNode node;
-
-
-		Seq(ISeq s, i:int, BitmapIndexedNode node){
-			this.s = s;
-			this.i = i;
-			this.node = node;
-		}
-
-		Seq(meta:IMap, ISeq s, i:int, BitmapIndexedNode node){
-			super(meta);
-			this.s = s;
-			this.i = i;
-			this.node = node;
-		}
-
-		static ISeq create(BitmapIndexedNode node, i:int){
-			if(i >= node.nodes.length)
-			return null;
-			return new Seq(node.nodes[i].nodeSeq(), i, node);
-		}
-
-		public Object first(){
-			return s.first();
-		}
-
-		public ISeq rest(){
-			ISeq nexts = s.rest();
-			if(nexts != null)
-			return new Seq(nexts, i, node);
-			return create(node, i + 1);
-		}
-
-		public Seq withMeta(meta:IMap){
-			return new Seq(meta, s, i, node);
-		}
-	}
-
-
 }
 
-class LeafNode extends AMapEntry implements INode{
+class BitmapIndexedNodeSeq extends ASeq{
+	private var s:ISeq;
+	private var i:int;
+	private var node:BitmapIndexedNode;
+
+
+	public function BitmapIndexedNodeSeq(s:ISeq, i:int, node:BitmapIndexedNode, meta:IMap = null){
+		super(meta);
+		this.s = s;
+		this.i = i;
+		this.node = node;
+	}
+
+	static function create(node:BitmapIndexedNode, i:int):ISeq{
+		if(i >= node.nodes.length)
+		return null;
+		return new BitmapIndexedNodeSeq(node.nodes[i].nodeSeq(), i, node);
+	}
+
+	public function first():Object{
+		return s.first();
+	}
+
+	public function rest():ISeq{
+		var nexts:ISeq = s.rest();
+		if(nexts != null)
+		return new BitmapIndexedNodeSeq(nexts, i, node);
+		return create(node, i + 1);
+	}
+
+	public function withMeta(meta:IMap):IObj{
+		return new BitmapIndexedNodeSeq(meta, s, i, node);
+	}
+}
+
+
+
+class LeafNode extends MapEntry implements INode{
 	private var hash:int;
 	private var key:Object;
 	private var val:Object;
 
-	public LeafNode(hash:int, key:Object, val:Object){
+	public function LeafNode(hash:int, key:Object, val:Object){
 		this.hash = hash;
 		this.key = key;
 		this.val = val;
 	}
 
-	public INode assoc(shift:int, hash:int, key:Object, val:Object, Box addedLeaf){
+	public function assoc(shift:int, hash:int, key:Object, val:Object, addedLeaf:Box):INode{
 		if(hash == this.hash)
 		{
 			if(Util.equal(key, this.key))
@@ -436,61 +433,61 @@ class LeafNode extends AMapEntry implements INode{
 				return new LeafNode(hash, key, val);
 			}
 			//hash collision - same hash, different keys
-			LeafNode newLeaf = new LeafNode(hash, key, val);
+			var newLeaf:LeafNode = new LeafNode(hash, key, val);
 			addedLeaf.val = newLeaf;
 			return new HashCollisionNode(hash, this, newLeaf);
 		}
 		return BitmapIndexedNode.create(shift, this, hash, key, val, addedLeaf);
 	}
 
-	public INode without(hash:int, key:Object){
+	public function without(hash:int, key:Object):INode{
 		if(hash == this.hash && Util.equal(key, this.key))
 		return null;
 		return this;
 	}
 
-	public LeafNode find(hash:int, key:Object){
+	public function find(hash:int, key:Object):LeafNode{
 		if(hash == this.hash && Util.equal(key, this.key))
 		return this;
 		return null;
 	}
 
-	public ISeq nodeSeq(){
+	public function nodeSeq():ISeq{
 		return RT.cons(this, null);
 	}
 
-	public int getHash(){
+	public function getHash():int{
 		return hash;
 	}
 
-	public Object key(){
+	public function key():Object{
 		return this.key;
 	}
 
-	public Object val(){
+	public function val():Object{
 		return this.val;
 	}
 
-	public Object getKey(){
+	public function getKey():Object{
 		return this.key;
 	}
 
-	public Object getValue(){
+	public function getValue():Object{
 		return this.val;
 	}
 }
 
-class HashCollisionNode implements INode{
 
+class HashCollisionNode implements INode{
 	private var hash:int;
 	private var leaves:Array;
 
-	public HashCollisionNode(hash:int, LeafNode... leaves){
+	public function HashCollisionNode(hash:int, leaves:Array){
 		this.hash = hash;
 		this.leaves = leaves;
 	}
 
-	public INode assoc(shift:int, hash:int, key:Object, val:Object, Box addedLeaf){
+	public function assoc(shift:int, hash:int, key:Object, val:Object, addedLeaf:Box):INode {
 		if(hash == this.hash)
 		{
 			idx:int = findIndex(hash, key);
@@ -498,12 +495,12 @@ class HashCollisionNode implements INode{
 			{
 				if(leaves[idx].val == val)
 				return this;
-				LeafNode[] newLeaves = leaves.clone();
+				var newLeaves:Array = ArrayUtil.clone(leaves);
 				//note  - do not set addedLeaf, since we are replacing
 				newLeaves[idx] = new LeafNode(hash, key, val);
 				return new HashCollisionNode(hash, newLeaves);
 			}
-			LeafNode[] newLeaves = new LeafNode[leaves.length + 1];
+			var newLeaves:Array = new LeafNode[leaves.length + 1];
 			ArrayUtil.arraycopy(leaves, 0, newLeaves, 0, leaves.length);
 			addedLeaf.val = newLeaves[leaves.length] = new LeafNode(hash, key, val);
 			return new HashCollisionNode(hash, newLeaves);
@@ -511,31 +508,31 @@ class HashCollisionNode implements INode{
 		return BitmapIndexedNode.create(shift, this, hash, key, val, addedLeaf);
 	}
 
-	public INode without(hash:int, key:Object){
-		idx:int = findIndex(hash, key);
+	public function without(hash:int, key:Object):INode{
+		var idx:int = findIndex(hash, key);
 		if(idx == -1)
 		return this;
 		if(leaves.length == 2)
 		return idx == 0 ? leaves[1] : leaves[0];
-		LeafNode[] newLeaves = new LeafNode[leaves.length - 1];
+		var newLeaves:Array = new LeafNode[leaves.length - 1];
 		ArrayUtil.arraycopy(leaves, 0, newLeaves, 0, idx);
 		ArrayUtil.arraycopy(leaves, idx + 1, newLeaves, idx, leaves.length - (idx + 1));
 		return new HashCollisionNode(hash, newLeaves);
 	}
 
-	public LeafNode find(hash:int, key:Object){
-		idx:int = findIndex(hash, key);
+	public function find(hash:int, key:Object):LeafNode{
+		var idx:int = findIndex(hash, key);
 		if(idx != -1)
 		return leaves[idx];
 		return null;
 	}
 
-	public ISeq nodeSeq(){
-		return ArraySeq.create((Object[]) leaves);
+	public function nodeSeq():ISeq{
+		return ArraySeq.create(leaves);
 	}
 
-	int findIndex(hash:int, key:Object){
-		for(i:int = 0; i < leaves.length; i++)
+	private function findIndex(hash:int, key:Object):int{
+		for(var i:int = 0; i < leaves.length; i++)
 		{
 			if(leaves[i].find(hash, key) != null)
 			return i;
@@ -543,7 +540,7 @@ class HashCollisionNode implements INode{
 		return -1;
 	}
 
-	public int getHash(){
+	public function getHash():int{
 		return hash;
 	}
 }
