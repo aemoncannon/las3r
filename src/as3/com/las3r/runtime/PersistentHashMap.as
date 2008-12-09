@@ -434,7 +434,7 @@ class LeafNode extends MapEntry implements INode{
 			//hash collision - same hash, different keys
 			var newLeaf:LeafNode = new LeafNode(hash, key, val);
 			addedLeaf.val = newLeaf;
-			return new HashCollisionNode(hash, this, newLeaf);
+			return new HashCollisionNode(hash, [this, newLeaf]);
 		}
 		return BitmapIndexedNode.create(shift, this, hash, key, val, addedLeaf);
 	}
@@ -473,7 +473,7 @@ class HashCollisionNode implements INode{
 	private var hash:int;
 	private var leaves:Array;
 
-	public function HashCollisionNode(hash:int, ...leaves:Array){
+	public function HashCollisionNode(hash:int, leaves:Array){
 		this.hash = hash;
 		this.leaves = leaves;
 	}
@@ -519,7 +519,7 @@ class HashCollisionNode implements INode{
 	}
 
 	public function nodeSeq():ISeq{
-		return ArraySeq.create(leaves);
+		return ArraySeq.createFromArray(leaves);
 	}
 
 	private function findIndex(hash:int, key:Object):int{

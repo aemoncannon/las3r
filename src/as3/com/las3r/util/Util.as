@@ -45,7 +45,7 @@ package com.las3r.util{
 		}
 
 		static public function hash(o:*):int{
-			if(o == null){
+			if(o === null){
 				return 0;
 			}
 			else if(o is Number){
@@ -63,7 +63,7 @@ package com.las3r.util{
 				return h;
 			}
 			else{
-				throw o + " is not hashable."
+				return stringHash(String(o));
 			}
 		}
 

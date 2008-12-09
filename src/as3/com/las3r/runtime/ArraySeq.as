@@ -16,27 +16,20 @@ package com.las3r.runtime{
 	import com.las3r.jdk.util.ArrayUtil;
 
 	public class ArraySeq extends ASeq implements IReduce{
-		private var array:Object;
+		private var array:Array;
 		private var i:int;
 
-		public static function create(...array:Array):ArraySeq{
+		public static function createFromArray(array:Array):ISeq{
 			if(array == null || array.length == 0)
 			return null;
 			return new ArraySeq(array, 0);
 		}
 
-		public static function createFromObject(array:Object):ISeq{
-			if(array == null || array.length == 0)
-			return null;
-			return new ArraySeq(array, 0);
-		}
-
-		public function ArraySeq(array:Object, i:int, meta:IMap = null){
+		public function ArraySeq(array:Array, i:int, meta:IMap = null){
 			super(meta);
 			this.array = array;
 			this.i = i;
 		}
-
 
 		override public function first():Object{
 			return array[i];
