@@ -14,6 +14,7 @@ package com.las3r.runtime{
 	import com.las3r.util.Util;
 
 	public class ASeq extends Obj implements ISeq, IReduce{
+		private var _hash:int = -1;
 
 		public function empty():ISeq{
 			return null;
@@ -34,6 +35,19 @@ package com.las3r.runtime{
 			if(ms != null)
 			return false;
 			return true;
+		}
+
+		override public function hashCode():int{
+			if(_hash == -1)
+			{
+				var hash:int = 0;
+				for(var s:ISeq = seq(); s != null; s = s.rest())
+				{
+					hash = Util.hashCombine(hash, Util.hash(s.first()));
+				}
+				this._hash = hash;
+			}
+			return _hash;
 		}
 
 		public function reduce(f:Function, start:Object):Object{

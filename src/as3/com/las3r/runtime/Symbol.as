@@ -12,6 +12,7 @@
 
 package com.las3r.runtime{
 
+	import com.las3r.util.Util;
 	import com.las3r.util.StringUtil;
 	import com.las3r.runtime.RT;
 
@@ -20,7 +21,7 @@ package com.las3r.runtime{
 		//these must be interned strings!
 		public var ns:String;
 		public var name:String;
-		private var hash:String;
+		private var hash:int;
 
 		public function toString():String{
 			if(ns != null)
@@ -63,11 +64,11 @@ package com.las3r.runtime{
 			super(null);
 			this.name = nameInterned;
 			this.ns = nsInterned;
-			this.hash = this.ns + "/" + this.name;
+			this.hash = Util.hashCombine(Util.hash(nameInterned), Util.hash(nsInterned));
 		}
 
 		override public function hashCode():int{
-			return -1;
+			return this.hash;
 		}
 
 		override public function withMeta(meta:IMap):IObj{

@@ -114,8 +114,6 @@ package com.las3r.runtime{
 		public var CATCH:Symbol;
 		public var FINALLY:Symbol;
 		public var THROW:Symbol;
-		public var MONITOR_ENTER:Symbol;
-		public var MONITOR_EXIT:Symbol;
 		public var NEW:Symbol;
 		public var LIST:Symbol;
 		public var HASHMAP:Symbol;
@@ -266,8 +264,6 @@ package com.las3r.runtime{
 			CATCH = sym1("catch");
 			FINALLY = sym1("finally");
 			THROW = sym1("throw");
-			MONITOR_ENTER = sym1("monitor-enter");
-			MONITOR_EXIT = sym1("monitor-exit");
 			NEW = sym1("new");
 			_AMP_ = sym1("&");
 			ISEQ = sym1("com.las3r.runtime.ISeq");

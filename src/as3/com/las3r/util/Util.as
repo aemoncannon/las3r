@@ -48,11 +48,19 @@ package com.las3r.util{
 			if(o == null){
 				return 0;
 			}
-			else if(o is String || o is Number || o is Boolean || !(o is Object)){
-				return o;
+			else if(o is Number){
+				return Math.floor(o);
+			}
+			else if(o is String){
+				return stringHash(o);
+			}
+			else if(o is Boolean){
+				return o ? 1 : 0;
 			}
 			else if(o is IHashable){
-				return o.hashCode();
+				var h:int = o.hashCode();
+				if(h == -1){ throw  o + " is hashed to -1."; }
+				return h;
 			}
 			else{
 				throw o + " is not hashable."
@@ -63,6 +71,15 @@ package com.las3r.util{
 			//a la boost
 			seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			return seed;
+		}
+
+		static public function stringHash(str:String):int{
+			var h:int = 0;
+			var len:int = str.length;
+			for (var i:int = 0; i < len; i++) {
+				h = (((31 * h) >> 0) + str.charCodeAt(i)) >> 0;
+			}
+			return h;
 		}
 
 	}

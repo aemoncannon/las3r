@@ -13,12 +13,14 @@
 package com.las3r.runtime{
 
 	import flash.utils.Dictionary;
+	import com.las3r.util.Util;
 
 	public class LispNamespace implements IHashable{
 		public var name:Symbol;
 		private var _mappings:IMap = new Map();
 		private var _aliases:IMap = new Map();
 		private var _rt:RT;
+		private var hash:int;
 
 		public static var LAS3R_NAMESPACE_NAME:String = "las3r";
 
@@ -31,12 +33,13 @@ package com.las3r.runtime{
 		}
 
 		public function hashCode():int{
-			return -1;
+			return this.hash;
 		}
 
 		function LispNamespace(rt:RT, name:Symbol){
 			_rt = rt;
 			this.name = name;
+			this.hash = Util.stringHash(toString());
 			rt.DEFAULT_IMPORTS.each(function(key:Object, val:Object):void{
 					_mappings = _mappings.assoc(key, val);
 				});

@@ -12,6 +12,7 @@
 
 package com.las3r.runtime{
 
+	import com.las3r.util.Util;
 	import com.las3r.runtime.RT;
 
 	public class Var extends Obj{
@@ -23,6 +24,7 @@ package com.las3r.runtime{
 		public var sym:Symbol;
 		public var ns:LispNamespace;
 		private var _rt:RT;
+		private var hash:int;
 
 		public function Var(rt:RT, ns:LispNamespace, sym:Symbol, root:Object = null){
 			_rt = rt;
@@ -30,6 +32,7 @@ package com.las3r.runtime{
 			this.sym = sym;
 			this.count = 0;
 			this.root = root === null ? UNBOUND_VAL : root;
+			this.hash = Util.stringHash(toString());
 			setMeta(RT.map());
 		}
 
@@ -41,7 +44,7 @@ package com.las3r.runtime{
 		}
 
 		override public function hashCode():int{
-			return -1;
+			return this.hash;
 		}
 
 		public static function create(rt):Var{

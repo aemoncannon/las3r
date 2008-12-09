@@ -15,7 +15,7 @@ package com.las3r.runtime{
 	import com.las3r.io.*;
 	import com.las3r.util.*;
 
-	public class UnquoteSplicing{
+	public class UnquoteSplicing implements IHashable{
 		public var o:Object;
 
 		public function UnquoteSplicing(o:Object){
@@ -24,6 +24,10 @@ package com.las3r.runtime{
 
 		public function equals(obj:Object):Boolean{
 			return obj is UnquoteSplicing && o.equals(obj.o);
+		}
+
+		public function hashCode():int{
+			return Util.hash(o);
 		}
 	}
 
