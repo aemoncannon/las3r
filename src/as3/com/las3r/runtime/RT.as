@@ -40,7 +40,7 @@ package com.las3r.runtime{
 		public var internedStrings:Object = {};
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
-		public var namespaces:IMap = new Map();
+		public var namespaces:IMap = RT.map();
 		private var specials:IMap;
 		public var dvals:Frame = new Frame();
 
@@ -226,7 +226,7 @@ package com.las3r.runtime{
 			HASHMAP = sym1("hash-map");
 			Var.internWithRoot(LAS3R_NAMESPACE, HASHMAP,
 				function(...args:Array):Object{
-					return Map.createFromArray(args);
+					return PersistentHashMap.createFromArray(args);
 				});
 			HASHMAP = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "hash-map");
 
@@ -767,7 +767,8 @@ package com.las3r.runtime{
 		}
 
 		public static function map(...init:Array):IMap{
-			return Map.createFromArray(init);
+			if(init.length == 0){ return PersistentHashMap.EMPTY; }
+			return PersistentHashMap.createFromArray(init);
 		}
 
 		public static function vector(...init:Array):IVector{

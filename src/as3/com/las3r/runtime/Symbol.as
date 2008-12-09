@@ -66,8 +66,8 @@ package com.las3r.runtime{
 			this.hash = this.ns + "/" + this.name;
 		}
 
-		override public function hashCode():*{
-			return this.hash;
+		override public function hashCode():int{
+			return -1;
 		}
 
 		override public function withMeta(meta:IMap):IObj{

@@ -30,8 +30,8 @@ package com.las3r.runtime{
 			return "#<LispNamespace: " + name + ">";
 		}
 
-		public function hashCode():*{
-			return toString();
+		public function hashCode():int{
+			return -1;
 		}
 
 		function LispNamespace(rt:RT, name:Symbol){

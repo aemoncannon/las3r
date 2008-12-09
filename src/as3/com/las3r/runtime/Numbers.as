@@ -53,7 +53,7 @@ package com.las3r.runtime{
 		static public function sar(a:Number, b:Number):Number{ return a >> b; }
 
 		static public function bitCount(a:int):int{ 
-			i = i - ((i >>> 1) & 0x55555555);
+			var i:int = a - ((a >>> 1) & 0x55555555);
             i = (i & 0x33333333) + ((i >>> 2) & 0x33333333);
             i = (i + (i >>> 4)) & 0x0f0f0f0f;
             i = i + (i >>> 8);

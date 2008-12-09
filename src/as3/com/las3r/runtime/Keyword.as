@@ -38,8 +38,8 @@ package com.las3r.runtime{
 			this.hash = ":" + this.sym.hashCode;
 		}
 
-		public function hashCode():*{
-			return this.hash;
+		public function hashCode():int{
+			return -1;
 		}
 
 		public function equals(o:*):Boolean{

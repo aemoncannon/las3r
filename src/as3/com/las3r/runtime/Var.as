@@ -40,8 +40,8 @@ package com.las3r.runtime{
 			return "#<Var: " + (sym != null ? sym.toString() : "--unnamed--") + ">";
 		}
 
-		override public function hashCode():*{
-			return toString();
+		override public function hashCode():int{
+			return -1;
 		}
 
 		public static function create(rt):Var{
@@ -123,7 +123,7 @@ package com.las3r.runtime{
 
 		public static function pushBindings(rt:RT, bindings:IMap):void{
 			var f:Frame = rt.dvals;
-			var newMap:IMap = new Map();
+			var newMap:IMap = RT.map();
 			bindings.each(function(v:Var, val:*):void{
 					v.count += 1;
 					newMap = newMap.assoc(v, new Box(val));

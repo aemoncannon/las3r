@@ -240,7 +240,7 @@
   "keyval => key val
   Returns a new hash map with supplied mappings."
   [& keyvals]
-  (. com.las3r.runtime.Map (createFromSeq keyvals)))
+  (. com.las3r.runtime.PersistentHashMap (createFromSeq keyvals)))
 
 (defn hash-set
   "Returns a new hash set with supplied values."
