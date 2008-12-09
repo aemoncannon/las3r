@@ -75,8 +75,7 @@ package com.las3r.runtime{
 			{
 				if(i >= tailoff())
 				{
-					var newTail:Array = new Array(tail.length);
-					ArrayUtil.arraycopy(tail, 0, newTail, 0, tail.length);
+					var newTail:Array = ArrayUtil.clone(tail);
 					newTail[i & 0x01f] = val;
 					return new PersistentVector(cnt, shift, root, newTail, meta);
 				}
@@ -88,8 +87,7 @@ package com.las3r.runtime{
 		}
 
 		private static function doAssoc(level:int, arr:Array, i:int, val:Object):Array{
-			var ret:Array = new Array(arr.length);
-			ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
+			var ret:Array = ArrayUtil.clone(arr);
 			if(level == 0)
 			{
 				ret[i & 0x01f] = val;
@@ -141,8 +139,7 @@ package com.las3r.runtime{
 				newchild = pushTail(level - 5, arr[arr.length - 1], tailNode, expansion);
 				if(expansion.val == null)
 				{
-					var ret:Array = new Array(arr.length);
-					ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
+					var ret:Array = ArrayUtil.clone(arr);
 					ret[arr.length - 1] = newchild;
 					return ret;
 				}
@@ -194,8 +191,7 @@ package com.las3r.runtime{
 				var newchild:Array = popTail(shift - 5, arr[arr.length - 1], ptail);
 				if(newchild != null)
 				{
-					var ret:Array = new Array(arr.length);
-					ArrayUtil.arraycopy(arr, 0, ret, 0, arr.length);
+					var ret:Array = ArrayUtil.clone(arr);
 					ret[arr.length - 1] = newchild;
 					return ret;
 				}

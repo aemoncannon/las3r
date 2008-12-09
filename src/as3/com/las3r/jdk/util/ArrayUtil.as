@@ -53,6 +53,12 @@ package com.las3r.jdk.util
 				dest[destPos + i] = src[srcPos + i];
 			}
 		}
+
+		public static function clone(src:Array):Array{
+			var ret:Array = new Array(src.length);
+			ArrayUtil.arraycopy(src, 0, ret, 0, src.length);
+			return ret;
+		}
 		
 	}
 }

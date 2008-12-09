@@ -44,7 +44,7 @@ package com.las3r.util{
 			return -1;
 		}
 
-		static public function hash(o:*):*{
+		static public function hash(o:*):int{
 			if(o == null){
 				return 0;
 			}

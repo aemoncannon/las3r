@@ -11,6 +11,6 @@
 
 package com.las3r.runtime{
     public interface IHashable{
-		function hashCode():*;
+		function hashCode():int;
     }
 }

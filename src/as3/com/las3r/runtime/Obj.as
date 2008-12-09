@@ -28,7 +28,7 @@ package com.las3r.runtime{
 			return null;
 		}
 
-		public function hashCode():*{
+		public function hashCode():int{
 			throw "Subclass responsibility. " + this + " is not hashable.";
 			return -1;
 		}

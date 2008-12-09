@@ -74,7 +74,7 @@ package com.las3r.runtime{
 			return true;
 		}
 
-		override public function hashCode():*{
+		override public function hashCode():int{
 			if(_hash == -1)
 			{
 				var hash:int = 1;
