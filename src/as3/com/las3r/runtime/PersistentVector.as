@@ -21,17 +21,21 @@ package com.las3r.runtime{
 		private var root:Array;
 		private var tail:Array;
 
-		public static var EMPTY:PersistentVector = new PersistentVector(0, 5, [], []);
+		private static var _empty:PersistentVector;
+		public static function empty():PersistentVector {
+			_empty = _empty || new PersistentVector(0, 5, [], []);
+			return _empty;
+		}
 
 		static public function createFromSeq(items:ISeq):PersistentVector{
-			var ret:PersistentVector = EMPTY;
+			var ret:PersistentVector = empty();
 			for(; items != null; items = items.rest())
 			ret = PersistentVector(ret.cons(items.first()));
 			return ret;
 		}
 
 		static public function createFromArray(items:Array):PersistentVector{
-			var ret:PersistentVector = EMPTY;
+			var ret:PersistentVector = empty();
 			for each(var item:* in items)
 			ret = PersistentVector(ret.cons(item));
 			return ret;

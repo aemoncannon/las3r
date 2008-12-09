@@ -20,7 +20,11 @@ package com.las3r.runtime{
 		private var _count:int;
 		private var root:INode;
 
-		public static var EMPTY:PersistentHashMap = new PersistentHashMap(0, new EmptyNode());
+		private static var _empty:PersistentHashMap;
+		public static function empty():PersistentHashMap {
+			_empty = _empty || new PersistentHashMap(0, new EmptyNode());
+			return _empty;
+		}
 
 
 		public static function createFromMany(...init:Array):PersistentHashMap {
@@ -28,7 +32,7 @@ package com.las3r.runtime{
 		}
 
 		public static function createFromArray(init:Array):PersistentHashMap {
-			var ret:IMap = EMPTY;
+			var ret:IMap = empty();
 			for(var i:int = 0; i < init.length; i += 2)
 			{
 				ret = ret.assoc(init[i], init[i + 1]);
@@ -37,7 +41,7 @@ package com.las3r.runtime{
 		}
 
 		public static function createFromSeq(items:ISeq):PersistentHashMap{
-			var ret:IMap = EMPTY;
+			var ret:IMap = empty();
 			for(; items != null; items = items.rest().rest())
 			{
 				if(items.rest() == null)
@@ -89,7 +93,7 @@ package com.las3r.runtime{
 			if(newroot == root)
 			return this;
 			if(newroot == null)
-			return IMap(EMPTY.withMeta(meta));
+			return IMap(empty().withMeta(meta));
 			return new PersistentHashMap(_count - 1, newroot, meta);
 		}
 
@@ -339,7 +343,7 @@ class BitmapIndexedNode implements INode{
 					return null;
 					//					if(nodes.length == 2)
 					//						return nodes[idx == 0?1:0];
-					var newnodes:Array = new INode[nodes.length - 1];
+					var newnodes:Array = new Array(nodes.length - 1);
 					ArrayUtil.arraycopy(nodes, 0, newnodes, 0, idx);
 					ArrayUtil.arraycopy(nodes, idx + 1, newnodes, idx, nodes.length - (idx + 1));
 					return new BitmapIndexedNode(bitmap & ~bit, newnodes, shift);
@@ -487,7 +491,7 @@ class HashCollisionNode implements INode{
 				newLeaves[idx] = new LeafNode(hash, key, val);
 				return new HashCollisionNode(hash, newLeaves);
 			}
-			newLeaves = new LeafNode[leaves.length + 1];
+			newLeaves = new Array(leaves.length + 1);
 			ArrayUtil.arraycopy(leaves, 0, newLeaves, 0, leaves.length);
 			addedLeaf.val = newLeaves[leaves.length] = new LeafNode(hash, key, val);
 			return new HashCollisionNode(hash, newLeaves);
@@ -501,7 +505,7 @@ class HashCollisionNode implements INode{
 		return this;
 		if(leaves.length == 2)
 		return idx == 0 ? leaves[1] : leaves[0];
-		var newLeaves:Array = new LeafNode[leaves.length - 1];
+		var newLeaves:Array = new Array(leaves.length - 1);
 		ArrayUtil.arraycopy(leaves, 0, newLeaves, 0, idx);
 		ArrayUtil.arraycopy(leaves, idx + 1, newLeaves, idx, leaves.length - (idx + 1));
 		return new HashCollisionNode(hash, newLeaves);
@@ -521,7 +525,7 @@ class HashCollisionNode implements INode{
 	private function findIndex(hash:int, key:Object):int{
 		for(var i:int = 0; i < leaves.length; i++)
 		{
-			if(leaves[i].find(hash, key) != null)
+			if(INode(leaves[i]).find(hash, key) != null)
 			return i;
 		}
 		return -1;

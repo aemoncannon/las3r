@@ -185,12 +185,8 @@ package com.las3r.runtime{
 			}
 		}
 
-		public function empty():IVector{
-			return PersistentVector.EMPTY;
-		}
-
 		public function collect(iterator:Function):IVector{
-			var v:IVector = empty();
+			var v:IVector = PersistentVector.empty();
 			for(var s:ISeq = seq(); s != null; s = s.rest())
 			{
 				v = v.cons(iterator(s.first()));
@@ -319,14 +315,11 @@ class SubVector extends APersistentVector{
 		return new SubVector(v.assocN(end, o), start, end + 1, meta);
 	}
 
-	override public function empty():IVector{
-		return IVector(PersistentVector.EMPTY.withMeta(meta));
-	}
 
 	override public function pop():IVector{
 		if(end - 1 == start)
 		{
-			return PersistentVector.EMPTY;
+			return PersistentVector.empty();
 		}
 		return new SubVector(v, start, end - 1, meta);
 	}

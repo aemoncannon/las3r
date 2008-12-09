@@ -767,12 +767,12 @@ package com.las3r.runtime{
 		}
 
 		public static function map(...init:Array):IMap{
-			if(init.length == 0){ return PersistentHashMap.EMPTY; }
+			if(init.length == 0){ return PersistentHashMap.empty(); }
 			return PersistentHashMap.createFromArray(init);
 		}
 
 		public static function vector(...init:Array):IVector{
-			if(init.length == 0){ return PersistentVector.EMPTY; }
+			if(init.length == 0){ return PersistentVector.empty(); }
 			else return PersistentVector.createFromArray(init);
 		}
 
@@ -781,7 +781,7 @@ package com.las3r.runtime{
 			throw new Error("IndexOutOfBoundsException");
 
 			if(start == end)
-			return PersistentVector.EMPTY;
+			return PersistentVector.empty();
 
 			if(!v is APersistentVector)
 			throw new Error("UnsupportedOperationException");
