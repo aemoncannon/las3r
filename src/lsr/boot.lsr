@@ -122,10 +122,10 @@
  (fn assoc
    ([map key val] (. com.las3r.runtime.RT (assoc map key val)))
    ([map key val & kvs]
-    (let [ret (assoc map key val)]
-      (if kvs
-        (recur ret (first kvs) (second kvs) (rrest kvs))
-        ret)))))
+      (let [ret (assoc map key val)]
+	(if kvs
+	  (recur ret (first kvs) (second kvs) (rrest kvs))
+	  ret)))))
 
 ;;;;;;;;;;;;;;;; loop ;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -223,7 +223,10 @@
 
 (. (var defn) (setMacro))
 
-
+(defn to-array
+  "Returns an array of Objects containing the contents of coll, which
+  can be any Collection."
+  [coll] (. com.las3r.runtime.RT (toArray coll)))
 
 (defn cast
   "Throws an Error if x is not a c, else returns x."
@@ -1124,6 +1127,15 @@
 	   map)))
 
 
+(defn line-seq
+  "Returns the lines of text from rdr as a lazy sequence of strings.
+  rdr must implement java.io.BufferedReader."
+  [#^com.las3r.jdk.io.BufferedReader rdr]
+  (let [line  (. rdr (readLine))]
+    (when line
+      (lazy-cons line (line-seq rdr)))))
+
+
 (defn eval
   "Evaluates the form data structure (provided as a string!) and calls back with the result
    if callback is provided."
@@ -1660,23 +1672,23 @@
 (defn distinct
   "Returns a lazy sequence of the elements of coll with duplicates removed"
   [coll] 
-    (let [step (fn step [[f & r :as xs] seen]
-                   (when xs
-                     (if (contains? seen f) (recur r seen)
-                         (lazy-cons f (step r (conj seen f))))))]
-      (step (seq coll) #{})))
+  (let [step (fn step [[f & r :as xs] seen]
+	       (when xs
+		 (if (contains? seen f) (recur r seen)
+		     (lazy-cons f (step r (conj seen f))))))]
+    (step (seq coll) #{})))
 ;;(distinct '(1 1 4 3 4 2 ))
 
 (defmacro if-let 
   "if test is true, evaluates then with binding-form bound to the value of test, if not, yields else"
   ([binding-form test then]
-   `(if-let ~binding-form ~test ~then nil))
+     `(if-let ~binding-form ~test ~then nil))
   ([binding-form test then else]
-   `(let [temp# ~test]
-      (if temp# 
-        (let [~binding-form temp#]
-          ~then)
-        ~else))))
+     `(let [temp# ~test]
+	(if temp# 
+	  (let [~binding-form temp#]
+	    ~then)
+	  ~else))))
 
 (defmacro when-let 
   "when test is true, evaluates body with binding-form bound to the value of test"
@@ -1720,21 +1732,20 @@
 (defn- read-bytes
   "Helper function for reading 0-terminated strings from eval_pipe."
   [socket buffer]
-  (let [to-eval []
-	term 0]
-    (loop* []
+  (let [term 0]
+    (loop* [to-eval []]
 	   (if (> (. socket bytesAvailable) 0)
 	     (let [byte (. socket (readUnsignedByte))]
 	       (if (= byte term)
-		 (do
-		   (. to-eval (push (str buffer)))
-		   (. buffer (clear)))
-		 (do
-		   (. buffer (append (char-code->str byte)))))
-	       (recur)
-	       )))
-    to-eval
-    ))
+		 (let [src (str buffer)]
+		   (. buffer (clear))
+		   (recur (cons src to-eval)))
+		 (let []
+		   (. buffer (append (char-code->str byte)))
+		   (recur to-eval)
+		   )))
+	     to-eval
+	     ))))
 
 
 (defn connect-to-eval-pipe
@@ -1758,6 +1769,7 @@
        (. socket (connect "localhost" port))
        socket
        )))
+(def ctep connect-to-eval-pipe)
 
 (defn load-url [url on-complete on-error]
   "Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners."
@@ -1885,8 +1897,15 @@
   (assert-true (= '(0 1 2 3 4 5) (range 6)))
   (assert-true (= '(1 2 3 4 5) (range 1 6)))
 
+  (let [s (line-seq (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\ndude")))]
+     (assert-true (= (first s) "hello"))
+     (assert-true (= (second s) "dude")))
+
   )
 
 ;;(run-tests)
 
 ;;(connect-to-eval-pipe)
+
+;; (def rdr (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\ndude")))
+;; (. rdr (readLine))

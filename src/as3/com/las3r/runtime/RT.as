@@ -808,6 +808,13 @@ package com.las3r.runtime{
 			return ret;
 		}
 
+		public static function toArray(obj:Object):Array{
+			if(obj is Array) return obj as Array;
+			if(obj is ISeq) return seqToArray(ISeq(obj));
+			throw new Error("UnsupportedOperationException");
+			return null;
+		}
+
 		public function propertyNamesList(object:Object):List{
 			var result:Array = [];
 

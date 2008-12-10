@@ -22,6 +22,7 @@ http_server.mount_proc("/push"){ |req, res|
     if params["src"]
       src = params["src"][0]
       @eval_q.push(src)
+      puts "PUSH: #{src[0..20]}......"
     end
   end
 }
@@ -38,8 +39,10 @@ def handle_socket_client(client)
     begin
       loop do
         if @eval_q.length > 0
-          client.write(@eval_q.pop)
+          src = @eval_q.pop
+          client.write(src)
           client.write("\0")
+          puts "POP: #{src[0..20]}......"
         end
         sleep 0.1
       end
