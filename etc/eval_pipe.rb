@@ -28,8 +28,6 @@ http_server.mount_proc("/push"){ |req, res|
 }
 
 
-socket_server = TCPServer.open(SOCKET_PORT)
-
 def handle_socket_client(client)
   Thread.start do
     port = client.peeraddr[1]
@@ -55,6 +53,7 @@ def handle_socket_client(client)
   end
 end
 
+socket_server = TCPServer.open(SOCKET_PORT)
 puts "Listening to tcp socket connections on port #{SOCKET_PORT}."
 Thread.start do 
   client = nil

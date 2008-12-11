@@ -128,7 +128,7 @@ package com.las3r.runtime{
 			{
 				if(r is LineNumberingPushbackReader)
 				var lineNumber = LineNumberingPushbackReader(r).getLineNumber();
-				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber + ": " + e.message, e);
+				var lispError:ReaderError = new ReaderError("ReaderError:" + lineNumber, e);
 				throw lispError;
 			}
 			return null;

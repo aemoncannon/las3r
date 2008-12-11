@@ -345,7 +345,7 @@ package com.las3r.runtime{
 			}
 			catch(e:Error)
 			{
-				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()) + ": " + e.message, e)
+				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()), e)
 				throw lispError;
 			}
 			finally
