@@ -256,7 +256,7 @@ package com.las3r.jdk.io{
 		/**
 		* This method determines whether or not a stream is ready to be read.  If
 		* this method returns <code>false</code> then this stream could (but is
-		* not guaranteed to) block on the next read attempt.
+			* not guaranteed to) block on the next read attempt.
 		*
 		* @return <code>true</code> if this stream is ready to be read, 
 		* <code>false</code> otherwise
@@ -440,7 +440,7 @@ package com.las3r.jdk.io{
 				for(var j:int = pos; j < i - pos; j++){
 					byteArray.writeByte(buffer[j]);
 				}
-				var str:String = byteArray.readUTFBytes(byteArray.length)
+				var str:String = byteArray.toString();
 
 				pos = i + 1;
 				// If the last char in the buffer is a '\r', we must remember
@@ -491,7 +491,12 @@ package com.las3r.jdk.io{
 				sbuf.appendBytesFromArray(buffer, pos - 1, i - (pos - 1));
 				pos = i;
 			}
-			return (sbuf.length() == 0 && eof) ? null : sbuf.toString();
+			if (sbuf.length() == 0 && eof){
+				return null;
+			} 
+			else{
+				return sbuf.toString();
+			}
 		}
 
 		/**

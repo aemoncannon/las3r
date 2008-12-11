@@ -27,10 +27,10 @@ package com.las3r.util
 
 		public function appendBytesFromArray(buffer:Array, i:int, j:int):StringBuffer{
 			var byteArray:ByteArray = new ByteArray();
-			for(var index:int = i; i < j; index++){
-				byteArray.writeByte(buffer[index]);
+			for(var index:int = 0; index < j; index++){
+				byteArray.writeByte(buffer[i + index]);
 			}
-			var str:String = byteArray.readUTFBytes(byteArray.length);
+			var str:String = byteArray.toString();
 			return append(str);
 		}
 

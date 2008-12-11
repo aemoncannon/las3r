@@ -1897,15 +1897,18 @@
   (assert-true (= '(0 1 2 3 4 5) (range 6)))
   (assert-true (= '(1 2 3 4 5) (range 1 6)))
 
+  ;; line-seq with line-feed
   (let [s (line-seq (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\ndude")))]
+     (assert-true (= (first s) "hello"))
+     (assert-true (= (second s) "dude")))
+
+  ;; now with carriage return..
+  (let [s (line-seq (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\r\ndude")))]
      (assert-true (= (first s) "hello"))
      (assert-true (= (second s) "dude")))
 
   )
 
 ;;(run-tests)
-
 ;;(connect-to-eval-pipe)
 
-;; (def rdr (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\ndude")))
-;; (. rdr (readLine))

@@ -45,6 +45,15 @@ package com.las3r.test{
 			assertTrue("read string should be the same", str == result);
 		}
 
+		public function testReadLine():void{
+			var str:String = "hello\ndude"
+			var s:BufferedReader = new BufferedReader(new StringReader(str));
+			var result:String = s.readLine();
+			assertTrue("result should be 'hello'", result == "hello");
+			result = s.readLine();
+			assertTrue("result should be 'dude'", result == "dude");
+		}
+
 
 
 	}
