@@ -148,8 +148,6 @@ package com.las3r.runtime{
 
 			var expr:Expr = analyze(C.EXPRESSION, form);
 
-
-
 			/* Emit bytecode to do the following:
 			*
 			* - Evaluate 'expr'
@@ -487,31 +485,6 @@ import com.hurlant.eval.abc.ABCSlotTrait;
 import com.hurlant.eval.abc.ABCException;
 import org.pranaframework.reflection.Type;
 import org.pranaframework.reflection.Field;
-
-
-class C{
-	private var _val:String;
-	public static const STATEMENT:C = new C("statement");
-	public static const EXPRESSION:C = new C("expression");
-	public static const RETURN:C = new C("return");
-	public static const INTERPRET:C = new C("interpret");
-
-	public function C(str:String){
-		_val = str;
-	}
-	public function toString():String{
-		return _val;
-	}
-}
-
-
-interface Expr{
-
-	function interpret():Object;
-
-	function emit(context:C, gen:CodeGen):void;
-
-}
 
 
 interface AssignableExpr{
