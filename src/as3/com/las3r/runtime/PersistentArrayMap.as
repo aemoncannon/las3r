@@ -19,7 +19,23 @@ package com.las3r.runtime{
 	public class PersistentArrayMap extends APersistentMap{
 
 		private var array:Array;
-		public static var EMPTY:PersistentArrayMap = new PersistentArrayMap();
+		private static var _empty:PersistentArrayMap;
+		public static function empty():PersistentArrayMap {
+			_empty = _empty || new PersistentArrayMap();
+			return _empty;
+		}
+
+		public static function createFromMany(...init:Array):PersistentArrayMap {
+			return createFromArray(init);
+		}
+
+		public static function createFromArray(init:Array):PersistentArrayMap {
+			return new PersistentArrayMap(ArrayUtil.clone(init));
+		}
+
+		public static function createFromSeq(items:ISeq):PersistentArrayMap{
+			return new PersistentArrayMap(RT.seqToArray(items));
+		}
 
 		public function PersistentArrayMap(init:Array = null, meta:IMap = null){
 			this.array = init || [];
@@ -92,7 +108,7 @@ package com.las3r.runtime{
 		}
 
 		public function empty():IMap{
-			return IMap(EMPTY.withMeta(meta));
+			return IMap(PersistentArrayMap.empty().withMeta(meta));
 		}
 
 		override public function valAt(key:Object, notFound:Object = null):Object{

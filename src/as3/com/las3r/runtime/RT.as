@@ -141,7 +141,7 @@ package com.las3r.runtime{
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
-			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer];
+			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
 			instances.push(this);
 			instanceId = instances.length - 1;
 			constants = [];
@@ -506,8 +506,12 @@ package com.las3r.runtime{
 		public static function count(o:Object):int{
 			if(o == null)
 			return 0;
-			else if(o is ASeq)
-			return (ASeq(o)).count();
+			else if(o is ISeq)
+			return (ISeq(o)).count();
+			else if(o is IVector)
+			return (IVector(o)).count();
+			else if(o is IMap)
+			return (IMap(o)).count();
 			else if(o is String)
 			return (String(o)).length;
 			else if(o is Array)

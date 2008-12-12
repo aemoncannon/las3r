@@ -69,12 +69,19 @@
     :arglists '([x])}
  rrest (fn rrest [x] (rest (rest x))))
 
+
 (def
- #^{:arglists '([coll x])
+ #^{:arglists '([coll x] [coll x & xs])
     :doc "conj[oin]. Returns a new collection with the xs
     'added'. (conj nil item) returns (item).  The 'addition' may
     happen at different 'places' depending on the concrete type."}
- conj (fn conj [coll x] (. com.las3r.runtime.RT (conj coll x))))
+ conj (fn conj 
+        ([coll x] (. com.las3r.runtime.RT (conj coll x)))
+        ([coll x & xs]
+	   (if xs
+	     (recur (conj coll x) (first xs) (rest xs))
+	     (conj coll x)))))
+
 
 (def
  #^{:arglists '([coll])
@@ -244,6 +251,12 @@
   Returns a new hash map with supplied mappings."
   [& keyvals]
   (. com.las3r.runtime.PersistentHashMap (createFromSeq keyvals)))
+
+(defn array-map
+  "keyval => key val
+  Returns a new array map with supplied mappings."
+  [& keyvals]
+  (. com.las3r.runtime.PersistentArrayMap (createFromSeq keyvals)))
 
 (defn hash-set
   "Returns a new hash set with supplied values."
@@ -785,6 +798,16 @@
 ;; clojury aliases
 (def bit-shift-left bit-shl)
 (def bit-shift-right bit-sar)
+
+
+(defn even?
+  "Returns true if n is even, throws an exception if n is not an integer"
+  [n] (zero? (bit-and n 1)))
+
+(defn odd?
+  "Returns true if n is odd, throws an exception if n is not an integer"
+  [n] (not (even? n)))
+
 
 ;;;;;;;;; var stuff      
 
@@ -1506,7 +1529,7 @@
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
 (defn destructure [bindings]
-  (let [bmap (apply hash-map bindings)
+  (let [bmap (apply array-map bindings)
         pb (fn pb [bvec b v]
 	     (let [pvec
 		   (fn [bvec b val]
@@ -1515,7 +1538,7 @@
 			       n 0
 			       bs b
 			       seen-rest? false]
-			      (if bs
+			      (if (seq bs)
 				(let [firstb (first bs)]
 				  (cond
 				   (= firstb '&) (recur (pb ret (second bs) (list `nthrest gvec n))
@@ -1542,7 +1565,7 @@
 					      (get bes (key entry))))
 				    (dissoc b :as :or)
 				    {:keys (fn [a] (keyword (str a))), :strs str, :syms (fn [a] (list `quote a))})]
-			      (if bes
+			      (if (seq bes)
 				(let [bb (key (first bes))
 				      bk (val (first bes))
 				      has-default (contains? defaults bb)]
@@ -1572,8 +1595,9 @@
   the binding-forms are bound to their respective init-exprs or parts
   therein."
   [bindings & body]
+  (when (odd? (count bindings))
+    (throw (new Error "Odd number of elements in let bindings")))
   `(let* ~(destructure bindings) ~@body))
-
 
 ;; ((fn [[x y z] a b c & d] x) [1 2 3] 2 3 4 5 6 7)
 (defmacro fn
@@ -1643,6 +1667,70 @@
 		  (let ~(vec (interleave bs gs))
 		    ~@body)))))))
 
+(defmacro when-first
+  "bindings => x xs
+
+  Same as (when (seq xs) (let [x (first xs)] body))"
+  [bindings & body]
+  (if (vector? bindings)
+    (let [[x xs] bindings]
+      `(when (seq ~xs)
+         (let [~x (first ~xs)]
+           ~@body)))
+    (throw (new Error
+		"when-first now requires a vector for its binding"))))
+
+(defmacro lazy-cat
+  "Expands to code which yields a lazy sequence of the concatenation
+  of the supplied colls.  Each coll expr is not evaluated until it is
+  needed."
+  ([coll] `(seq ~coll))
+  ([coll & colls]
+     `(let [iter# (fn iter# [coll#]
+		    (if (seq coll#)
+		      (lazy-cons (first coll#) (iter# (rest coll#)))
+		      (lazy-cat ~@colls)))]
+	(iter# ~coll))))
+
+
+(defmacro for
+  "List comprehension. Takes a vector of one or more
+ binding-form/collection-expr pairs, each followed by an optional filtering
+ :when/:while expression (:when test or :while test), and yields a
+ lazy sequence of evaluations of expr. Collections are iterated in a
+ nested fashion, rightmost fastest, and nested coll-exprs can refer to
+ bindings created in prior binding-forms.
+ (take 100 (for [x (range 100000000) y (range 1000000) :while (< y x)]  [x y]))"
+  ([seq-exprs expr]
+     (let [pargs (fn [xs]
+		   (loop [ret []
+			  [b e & [w f & wr :as r] :as xs] (seq xs)]
+		     (if xs
+		       (cond 
+			(= w :when) (recur (conj ret {:b b :e e :f f :w :when}) wr)
+			(= w :while) (recur (conj ret {:b b :e e :f f :w :while}) wr)
+			:else (recur (conj ret {:b b :e e :f true :w :while}) r))
+		       (seq ret))))
+	     
+	   emit (fn emit [[{b :b f :f w :w} & [{ys :e} :as rses]]]
+		  (let [giter (gensym "iter__") gxs (gensym "s__")]
+		    `(fn ~giter [~gxs]
+		       (when-first [~b ~gxs]
+			   (if ~f
+			     ~(if rses
+				`(let [iterys# ~(emit rses)
+				       fs# (iterys# ~ys)]
+				   (if fs#
+				     (lazy-cat fs# (~giter (rest ~gxs)))
+				     (recur (rest ~gxs))))
+				`(lazy-cons ~expr (~giter (rest ~gxs))))
+			     ~(if (= w :when)
+				`(recur (rest ~gxs))
+				nil))))))]
+       `(let [iter# ~(emit (pargs seq-exprs))]
+	  (iter# ~(second seq-exprs))))))
+      
+
 (defn special-symbol?
   "Returns true if s names a special form"
   [s]
@@ -1698,6 +1786,12 @@
        (let [~binding-form temp#]
          ~@body))))
 
+
+(defmacro comment
+  "Ignores body, yields nil"
+  [& body])
+
+
 ;;;;;;;;;;;;;;;; for..each and for..in wrappers
 
 (defn get-property-values
@@ -1733,19 +1827,19 @@
   "Helper function for reading 0-terminated strings from eval_pipe."
   [socket buffer]
   (let [term 0]
-    (loop* [to-eval []]
-	   (if (> (. socket bytesAvailable) 0)
-	     (let [byte (. socket (readUnsignedByte))]
-	       (if (= byte term)
-		 (let [src (str buffer)]
-		   (. buffer (clear))
-		   (recur (cons src to-eval)))
-		 (let []
-		   (. buffer (append (char-code->str byte)))
-		   (recur to-eval)
-		   )))
-	     to-eval
-	     ))))
+    (loop [to-eval []]
+      (if (> (. socket bytesAvailable) 0)
+	(let [byte (. socket (readUnsignedByte))]
+	  (if (= byte term)
+	    (let [src (str buffer)]
+	      (. buffer (clear))
+	      (recur (cons src to-eval)))
+	    (let []
+	      (. buffer (append (char-code->str byte)))
+	      (recur to-eval)
+	      )))
+	to-eval
+	))))
 
 
 (defn connect-to-eval-pipe
@@ -1789,6 +1883,8 @@
 	       (fn [e] 
 		 (eval (.. e target data) callback err-callback))
 	       err-callback)))
+
+
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
@@ -1853,9 +1949,9 @@
   		 (set! (. obj funcs) [])
   		 (doseq ea '[1 2 3 4 5]
   		   (set! (. obj funcs) (conj
-  					(. obj funcs)
-  					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
-  					)))
+					(. obj funcs)
+					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
+					)))
   		 (doseq ea (. obj funcs) (ea))
   		 (= [1 2 3 4 5] (. obj nums))
   		 ))
@@ -1899,13 +1995,17 @@
 
   ;; line-seq with line-feed
   (let [s (line-seq (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\ndude")))]
-     (assert-true (= (first s) "hello"))
-     (assert-true (= (second s) "dude")))
+    (assert-true (= (first s) "hello"))
+    (assert-true (= (second s) "dude")))
 
   ;; now with carriage return..
   (let [s (line-seq (new com.las3r.jdk.io.BufferedReader (new com.las3r.jdk.io.StringReader "hello\r\ndude")))]
-     (assert-true (= (first s) "hello"))
-     (assert-true (= (second s) "dude")))
+    (assert-true (= (first s) "hello"))
+    (assert-true (= (second s) "dude")))
+
+  ;; For comprehension
+  (assert-true (= (take 3 (for [x (range 100) :when (odd? x)]  [x]))
+		  '([1][3][5])))
 
   )
 
