@@ -29,11 +29,10 @@ package com.las3r.gen{
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
 		private var _gen:CodeGen;
-		private var _rt:RT;
 
-		public static function createSingleExprSWF(rt:RT, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
-			var swf:SWFGen = new SWFGen(rt, new Lock());
-			swf.addInitExpr(expr, callback, errorCallback);
+		public static function createSingleExprSWF(rtInstanceId:String, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
+			var swf:SWFGen = new SWFGen(rtInstanceId, new Lock());
+			swf.addInitExpr(rtInstanceId, expr, callback, errorCallback);
 			return swf;
 		}
 
@@ -44,12 +43,13 @@ package com.las3r.gen{
 		// 		}
 
 
-		protected function addInitExpr(expr:Expr, callback:Function, errorCallback:Function):void{
-			var rt:RT = _rt;
+		protected function addInitExpr(rtInstanceId:String, expr:Expr, callback:Function, errorCallback:Function):void{
 			var gen:CodeGen = _gen;
-
-			var resultKey:String = rt.createResultCallback(callback);
-			var errorKey:String = rt.createResultCallback(errorCallback);
+			var rt:RT = RT(RT.instances[rtInstanceId]);
+			if(rt){
+				var resultKey:String = rt.createResultCallback(callback);
+				var errorKey:String = rt.createResultCallback(errorCallback);
+			}
 
 			/* Emit bytecode to do the following:
 			*
@@ -68,7 +68,9 @@ package com.las3r.gen{
 
 			var tryStart:Object = gen.asm.I_label(undefined);
 			expr.emit(C.EXPRESSION, gen);
-			gen.callbackWithResult(resultKey);
+			if(rt){
+				gen.callbackWithResult(resultKey);
+			}
  			var tryEnd:Object = gen.asm.I_label(undefined);
 
  			var catchEnd:Object = gen.asm.newLabel();
@@ -85,7 +87,9 @@ package com.las3r.gen{
  			gen.asm.startCatch(); // Increment max stack by 1, for exception object
  			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
  			gen.pushCatchScope(excId);
- 			gen.callbackWithResult(errorKey);
+			if(rt){
+ 				gen.callbackWithResult(errorKey);
+			}
 			gen.popScope(); 
 			gen.asm.I_returnvoid();
  			gen.asm.I_label(catchEnd);
@@ -101,11 +105,10 @@ package com.las3r.gen{
 		}
 
 
-		public function SWFGen(rt:RT, l:Lock){
-			_rt = rt;
+		public function SWFGen(rtInstanceId:String, l:Lock){
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
-			_gen = new CodeGen(_rt.instanceId, _emitter, _script);
+			_gen = new CodeGen(rtInstanceId, _emitter, _script);
 		}
 		
 	}

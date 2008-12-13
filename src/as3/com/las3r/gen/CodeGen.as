@@ -31,9 +31,9 @@ package com.las3r.gen{
 		public var currentActivation:Object;
 		public var cachedRTTempIndex:int = -1;
 		public var scopeToLocalMap:IVector;
-		protected var _rtInstanceId:int;
+		protected var _rtInstanceId:String;
 
-		public function CodeGen(rtInstanceId:int, emitter:ABCEmitter, scr:Script, meth:Method = null){
+		public function CodeGen(rtInstanceId:String, emitter:ABCEmitter, scr:Script, meth:Method = null){
 			_rtInstanceId = rtInstanceId;
 			this.emitter = emitter;
 			this.scr = scr;
@@ -185,8 +185,7 @@ package com.las3r.gen{
 			else{
 				getRTClass();
 				asm.I_getproperty(emitter.nameFromIdent("instances"));
-				asm.I_pushint(emitter.constants.int32(_rtInstanceId + 1));
-				asm.I_nextvalue();
+				asm.I_getproperty(emitter.nameFromIdent(_rtInstanceId));
 			}
 		}
 
@@ -200,8 +199,7 @@ package com.las3r.gen{
 		public function cacheRTInstance():void{
 			getRTClass();
 			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_pushint(emitter.constants.int32(_rtInstanceId + 1));
-			asm.I_nextvalue();
+			asm.I_getproperty(emitter.nameFromIdent(_rtInstanceId));
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
 			cachedRTTempIndex = i;

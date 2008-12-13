@@ -19,6 +19,7 @@ package com.las3r.runtime{
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
 	import com.las3r.util.StringBuffer;
+	import com.las3r.util.GUID;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -27,16 +28,15 @@ package com.las3r.runtime{
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.getTimer;
 
-
 	public class RT extends EventDispatcher{
 
 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
 		protected const BootLsr:Class;
 		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
-		public static var instances:Array = [];
+		public static var instances:Object = {};
+		public var guid:String;
 
-		public var instanceId:int = -1;
 		public var internedStrings:Object = {};
 		public var internedSymbols:Dictionary = new Dictionary();
 		public var internedKeywords:Dictionary = new Dictionary();
@@ -135,15 +135,15 @@ package com.las3r.runtime{
 			);
 		}
 
-		public function RT(stage:Stage = null, out:OutputStream = null, err:OutputStream = null, inn:InputStream = null):void{
+		public function RT(stage:Stage = null, out:OutputStream = null, err:OutputStream = null, inn:InputStream = null, guid:String = null):void{
 			_this = this;
 			_stage = stage;
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
 			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
-			instances.push(this);
-			instanceId = instances.length - 1;
+			this.guid = guid || GUID.create();
+			instances[this.guid] = this;
 			constants = [];
 			keywords = new Dictionary();
 			vars = new Dictionary();
