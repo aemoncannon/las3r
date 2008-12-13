@@ -10,12 +10,15 @@
 **/
 
 package com.las3r.gen{
+	import flash.utils.*;
 	import com.las3r.runtime.*;
 	import com.las3r.util.*;
+	import com.hurlant.eval.ByteLoader;
 	import com.hurlant.eval.gen.Script;
 	import com.hurlant.eval.gen.Method;
 	import com.hurlant.eval.gen.ABCEmitter;
 	import com.hurlant.eval.gen.AVM2Assembler;
+	import com.hurlant.eval.abc.ABCFile;
 	import com.hurlant.eval.abc.ABCSlotTrait;
 	import com.hurlant.eval.abc.ABCException;
 	import org.pranaframework.reflection.Type;
@@ -23,19 +26,25 @@ package com.las3r.gen{
 
 
 	public class SWFGen{
-
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
 		private var _gen:CodeGen;
 		private var _rt:RT;
 
-		public static evalExprOnInit(rt:RT, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
-			
-			var swf:SWFGen = new SWFGen(rt);
+		public static function createSingleExprSWF(rt:RT, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
+			var swf:SWFGen = new SWFGen(rt, new Lock());
 			swf.addInitExpr(expr, callback, errorCallback);
+			return swf;
 		}
 
-		protected function addInitExpr():void{
+		// 		public static function createAOTSWF():SWFGen{
+		// 			var swf:SWFGen = new SWFGen(rt, new Lock());
+		// 			swf.addInitExpr(expr, callback, errorCallback);
+		// 			return swf;
+		// 		}
+
+
+		protected function addInitExpr(expr:Expr, callback:Function, errorCallback:Function):void{
 			var rt:RT = _rt;
 			var gen:CodeGen = _gen;
 
@@ -82,6 +91,7 @@ package com.las3r.gen{
  			gen.asm.I_label(catchEnd);
 		}
 
+
 		public function load():void{
 			var file:ABCFile = _emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
@@ -91,14 +101,16 @@ package com.las3r.gen{
 		}
 
 
-		public function SWFGen(rt:RT){
+		public function SWFGen(rt:RT, l:Lock){
 			_rt = rt;
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
-			_gen = new CodeGen(_rt.instanceId, emitter, scr);
+			_gen = new CodeGen(_rt.instanceId, _emitter, _script);
 		}
 		
 	}
 
 
 }
+
+class Lock{}

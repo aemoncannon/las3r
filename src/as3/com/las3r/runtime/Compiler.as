@@ -135,63 +135,10 @@ package com.las3r.runtime{
 			loadAllForms(null);
 		}
 
-
-
 		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
-			// XXX Compiled LAS3R code stores result of expression here..
-			var resultKey:String = _rt.createResultCallback(callback);
-			var errorKey:String = _rt.createResultCallback(errorCallback);
-
-			var emitter = new ABCEmitter();
-			var scr = emitter.newScript();
-			var gen:CodeGen = new CodeGen(rt.instanceId, emitter, scr);
-
 			var expr:Expr = analyze(C.EXPRESSION, form);
-
-			/* Emit bytecode to do the following:
-			*
-			* - Evaluate 'expr'
-			*
-			* - Establish a try-catch context around 'expr'
-			*   to catch any errors thrown to the top-level
-			*
-			* - Apply 'callback' to the value of 'expr' or apply
-			*   'errorCallback' to the error thrown when evaluating 'expr'
-			*/
-
-			gen.pushThisScope();
-			gen.pushNewActivationScope();
-			gen.cacheRTInstance();
-
-			var tryStart:Object = gen.asm.I_label(undefined);
-			expr.emit(C.EXPRESSION, gen);
-			gen.callbackWithResult(resultKey);
- 			var tryEnd:Object = gen.asm.I_label(undefined);
-
- 			var catchEnd:Object = gen.asm.newLabel();
- 			gen.asm.I_jump(catchEnd);
-
- 			var catchStart:Object = gen.asm.I_label(undefined);
- 			var excId:int = gen.meth.addException(new ABCException(
- 					tryStart.address, 
- 					tryEnd.address, 
- 					catchStart.address,
- 					0, // *
- 					gen.emitter.nameFromIdent("toplevelExceptionHandler")
- 				));
- 			gen.asm.startCatch(); // Increment max stack by 1, for exception object
- 			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
- 			gen.pushCatchScope(excId);
- 			gen.callbackWithResult(errorKey);
-			gen.popScope(); 
-			gen.asm.I_returnvoid();
- 			gen.asm.I_label(catchEnd);
-
-			var file:ABCFile = emitter.finalize();
-			var bytes:ByteArray = file.getBytes();
-			bytes.position = 0;
-			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
-			ByteLoader.loadBytes(swfBytes, null, true);
+			var swf:SWFGen = SWFGen.createSingleExprSWF(rt, expr, callback, errorCallback);
+			swf.load();
 		}
 
 		public function currentNS():LispNamespace{
