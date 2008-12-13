@@ -214,6 +214,7 @@ package com.las3r.gen{
 		*/
 		public function getConstant(id:int, name:String, type:Class):void{
 			getRT();
+			do this here!
  			asm.I_getproperty(emitter.nameFromIdent("constants"));
 			asm.I_pushint(emitter.constants.int32(id + 1));
 			asm.I_nextvalue();

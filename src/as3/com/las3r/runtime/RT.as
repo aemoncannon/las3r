@@ -46,7 +46,7 @@ package com.las3r.runtime{
 
 		public var vars:Dictionary;
 		public var keywords:Dictionary;
-		public var constants:Array;
+		public var constants:Dictionary;
 
 		public var stdout:OutputStream;
 		public var stderr:OutputStream;
@@ -144,7 +144,8 @@ package com.las3r.runtime{
 			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
 			this.guid = guid || GUID.create();
 			instances[this.guid] = this;
-			constants = [];
+
+			constants = new Dictionary();
 			keywords = new Dictionary();
 			vars = new Dictionary();
 
