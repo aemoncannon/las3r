@@ -30,7 +30,7 @@ package com.hurlant.eval.gen
         public var meta_construct_name;
 
         public function namespace( ns:String ):int {
-			return constants.namespace(AVM2Assembler.CONSTANT_Namespace, constants.stringUtf8(ns))
+			return constants.namespace(AVM2Assembler.CONSTANT_Namespace, constants.stringUtf8(ns));
         }
 
         public function flattenNamespaceSet(nss:Array /*:[[NAMESPACE]]*/) {
@@ -67,6 +67,10 @@ package com.hurlant.eval.gen
         public function rtqname(tmp, is_attr) {
         	var ident=tmp.ident;
             return constants.RTQName(constants.stringUtf8(ident), is_attr);
+        }
+
+        public function rtqnamel(is_attr) {
+            return constants.RTQNameL(is_attr);
         }
 
 

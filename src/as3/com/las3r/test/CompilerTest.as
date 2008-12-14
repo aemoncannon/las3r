@@ -36,7 +36,6 @@ package com.las3r.test{
 		public function testBindBirdToTrue():void{
 			readAndLoad("(def *bird* true)",
 				function(rt:RT, val:*):void{
-					assertTrue("Should be one static constant (the var *bird*).", rt.constants.length == 1);
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("Value of *bird* should be true.", v.get() == true);
 				});
@@ -45,7 +44,6 @@ package com.las3r.test{
 		public function testBindBirdToFalse():void{
 			readAndLoad("(def *bird* false)",
 				function(rt:RT, val:*):void{
-					assertTrue("Should be one static constant (the var *bird*).", rt.constants.length == 1);
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("Value of *bird* should be true.", v.get() == false);
 				});
@@ -54,7 +52,6 @@ package com.las3r.test{
 		public function testBindBirdToNil():void{
 			readAndLoad("(def *bird* nil)",
 				function(rt:RT, val:*):void{
-					assertTrue("Should be one static constant (the var *bird*).", rt.constants.length == 1);
 					var v:Var = rt.getVar("las3r", "*bird*");
 					assertTrue("Value of *bird* should be true.", v.get() == null);
 				});

@@ -43,7 +43,7 @@ package com.las3r.runtime{
 		public var IN_CATCH_FINALLY:Var;
 
 		public function get rt():RT{ return _rt; }
-		public function get constants():Array{ return _rt.constants; }
+		public function get constants():Dictionary{ return _rt.constants; }
 		public function get keywords():Dictionary{ return _rt.keywords; }
 		public function get vars():Dictionary{ return _rt.vars; }
 

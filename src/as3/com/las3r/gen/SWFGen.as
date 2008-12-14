@@ -28,11 +28,11 @@ package com.las3r.gen{
 	public class SWFGen{
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
-		private var _gen:CodeGen;
+		private var _initGen:CodeGen;
 
-		public static function createSingleExprSWF(rtInstanceId:String, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
-			var swf:SWFGen = new SWFGen(rtInstanceId, new Lock());
-			swf.addInitExpr(rtInstanceId, expr, callback, errorCallback);
+		public static function createSingleExprSWF(rtGuid:String, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
+			var swf:SWFGen = new SWFGen(rtGuid, new Lock());
+			swf.addInitExpr(rtGuid, expr, callback, errorCallback);
 			return swf;
 		}
 
@@ -43,9 +43,8 @@ package com.las3r.gen{
 		// 		}
 
 
-		protected function addInitExpr(rtInstanceId:String, expr:Expr, callback:Function, errorCallback:Function):void{
-			var gen:CodeGen = _gen;
-			var rt:RT = RT(RT.instances[rtInstanceId]);
+		protected function addInitExpr(rtGuid:String, expr:Expr, callback:Function, errorCallback:Function):void{
+			var rt:RT = RT(RT.instances[rtGuid]);
 			if(rt){
 				var resultKey:String = rt.createResultCallback(callback);
 				var errorKey:String = rt.createResultCallback(errorCallback);
@@ -61,6 +60,8 @@ package com.las3r.gen{
 			* - Apply 'callback' to the value of 'expr' or apply
 			*   'errorCallback' to the error thrown when evaluating 'expr'
 			*/
+
+			var gen:CodeGen = _initGen;
 
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
@@ -95,7 +96,6 @@ package com.las3r.gen{
  			gen.asm.I_label(catchEnd);
 		}
 
-
 		public function load():void{
 			var file:ABCFile = _emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
@@ -104,11 +104,17 @@ package com.las3r.gen{
 			ByteLoader.loadBytes(swfBytes, null, true);
 		}
 
+		public function getSWFBytes():ByteArray{
+			var file:ABCFile = _emitter.finalize();
+			var bytes:ByteArray = file.getBytes();
+			bytes.position = 0;
+			return ByteLoader.wrapInSWF([bytes]);
+		}
 
-		public function SWFGen(rtInstanceId:String, l:Lock){
+		public function SWFGen(rtGuid:String, l:Lock){
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
-			_gen = new CodeGen(rtInstanceId, _emitter, _script);
+			_initGen = new CodeGen(rtGuid, _emitter, _script);
 		}
 		
 	}

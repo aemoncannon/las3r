@@ -31,10 +31,10 @@ package com.las3r.gen{
 		public var currentActivation:Object;
 		public var cachedRTTempIndex:int = -1;
 		public var scopeToLocalMap:IVector;
-		protected var _rtInstanceId:String;
+		protected var _rtGuid:String;
 
-		public function CodeGen(rtInstanceId:String, emitter:ABCEmitter, scr:Script, meth:Method = null){
-			_rtInstanceId = rtInstanceId;
+		public function CodeGen(rtGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null){
+			_rtGuid = rtGuid;
 			this.emitter = emitter;
 			this.scr = scr;
 			this.asm = meth ? meth.asm : scr.init.asm;
@@ -45,7 +45,7 @@ package com.las3r.gen{
 
 
 		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
-			return new CodeGen(_rtInstanceId, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
+			return new CodeGen(_rtGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
 		}
 
 
@@ -185,7 +185,7 @@ package com.las3r.gen{
 			else{
 				getRTClass();
 				asm.I_getproperty(emitter.nameFromIdent("instances"));
-				asm.I_getproperty(emitter.nameFromIdent(_rtInstanceId));
+				asm.I_getproperty(emitter.nameFromIdent(_rtGuid));
 			}
 		}
 
@@ -199,12 +199,11 @@ package com.las3r.gen{
 		public function cacheRTInstance():void{
 			getRTClass();
 			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_getproperty(emitter.nameFromIdent(_rtInstanceId));
+			asm.I_getproperty(emitter.nameFromIdent(_rtGuid));
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
 			cachedRTTempIndex = i;
 		}
-
 
 
 
@@ -214,10 +213,8 @@ package com.las3r.gen{
 		*/
 		public function getConstant(id:int, name:String, type:Class):void{
 			getRT();
-			do this here!
  			asm.I_getproperty(emitter.nameFromIdent("constants"));
-			asm.I_pushint(emitter.constants.int32(id + 1));
-			asm.I_nextvalue();
+			asm.I_getproperty(emitter.nameFromIdent(String(id)));
 		}
 
 

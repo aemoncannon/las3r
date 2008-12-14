@@ -18,7 +18,7 @@ package com.las3r.util{
 
 	public class TraceSwf extends Sprite{
 
-		[Embed(source="../../../../../bin/SimpleTryCatch.swf", mimeType="application/octet-stream")]
+		[Embed(source="../../../../../bin/ArrayAccess.swf", mimeType="application/octet-stream")]
 		private const SWF:Class;
 
 		public function TraceSwf() {
