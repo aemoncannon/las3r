@@ -260,18 +260,6 @@ package com.las3r.gen{
 
 
 		/*
-		* Store the value at TOS at key in RT.
-		* Stack:   
-		*   val => ...
-		*/
-		public function callbackWithResult(key:String):void{
-			getRT();
-			asm.I_swap();
-			asm.I_pushstring( emitter.constants.stringUtf8(key));
-			asm.I_callpropvoid(emitter.nameFromIdent("callbackWithResult"), 2);
-		}
-
-		/*
 		* Stack:   
 		*   aVar,init => ...
 		*/
