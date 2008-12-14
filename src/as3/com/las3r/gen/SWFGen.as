@@ -29,16 +29,16 @@ package com.las3r.gen{
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
 		private var _initGen:CodeGen;
+		private var _exprs:Array = [];
 		private var _moduleId:String;
 
-		public static function createModuleSwf(moduleId:String, exprs:Array):SWFGen{
+		public static function createModuleSwf(moduleId:String):SWFGen{
 			var swf:SWFGen = new SWFGen(moduleId, new Lock());
-			swf.emitModule(moduleId, exprs);
 			return swf;
 		}
 
 
-		protected function emitModule(moduleId:String, exprs:Array):void{
+		protected function emitModule():void{
 
 			var gen:CodeGen = _initGen;
 			gen.pushThisScope();
@@ -47,7 +47,7 @@ package com.las3r.gen{
 			/* Define module constructor function.. */
 
 			var formalsTypes:Array = [0, 0, 0]; //rt:*, callback:*, errorCallback*
-			var methGen = gen.newMethodCodeGen(formalsTypes, false, false, gen.asm.currentScopeDepth, moduleId);
+			var methGen = gen.newMethodCodeGen(formalsTypes, false, false, gen.asm.currentScopeDepth, _moduleId);
 			methGen.pushThisScope();
 			methGen.pushNewActivationScope();
 
@@ -60,12 +60,13 @@ package com.las3r.gen{
 			var tryStart:Object = methGen.asm.I_label(undefined);
 			methGen.asm.I_getlocal(callbackTmp); // the result callback
 			methGen.asm.I_pushnull(); // the receiver
-			if(exprs.length > 0){
-				for(var i:int = 0; i < exprs.length - 1; i++){
-					var expr:Expr = Expr(exprs[i]);
+			if(_exprs.length > 0){
+				var expr:Expr;
+				for(var i:int = 0; i < _exprs.length - 1; i++){
+					expr = Expr(_exprs[i]);
 					expr.emit(C.STATEMENT, methGen);
 				}
-				expr = Expr(exprs[exprs.length - 1]);
+				expr = Expr(_exprs[_exprs.length - 1]);
 				expr.emit(C.EXPRESSION, methGen);
 			}
 			methGen.asm.I_call(1); // invoke result callback
@@ -100,10 +101,15 @@ package com.las3r.gen{
 			/* Module constructor finished. Now, provide the module.. */
 
 			gen.asm.I_newfunction(methGen.meth.finalize());
-			gen.provideModule(moduleId);
+			gen.provideModule(_moduleId);
+		}
+
+		public function addExpr(expr:Expr):void{
+			_exprs.push(expr);
 		}
 
 		public function getSWFBytes():ByteArray{
+			emitModule();
 			var file:ABCFile = _emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
 			bytes.position = 0;

@@ -137,8 +137,11 @@ package com.las3r.runtime{
 
 		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
 			var expr:Expr = analyze(C.EXPRESSION, form);
-			var moduleId:String
-			var swf:SWFGen = SWFGen.createModuleSwf(moduleId, [expr]);
+
+			var moduleId:String = GUID.create();
+			var swf:SWFGen = SWFGen.createModuleSwf(moduleId);
+			swf.addExpr(expr);
+
 			var swfBytes:ByteArray = swf.getSWFBytes();
 			ByteLoader.loadBytes(swfBytes, function():void{
 					var moduleConstructor:Function = RT.modules[moduleId];
