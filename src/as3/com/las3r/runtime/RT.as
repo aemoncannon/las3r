@@ -19,7 +19,6 @@ package com.las3r.runtime{
 	import com.las3r.runtime.Var;
 	import com.las3r.runtime.Frame;
 	import com.las3r.util.StringBuffer;
-	import com.las3r.util.GUID;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -35,7 +34,7 @@ package com.las3r.runtime{
 		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
 		public static var instances:Object = {};
-		public var guid:String;
+		public static var modules:Object = {};
 
 		public var internedStrings:Object = {};
 		public var internedSymbols:Dictionary = new Dictionary();
@@ -135,15 +134,13 @@ package com.las3r.runtime{
 			);
 		}
 
-		public function RT(stage:Stage = null, out:OutputStream = null, err:OutputStream = null, inn:InputStream = null, guid:String = null):void{
+		public function RT(stage:Stage = null, out:OutputStream = null, err:OutputStream = null, inn:InputStream = null):void{
 			_this = this;
 			_stage = stage;
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
 			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
-			this.guid = guid || GUID.create();
-			instances[this.guid] = this;
 
 			constants = new Dictionary();
 			keywords = new Dictionary();

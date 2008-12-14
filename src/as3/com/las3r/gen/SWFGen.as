@@ -29,79 +29,78 @@ package com.las3r.gen{
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
 		private var _initGen:CodeGen;
+		private var _moduleId:String;
 
-		public static function createSingleExprSWF(rtGuid:String, expr:Expr, callback:Function, errorCallback:Function):SWFGen{
-			var swf:SWFGen = new SWFGen(rtGuid, new Lock());
-			swf.addInitExpr(rtGuid, expr, callback, errorCallback);
+		public static function createModuleSwf(moduleId:String, exprs:Array):SWFGen{
+			var swf:SWFGen = new SWFGen(moduleId, new Lock());
+			swf.emitModule(moduleId, exprs);
 			return swf;
 		}
 
-		// 		public static function createAOTSWF():SWFGen{
-		// 			var swf:SWFGen = new SWFGen(rt, new Lock());
-		// 			swf.addInitExpr(expr, callback, errorCallback);
-		// 			return swf;
-		// 		}
 
-
-		protected function addInitExpr(rtGuid:String, expr:Expr, callback:Function, errorCallback:Function):void{
-			var rt:RT = RT(RT.instances[rtGuid]);
-			if(rt){
-				var resultKey:String = rt.createResultCallback(callback);
-				var errorKey:String = rt.createResultCallback(errorCallback);
-			}
-
-			/* Emit bytecode to do the following:
-			*
-			* - Evaluate 'expr'
-			*
-			* - Establish a try-catch context around 'expr'
-			*   to catch any errors thrown to the top-level
-			*
-			* - Apply 'callback' to the value of 'expr' or apply
-			*   'errorCallback' to the error thrown when evaluating 'expr'
-			*/
+		protected function emitModule(moduleId:String, exprs:Array):void{
 
 			var gen:CodeGen = _initGen;
-
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
-			gen.cacheRTInstance();
 
-			var tryStart:Object = gen.asm.I_label(undefined);
-			expr.emit(C.EXPRESSION, gen);
-			if(rt){
-				gen.callbackWithResult(resultKey);
+			/* Define module constructor function.. */
+
+			var formalsTypes:Array = [0, 0, 0]; //rt:*, callback:*, errorCallback*
+			var methGen = gen.newMethodCodeGen(formalsTypes, false, false, gen.asm.currentScopeDepth, moduleId);
+			methGen.pushThisScope();
+			methGen.pushNewActivationScope();
+
+			var rtTmp:int = 1;
+			var callbackTmp:int = 2;
+			var errorCallbackTmp:int = 3;
+
+			methGen.registerRTInstance(rtTmp);
+
+			var tryStart:Object = methGen.asm.I_label(undefined);
+			methGen.asm.I_getlocal(callbackTmp); // the result callback
+			methGen.asm.I_pushnull(); // the receiver
+			if(exprs.length > 0){
+				for(var i:int = 0; i < exprs.length - 1; i++){
+					var expr:Expr = Expr(exprs[i]);
+					expr.emit(C.STATEMENT, methGen);
+				}
+				expr = Expr(exprs[exprs.length - 1]);
+				expr.emit(C.EXPRESSION, methGen);
 			}
- 			var tryEnd:Object = gen.asm.I_label(undefined);
+			methGen.asm.I_call(1); // invoke result callback
+ 			var tryEnd:Object = methGen.asm.I_label(undefined);
 
- 			var catchEnd:Object = gen.asm.newLabel();
- 			gen.asm.I_jump(catchEnd);
+ 			var catchEnd:Object = methGen.asm.newLabel();
+ 			methGen.asm.I_jump(catchEnd);
 
- 			var catchStart:Object = gen.asm.I_label(undefined);
- 			var excId:int = gen.meth.addException(new ABCException(
+ 			var catchStart:Object = methGen.asm.I_label(undefined);
+ 			var excId:int = methGen.meth.addException(new ABCException(
  					tryStart.address, 
  					tryEnd.address, 
  					catchStart.address,
  					0, // *
- 					gen.emitter.nameFromIdent("toplevelExceptionHandler")
+ 					methGen.emitter.nameFromIdent("toplevelExceptionHandler")
  				));
- 			gen.asm.startCatch(); // Increment max stack by 1, for exception object
- 			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
- 			gen.pushCatchScope(excId);
-			if(rt){
- 				gen.callbackWithResult(errorKey);
-			}
-			gen.popScope(); 
-			gen.asm.I_returnvoid();
- 			gen.asm.I_label(catchEnd);
-		}
+ 			methGen.asm.startCatch(); // Increment max stack by 1, for exception object
+ 			methGen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
+ 			methGen.pushCatchScope(excId);
 
-		public function load():void{
-			var file:ABCFile = _emitter.finalize();
-			var bytes:ByteArray = file.getBytes();
-			bytes.position = 0;
-			var swfBytes:ByteArray = ByteLoader.wrapInSWF([bytes]);
-			ByteLoader.loadBytes(swfBytes, null, true);
+			methGen.asm.I_getlocal(errorCallbackTmp); // the error callback
+			methGen.asm.I_swap(); 
+			methGen.asm.I_pushnull(); // the receiver
+			methGen.asm.I_swap(); 
+			methGen.asm.I_call(1); // invoke error callback
+
+			methGen.popScope(); 
+			methGen.asm.I_returnvoid();
+ 			methGen.asm.I_label(catchEnd);
+			methGen.asm.I_returnvoid();
+
+			/* Module constructor finished. Now, provide the module.. */
+
+			gen.asm.I_newfunction(methGen.meth.finalize());
+			gen.provideModule(moduleId);
 		}
 
 		public function getSWFBytes():ByteArray{
@@ -111,9 +110,12 @@ package com.las3r.gen{
 			return ByteLoader.wrapInSWF([bytes]);
 		}
 
-		public function SWFGen(rtGuid:String, l:Lock){
+		public function SWFGen(moduleId:String, l:Lock){
+			_moduleId = moduleId;
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
+
+			var rtGuid:String = GUID.create();
 			_initGen = new CodeGen(rtGuid, _emitter, _script);
 		}
 		

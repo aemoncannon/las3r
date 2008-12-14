@@ -137,8 +137,18 @@ package com.las3r.runtime{
 
 		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
 			var expr:Expr = analyze(C.EXPRESSION, form);
-			var swf:SWFGen = SWFGen.createSingleExprSWF(rt.guid, expr, callback, errorCallback);
-			swf.load();
+			var moduleId:String
+			var swf:SWFGen = SWFGen.createModuleSwf(moduleId, [expr]);
+			var swfBytes:ByteArray = swf.getSWFBytes();
+			ByteLoader.loadBytes(swfBytes, function():void{
+					var moduleConstructor:Function = RT.modules[moduleId];
+					if(!(moduleConstructor is Function)) {
+						throw new Error("IllegalStateException: no module constructor at " + moduleId);
+					}
+					moduleConstructor(rt, callback, errorCallback);
+				}, 
+				true
+			);
 		}
 
 		public function currentNS():LispNamespace{
@@ -1284,20 +1294,20 @@ class InvokeExpr implements Expr{
 		// TODO: Aemon, do this.
 		// 		if(args.count() > MAX_POSITIONAL_ARITY)
 		// 		{
-			// 			PersistentVector restArgs = PersistentVector.EMPTY;
-			// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-			// 			{
-				// 				restArgs = restArgs.cons(args.nth(i));
-				// 			}
-			// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-			// 		}
+		// 			PersistentVector restArgs = PersistentVector.EMPTY;
+		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
+		// 			{
+		// 				restArgs = restArgs.cons(args.nth(i));
+		// 			}
+		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
+		// 		}
 
 		// TODO: For recursion?
 		// 		if(context == C.RETURN)
 		// 		{
-			// 			FnMethod method = (FnMethod) METHOD.get();
-			// 			method.emitClearLocals(gen);
-			// 		}
+		// 			FnMethod method = (FnMethod) METHOD.get();
+		// 			method.emitClearLocals(gen);
+		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}

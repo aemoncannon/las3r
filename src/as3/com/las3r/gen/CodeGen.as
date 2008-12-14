@@ -43,11 +43,37 @@ package com.las3r.gen{
 		}
 
 
-
 		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
 			return new CodeGen(_rtGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
 		}
 
+
+		/*
+		* Register an RT instance for lookup at _rtGuid
+		*
+		* Stack:   
+		*   .... => ...
+		*/		
+		public function registerRTInstance(tmpIndex:int):void{
+			getRTClass();
+			asm.I_getproperty(emitter.nameFromIdent("instances"));
+			asm.I_getlocal(tmpIndex);
+			asm.I_setproperty(emitter.nameFromIdent(_rtGuid));
+		}
+
+
+		/*
+		* Provide a module constructor function for lookup by moduleId.
+		*
+		* Stack:   
+		*   aFunc => ...
+		*/		
+		public function provideModule(moduleId:String):void{
+			getRTClass();
+			asm.I_getproperty(emitter.nameFromIdent("modules"));
+			asm.I_swap();
+			asm.I_setproperty(emitter.nameFromIdent(moduleId));
+		}
 
 
 		public function nextActivationSlot():int{
@@ -244,7 +270,6 @@ package com.las3r.gen{
 			asm.I_pushstring( emitter.constants.stringUtf8(key));
 			asm.I_callpropvoid(emitter.nameFromIdent("callbackWithResult"), 2);
 		}
-
 
 		/*
 		* Stack:   
