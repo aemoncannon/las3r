@@ -64,6 +64,9 @@ package com.las3r.gen{
 				expr = Expr(_exprs[_exprs.length - 1]);
 				expr.emit(C.EXPRESSION, methGen);
 			}
+			else{
+				methGen.asm.I_pushnull();
+			}
 			methGen.asm.I_call(1); // invoke result callback
  			var tryEnd:Object = methGen.asm.I_label(undefined);
 

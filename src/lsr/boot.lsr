@@ -1888,15 +1888,17 @@
 (defn compile-module
   "Evaluate all forms in src, returns a ByteArray containing compiled swf."
   [src module-id callback]
-  (binding [*aot-swf* (new com.las3r.gen.SWFGen module-id)]
-    (let [aot-swf *aot-swf*] ;; Establish a lexical binding so callbacks can close over..
-      (eval src
-	    (fn [val] (callback (. aot-swf (getSWFBytes))))
-	    (fn [err] (binding [*out* *err*]
-			(println err))))
-      )))
+  (set! *aot-swf* (new com.las3r.gen.SWFGen module-id))
+  (eval src
+	(fn [val] 
+	  (callback (. *aot-swf* (getSWFBytes)))
+	  (set! *aot-swf* nil))
+	(fn [err] 
+	  (binding [*out* *err*] (println err))
+	  (set! *aot-swf* nil))
+	))
 
-(defn compile-and-save-module
+(defn save-module
   "Evaluate all forms in src, create a ByteArray containing compiled forms, 
    initiate saving of those bytes as a SWF file."
   [src module-id]
@@ -1904,13 +1906,21 @@
 				  (let [f (new flash.net.FileReference)]
 				    (. f (save bytes (str module-id ".swf")))))))
 
-;;(defn load-module
-;;  "Evaluate all forms in src, create a ByteArray containing compiled forms, 
-;;   initiate saving of those bytes as a SWF file."
-;;  [file-path]
-;;  (compile-module src module-id (fn [bytes]
-;;				  (let [f (new flash.net.FileReference)]
-;;				    (. f (save bytes (str module-id ".swf")))))))
+(defn browse-module
+  "Load a las3r module from a swf on the file system."
+  [module-id] (let [f (new flash.net.FileReference)
+		    filter (new flash.net.FileFilter "swf" "*.swf")
+		    data-handler 
+		    (fn [e] (let [data (. f data)]
+			      (. *runtime* 
+				 (loadModule module-id data
+					     (fn [val] (println val))
+					     (fn [err] (binding [*out* *err*]
+							 (println err))))
+				 )))]
+		(. f (addEventListener (. Event SELECT) (fn [e] (. f (load)))))
+		(. f (addEventListener (. Event COMPLETE) data-handler))
+		(. f (browse (to-array [filter])))))
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
@@ -1971,16 +1981,16 @@
   (assert-true (= 1 (if true (do (doseq a (quote (1 2)) a) 1))))
 
   (assert-true (let [obj (new Object)]
-  		 (set! (. obj nums) [])
-  		 (set! (. obj funcs) [])
-  		 (doseq ea '[1 2 3 4 5]
-  		   (set! (. obj funcs) (conj
+		 (set! (. obj nums) [])
+		 (set! (. obj funcs) [])
+		 (doseq ea '[1 2 3 4 5]
+		   (set! (. obj funcs) (conj
 					(. obj funcs)
 					(fn [] (set! (. obj nums) (conj (. obj nums) ea)))
 					)))
-  		 (doseq ea (. obj funcs) (ea))
-  		 (= [1 2 3 4 5] (. obj nums))
-  		 ))
+		 (doseq ea (. obj funcs) (ea))
+		 (= [1 2 3 4 5] (. obj nums))
+		 ))
   
   ;;namespace stuff
   (let [sym (gensym)]
@@ -2004,7 +2014,7 @@
   (assert-true (= '[1 2 3 4] (let [[[x1 y1][x2 y2]] [[1 2] [3 4]]] [x1 y1 x2 y2])))
   
   (assert-true (= '["a" "s" ("d" "j" "h" "h" "f" "d" "a" "s") "asdjhhfdas"]
-  		  (let [[a b & c :as str] "asdjhhfdas"] [a b c str])))
+		  (let [[a b & c :as str] "asdjhhfdas"] [a b c str])))
   
   ;; "Map binding forms"
   (assert-true (= [5 3 6 {:c 6, :a 5}] (let [{a :a, b :b, c :c, :as m :or {a 2 b 3}} {:a 5 :c 6}] [a b c m])))

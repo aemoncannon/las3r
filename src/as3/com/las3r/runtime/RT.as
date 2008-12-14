@@ -801,7 +801,8 @@ package com.las3r.runtime{
 
 		public static function toArray(obj:Object):Array{
 			if(obj is Array) return obj as Array;
-			if(obj is ISeq) return seqToArray(ISeq(obj));
+			else if(obj is ISeq) return seqToArray(ISeq(obj));
+			else if(obj is IVector) return IVector(obj).toArray();
 			throw new Error("UnsupportedOperationException");
 			return null;
 		}
