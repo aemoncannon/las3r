@@ -33,12 +33,6 @@ package com.las3r.gen{
 		private var _moduleId:String;
 		private var _finalized:Boolean = false;
 
-		public static function createModuleSwf(moduleId:String):SWFGen{
-			var swf:SWFGen = new SWFGen(moduleId, new Lock());
-			return swf;
-		}
-
-
 		protected function emitModule():void{
 
 			var gen:CodeGen = _initGen;
@@ -120,7 +114,8 @@ package com.las3r.gen{
 			return ByteLoader.wrapInSWF([bytes]);
 		}
 
-		public function SWFGen(moduleId:String, l:Lock){
+
+		public function SWFGen(moduleId:String){
 			_moduleId = moduleId;
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
@@ -128,10 +123,10 @@ package com.las3r.gen{
 			var rtGuid:String = GUID.create();
 			_initGen = new CodeGen(rtGuid, _emitter, _script);
 		}
+
 		
 	}
 
 
 }
 
-class Lock{}

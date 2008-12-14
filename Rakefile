@@ -12,9 +12,9 @@ include REXML
 
 $debug = true
 
-MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe" : "~/lib/flex3/bin/mxmlc"
-COMPC = PLATFORM =~ /win/ ? "compc.exe" : "~/lib/flex3/bin/compc"
-DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector_10"
+MXMLC = PLATFORM =~ /win/ ? "mxmlc.exe -target-player=10.0.0" : "mxmlc -target-player=10.0.0"
+COMPC = PLATFORM =~ /win/ ? "compc.exe -target-player=10.0.0" : "compc -target-player=10.0.0"
+DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_10_debug.exe" : "~/bin/flashplayer_debug_projector_10"
 
 SHARED_CLASS_PATH = [
                      "src/as3",

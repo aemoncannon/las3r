@@ -1865,8 +1865,9 @@
        )))
 (def ctep connect-to-eval-pipe)
 
-(defn load-url [url on-complete on-error]
+(defn load-url 
   "Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners."
+  [url on-complete on-error]
   (let [request (new flash.net.URLRequest url)
 	loader (new flash.net.URLLoader)]
     (. loader (addEventListener "complete" on-complete))
@@ -1884,7 +1885,32 @@
 		 (eval (.. e target data) callback err-callback))
 	       err-callback)))
 
+(defn compile-module
+  "Evaluate all forms in src, returns a ByteArray containing compiled swf."
+  [src module-id callback]
+  (binding [*aot-swf* (new com.las3r.gen.SWFGen module-id)]
+    (let [aot-swf *aot-swf*] ;; Establish a lexical binding so callbacks can close over..
+      (eval src
+	    (fn [val] (callback (. aot-swf (getSWFBytes))))
+	    (fn [err] (binding [*out* *err*]
+			(println err))))
+      )))
 
+(defn compile-and-save-module
+  "Evaluate all forms in src, create a ByteArray containing compiled forms, 
+   initiate saving of those bytes as a SWF file."
+  [src module-id]
+  (compile-module src module-id (fn [bytes]
+				  (let [f (new flash.net.FileReference)]
+				    (. f (save bytes (str module-id ".swf")))))))
+
+;;(defn load-module
+;;  "Evaluate all forms in src, create a ByteArray containing compiled forms, 
+;;   initiate saving of those bytes as a SWF file."
+;;  [file-path]
+;;  (compile-module src module-id (fn [bytes]
+;;				  (let [f (new flash.net.FileReference)]
+;;				    (. f (save bytes (str module-id ".swf")))))))
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 

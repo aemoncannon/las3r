@@ -142,7 +142,7 @@ package com.las3r.runtime{
 			if(aotSwf){ aotSwf.addExpr(expr); }
 
 			var moduleId:String = GUID.create();
-			var swf:SWFGen = SWFGen.createModuleSwf(moduleId);
+			var swf:SWFGen = new SWFGen(moduleId);
 			swf.addExpr(expr);
 
 			var swfBytes:ByteArray = swf.getSWFBytes();
@@ -1260,11 +1260,6 @@ class LetExpr implements Expr{
 	}
 
 }
-
-
-
-
-
 
 
 
