@@ -81,6 +81,7 @@ package com.las3r.runtime{
 		public var IN:Var;
 		public var SAVE_BYTECODES:Var;
 		public var PRINT_READABLY:Var;
+		public var AOT_MODULE_SWF:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
 		public var BYTECODES_KEY:Keyword;
@@ -163,8 +164,7 @@ package com.las3r.runtime{
 			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*err*"), stderr);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
-
-
+			AOT_MODULE_SWF = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*aot-swf*"), null);
 
 			/* 
 			The following symbols will be spliced into macro-generated code, 
@@ -292,7 +292,8 @@ package com.las3r.runtime{
 			Var.pushBindings(this,
 				RT.map(
 					CURRENT_NS, CURRENT_NS.get(),
-					SAVE_BYTECODES, SAVE_BYTECODES.get()
+					SAVE_BYTECODES, SAVE_BYTECODES.get(),
+					AOT_MODULE_SWF, AOT_MODULE_SWF.get()
 				)
 			);
 		}

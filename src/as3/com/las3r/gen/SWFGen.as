@@ -31,6 +31,7 @@ package com.las3r.gen{
 		private var _initGen:CodeGen;
 		private var _exprs:Array = [];
 		private var _moduleId:String;
+		private var _finalized:Boolean = false;
 
 		public static function createModuleSwf(moduleId:String):SWFGen{
 			var swf:SWFGen = new SWFGen(moduleId, new Lock());
@@ -105,14 +106,17 @@ package com.las3r.gen{
 		}
 
 		public function addExpr(expr:Expr):void{
+			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
 			_exprs.push(expr);
 		}
 
 		public function getSWFBytes():ByteArray{
+			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
 			emitModule();
 			var file:ABCFile = _emitter.finalize();
 			var bytes:ByteArray = file.getBytes();
 			bytes.position = 0;
+			_finalized = true;
 			return ByteLoader.wrapInSWF([bytes]);
 		}
 
