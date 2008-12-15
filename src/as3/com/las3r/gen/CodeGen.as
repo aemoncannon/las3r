@@ -154,8 +154,8 @@ package com.las3r.gen{
 		public function restoreScopeStack():void{
 			var len:int = this.scopeToLocalMap.count();
 			for(var i:int = 0; i < len; i++){
-				asm.I_getlocal(i);
-				asm.I_pushscope();				
+				asm.I_getlocal(this.scopeToLocalMap.nth(i));
+				asm.I_pushscope();
 			}
 		}
 

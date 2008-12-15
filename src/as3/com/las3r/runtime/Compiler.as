@@ -1095,7 +1095,7 @@ class FnExpr implements Expr{
 	public function emit(context:C, gen:CodeGen):void{
 		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + this.line;
 		var methGen:CodeGen;
-		var argsIndex:int;
+		var argumentsObjIndex:int;
 		var formalsTypes:Array = [];
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
@@ -1113,13 +1113,9 @@ class FnExpr implements Expr{
  			meth.startLabel = methGen.asm.newLabel();
 
  			var arity:int = meth.reqParams.count();
- 			argsIndex = arity + 1;
+ 			argumentsObjIndex = arity + 1;
 
-			if(meth.restParam != null || meth.nameLb != null){
-				methGen.asm.useTemp(argsIndex);
-			}
-
- 			methGen.asm.I_getlocal(argsIndex);
+ 			methGen.asm.I_getlocal(argumentsObjIndex);
  			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
  			methGen.asm.I_pushuint(methGen.emitter.constants.uint32(arity));
 
@@ -1145,18 +1141,15 @@ class FnExpr implements Expr{
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 			methGen = gen.newMethodCodeGen(formalsTypes, false, true, gen.asm.currentScopeDepth, name);
-			argsIndex = 1;
+			argumentsObjIndex = 1;
 
 			// Initialize all the methods
 			methods.each(function(meth:FnMethod):void{
 					meth.startLabel = methGen.asm.newLabel(); 
-					if(meth.restParam != null || meth.nameLb != null){
-						methGen.asm.useTemp(argsIndex);
-					}
 				});
 
 			methods.each(function(meth:FnMethod):void{  
-					methGen.asm.I_getlocal(argsIndex);
+					methGen.asm.I_getlocal(argumentsObjIndex);
 					methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
 					if(meth.restParam){
 						var minArity:int = meth.reqParams.count();
@@ -1178,7 +1171,7 @@ class FnExpr implements Expr{
 
 					methGen.asm.I_label(meth.startLabel);
 
-					var i:int = argsIndex;
+					var i:int = argumentsObjIndex;
 					methGen.asm.I_getlocal(i);
 					meth.reqParams.each(function(ea:Object):void{
 							methGen.asm.I_dup(); // Keep a copy of the arguments object.
