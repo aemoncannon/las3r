@@ -306,7 +306,7 @@ package com.las3r.runtime{
 			}
 			catch(e:Error)
 			{
-				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()), e)
+				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()), e);
 				throw lispError;
 			}
 			finally
@@ -341,7 +341,6 @@ package com.las3r.runtime{
 				throw new Error("Unable to resolve symbol: " + sym + " in this context");
 			}
 		}
-
 
 		public function resolve(sym:Symbol):Object{
 			return _rt.resolve(sym);
@@ -911,7 +910,6 @@ class FnMethod{
 	public var nameLb:LocalBinding;
 	public var params:IVector;
 	public var reqParams:IVector;
-	public var optionalParams:IVector;
 	public var restParam:LocalBinding;
 	public var body:BodyExpr;
 	public var paramBindings:LocalBindingSet;
@@ -931,7 +929,6 @@ class FnMethod{
 			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		}
 		meth.reqParams = RT.vector();
-		meth.optionalParams = RT.vector();
 		meth.paramBindings = new LocalBindingSet();
 		var state:PSTATE = PSTATE.REQ;
 		for(var i:int = 0; i < meth.params.count(); i++)
@@ -951,29 +948,17 @@ class FnMethod{
 			throw new Error("Can't use qualified name as parameter: " + paramSym);
 			if(param.equals(c.rt._AMP_))
 			{
-				if(state == PSTATE.REQ || state == PSTATE.OPT)
+				if(state == PSTATE.REQ)
 				state = PSTATE.REST;
 				else
 				throw new Error("Exception: Invalid parameter list.");
 			}
 			else
 			{
-				if(param is List){
-					if(state == PSTATE.REQ || state == PSTATE.OPT)
-					state = PSTATE.OPT;
-					else
-					throw new Error("Exception: Invalid parameter list.");
-					if(RT.count(param) != 2)
-					throw new Error("Exception: Invalid optional parameter pair.");
-				}
 				switch(state)
 				{
 					case PSTATE.REQ:
 					meth.reqParams = meth.reqParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym));
-					break;
-
-					case PSTATE.OPT:
-					meth.optionalParams = meth.optionalParams.cons(meth.paramBindings.registerLocal(c.rt.nextID(), paramSym, c.analyze(context, RT.second(param))));
 					break;
 
 					case PSTATE.REST:
@@ -1011,13 +996,6 @@ class FnMethod{
 
 		var i:int = 1;
 		reqParams.each(function(b:LocalBinding):void{
-				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
-				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-				methGen.asm.I_getlocal(i);
-				methGen.asm.I_setslot(activationSlot);
-				i++;
-			});
-		optionalParams.each(function(b:LocalBinding):void{
 				var activationSlot:int = methGen.createActivationSlotForLocalBinding(b);
 				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 				methGen.asm.I_getlocal(i);
@@ -1065,7 +1043,6 @@ class FnMethod{
 
 class PSTATE{
 	public static var REQ:PSTATE = new PSTATE();
-	public static var OPT:PSTATE = new PSTATE();
 	public static var REST:PSTATE = new PSTATE();
 	public static var DONE:PSTATE = new PSTATE();
 }
@@ -1117,27 +1094,55 @@ class FnExpr implements Expr{
 	public function emit(context:C, gen:CodeGen):void{
 		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + this.line;
 		var methGen:CodeGen;
+		var argsIndex:int;
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
+
 			var formalsTypes:Array = [];
 			meth.reqParams.each(function(ea:Object):void{
 					formalsTypes.push(0/*'*'*/); 
 				});
-			meth.optionalParams.each(function(ea:Object):void{
-					formalsTypes.push(0/*'*'*/);
-				});
-			methGen = gen.newMethodCodeGen(formalsTypes, false, meth.restParam != null || meth.nameLb != null, gen.asm.currentScopeDepth, name);
-			if(meth.optionalParams.count() > 0){
-				var defaults:Array = (meth.optionalParams.collect(function(ea:LocalBinding):Object{ return { val: 0, kind: 0x0c } })).toArray();
-				methGen.meth.setDefaults(defaults);
-			}
+			methGen = gen.newMethodCodeGen(
+				formalsTypes,
+				false,
+				true, /*meth.restParam != null || meth.nameLb != null*/
+				gen.asm.currentScopeDepth, 
+				name
+			);
+
+			meth.startLabel = methGen.asm.newLabel();
+			var minArity:int = meth.reqParams.count();
+			argsIndex = minArity + 1;
+			methGen.asm.I_getlocal(argsIndex);
+			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
+			methGen.asm.I_pushuint(methGen.emitter.constants.uint32(minArity));
+
+  			if(meth.restParam){
+  				methGen.asm.I_ifge(meth.startLabel);
+				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
+						"Function invoked with invalid arity, expecting at least " + minArity + " argument(s)."
+					));
+				methGen.asm.I_throw();
+   			}
+   			else{
+                methGen.asm.I_ifeq(meth.startLabel);
+				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
+						"Function invoked with invalid arity, expecting " + minArity + " argument(s)."
+					));
+				methGen.asm.I_throw();
+ 			}
+			
+
+
+			methGen.asm.I_label(meth.startLabel);
 			meth.emit(context, methGen);
+
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 
 			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth, name);
-			var argsIndex:int = 1;
+			argsIndex = 1;
 
 			// Initialize all the jump labels
 			methods.each(function(meth:FnMethod):void{  meth.startLabel = methGen.asm.newLabel(); });
@@ -1168,13 +1173,6 @@ class FnExpr implements Expr{
 					var i:int = argsIndex;
 					methGen.asm.I_getlocal(i);
 					meth.reqParams.each(function(ea:Object):void{
-							methGen.asm.I_dup(); // Keep a copy of the arguments object.
-							methGen.asm.I_pushint(methGen.emitter.constants.int32(i));
-							methGen.asm.I_nextvalue();
-							methGen.asm.I_setlocal(i);
-							i++;
-						});
-					meth.optionalParams.each(function(ea:Object):void{
 							methGen.asm.I_dup(); // Keep a copy of the arguments object.
 							methGen.asm.I_pushint(methGen.emitter.constants.int32(i));
 							methGen.asm.I_nextvalue();
@@ -1286,29 +1284,11 @@ class InvokeExpr implements Expr{
 	public function emit(context:C, gen:CodeGen):void{
 		fexpr.emit(C.EXPRESSION, gen);
 		gen.asm.I_pushnull(); // <-- the receiver
-		for(var i:int = 0; i < Math.min(Compiler.MAX_POSITIONAL_ARITY, args.count()); i++)
+		for(var i:int = 0; i < args.count(); i++)
 		{
 			var e:Expr = Expr(args.nth(i));
 			e.emit(C.EXPRESSION, gen);
 		}
-
-		// TODO: Aemon, do this.
-		// 		if(args.count() > MAX_POSITIONAL_ARITY)
-		// 		{
-		// 			PersistentVector restArgs = PersistentVector.EMPTY;
-		// 			for(int i = MAX_POSITIONAL_ARITY; i < args.count(); i++)
-		// 			{
-		// 				restArgs = restArgs.cons(args.nth(i));
-		// 			}
-		// 			MethodExpr.emitArgsAsArray(restArgs, fn, gen);
-		// 		}
-
-		// TODO: For recursion?
-		// 		if(context == C.RETURN)
-		// 		{
-		// 			FnMethod method = (FnMethod) METHOD.get();
-		// 			method.emitClearLocals(gen);
-		// 		}
 		gen.asm.I_call(args.count());
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1556,6 +1536,10 @@ class RecurExpr implements Expr{
 		if(_compiler.RECURING_BINDER.get() is FnMethod){
 			gen.refreshCurrentActivationScope();
 		}
+
+
+		/******    TODO: Need to clear locals here?   ****/
+
 
 		// then fill it up with the recur args.
 		this.loopLocals.eachReversedWithIndex(function(sym:Symbol, lb:LocalBinding, i:int){

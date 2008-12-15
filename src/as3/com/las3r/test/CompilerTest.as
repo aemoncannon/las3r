@@ -230,35 +230,6 @@ package com.las3r.test{
 				});
 		}
 
-		public function testFnWithAnOptionalArgument():void{
-			readAndLoad("(def *bird* ((fn* [a b (c nil)] c) 1 2))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be nil", v.get() == null);
-				});
-		}
-
-		public function testPassingValueToOptionalArg():void{
-			readAndLoad("(def *bird* ((fn* [a b (c nil)] c) 1 2 3))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be nil", v.get() == 3);
-				});
-		}
-
-		public function testPassingValueToFirstOfTwoOptionalArgs():void{
-			readAndLoad("(def *bird* ((fn* [a b (c nil) (d nil)] c) 1 2 3))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be nil", v.get() == 3);
-
-				});
-		}
-
-		public function testOnlyArgIsOptional():void{
-			readAndLoad("(def *bird* ((fn* [(c nil)] c)))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should be nil", v.get() == null);
-
-				});
-		}
 
 		public function testFnWithOnlyRestParam():void{
 			readAndLoad("(def *fun* (fn* [& dudes] dudes))", function(rt:RT, val:*):void{
@@ -304,22 +275,6 @@ package com.las3r.test{
 							assertTrue("*bird* should be empty.", v.get().count() == 3);
 							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(2, 3, 4)));
 						}, rt);
-				});
-		}
-
-		public function testOptionalsWithEmptyRestArg():void{
-			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(v.get(), null));
-
-				});
-		}
-
-
-		public function testOptionalsWithRestArg():void{
-			readAndLoad("(def *bird* ((fn* [a (b nil) & rest] rest) 1 2 3 4))", function(rt:RT, val:*):void{
-					var v:Var = rt.getVar("las3r", "*bird*");
-					assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(3, 4)));
 				});
 		}
 

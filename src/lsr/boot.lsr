@@ -1164,7 +1164,8 @@
    if callback is provided."
   ([form] (. *runtime* (evalStr form)))
   ([form callback] (. *runtime* (evalStr form callback)))
-  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback))))
+  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback)))
+  ([form callback err-callback progress] (. *runtime* (evalStr form callback progress err-callback))))
 
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
@@ -1875,6 +1876,16 @@
     (. loader (addEventListener "securityError" on-error))
     (. loader (load request))))
 
+(defn browse-file
+  "Browse to a file. Apply callback to the loaded FileReference."
+  [filters callback] 
+  (let [f (new flash.net.FileReference)
+	data-handler
+	(fn [e] (callback f))]
+    (. f (addEventListener (. Event SELECT) (fn [e] (. f (load)))))
+    (. f (addEventListener (. Event COMPLETE) data-handler))
+    (. f (browse (to-array filters)))))
+
 (defn eval-url
   "Evaluate the code in the provided URL and call back with the result or error if callbacks are provided."
   ([url] (eval-url url (fn [e] nil) (fn [e] nil)))
@@ -1896,6 +1907,7 @@
 	(fn [err] 
 	  (binding [*out* *err*] (println err))
 	  (set! *aot-swf* nil))
+	(fn [a b] (print "."))
 	))
 
 (defn save-module
@@ -1906,21 +1918,32 @@
 				  (let [f (new flash.net.FileReference)]
 				    (. f (save bytes (str module-id ".swf")))))))
 
+(defn save-file-to-module
+  "1. Browse to a source file. 
+   2. Compile all forms in the source file. 
+   3. Browse a location to save the compiled swf module."
+  [module-id] 
+  (let [filters [(new flash.net.FileFilter "lsr" "*.lsr")]]
+    (browse-file filters 
+		 (fn [f]
+		   (let [src (str (. f data))]
+		     (save-module src module-id))))))
+
 (defn browse-module
-  "Load a las3r module from a swf on the file system."
-  [module-id] (let [f (new flash.net.FileReference)
-		    filter (new flash.net.FileFilter "swf" "*.swf")
-		    data-handler 
-		    (fn [e] (let [data (. f data)]
-			      (. *runtime* 
-				 (loadModule module-id data
-					     (fn [val] (println val))
-					     (fn [err] (binding [*out* *err*]
-							 (println err))))
-				 )))]
-		(. f (addEventListener (. Event SELECT) (fn [e] (. f (load)))))
-		(. f (addEventListener (. Event COMPLETE) data-handler))
-		(. f (browse (to-array [filter])))))
+  "1. Browse to a swf on the local file system.
+   2. Load the compiled lisp forms contained inside."
+  [module-id] 
+  (let [filters [(new flash.net.FileFilter "swf" "*.swf")]]
+    (browse-file 
+     filters
+     (fn [f]
+       (. *runtime*
+	  (loadModule 
+	   module-id (. f data)
+	   (fn [val] (println val))
+	   (fn [err] (binding [*out* *err*]
+		       (println err)))))
+       ))))
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
 
