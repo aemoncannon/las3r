@@ -304,7 +304,7 @@ package com.las3r.runtime{
 				return new ConstantExpr(this, form);
 
 			}
-			catch(e:Error)
+			catch(e:*)
 			{
 				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()), e);
 				throw lispError;
@@ -1121,17 +1121,11 @@ class FnExpr implements Expr{
 
    			if(meth.restParam){
    				methGen.asm.I_ifge(meth.startLabel);
- 				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
- 						"Function invoked with invalid arity, expecting at least " + arity + " argument(s)."
- 					));
- 				methGen.asm.I_throw();
+				methGen.throwError("Function invoked with invalid arity, expecting at least " + arity + " argument(s).");
     		}
     		else{
                 methGen.asm.I_ifeq(meth.startLabel);
- 				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
- 						"Function invoked with invalid arity, expecting " + arity + " argument(s)."
- 					));
- 				methGen.asm.I_throw();
+				methGen.throwError("Function invoked with invalid arity, expecting " + arity + " argument(s).");
   			}
 
  			methGen.asm.I_label(meth.startLabel);
@@ -1164,8 +1158,7 @@ class FnExpr implements Expr{
 				});
 
 			// If # of params at runtime doesn't match any of the overloads..
-			methGen.asm.I_pushstring( methGen.emitter.constants.stringUtf8("Variadic function invoked with invalid arity."));
-			methGen.asm.I_throw();
+			methGen.throwError("Variadic function invoked with invalid arity.");
 
 			methods.each(function(meth:FnMethod):void{
 

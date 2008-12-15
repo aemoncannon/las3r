@@ -245,6 +245,20 @@ package com.las3r.gen{
 
 
 		/*
+		* Throw an Error instance with the provide message.
+		* Stack:   
+		*   ... => ...
+		*
+		*/
+		public function throwError(msg:String):void{
+			asm.I_getlex(emitter.qname({ns: "", id:"Error"}, false))
+			asm.I_pushstring( emitter.constants.stringUtf8(msg));
+			asm.I_construct(1);
+			asm.I_throw();
+		}
+
+
+		/*
 		* A debug helper... not meant for long-term usage.
 		* Stack:   
 		*   val => ...
