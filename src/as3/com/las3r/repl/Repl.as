@@ -59,7 +59,7 @@ package com.las3r.repl{
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			_rt.addEventListener(LispError.LISP_ERROR, function(e:LispError):void{
-					outputError(e.toString() + "\n");
+					outputError(e);
 					e.stopPropagation();
 				});
 
@@ -75,7 +75,7 @@ package com.las3r.repl{
 						outputText(" .");
 					},
 					function(error:*):void{
-						outputError(error + "\n");
+						outputError(error);
 					}
 				);
 			}
@@ -330,7 +330,7 @@ package com.las3r.repl{
 					}, 
 					null,
 					function(error:*):void{
-						outputError(error + "\n");
+						outputError(error);
 					}
 				);
 			}
@@ -340,9 +340,16 @@ package com.las3r.repl{
 
 		}
 
-		protected function outputError(str:String):void{
+		protected function outputError(e:*):void{
+			var str:String;
+			if(e is Error){
+				str = e.getStackTrace();
+			}
+			else{
+				str = String(e);
+			}
 			setOutputTextColor(0xFF3333);
-			_outputField.appendText(str);
+			_outputField.appendText("\n" + str + "\n");
 			_outputField.scrollV = _outputField.maxScrollV;
 			setOutputTextColor(0xFFFFFF);
 		}
