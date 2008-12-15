@@ -1002,6 +1002,7 @@ class FnMethod{
 				methGen.asm.I_setslot(activationSlot);
 				i++;
 			});
+
 		if(restParam){
 			var restSlot:int = methGen.createActivationSlotForLocalBinding(restParam);
 			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
@@ -1095,57 +1096,64 @@ class FnExpr implements Expr{
 		var name:String = (this.nameSym ? this.nameSym.name : "anonymous") + "_at_" + this.line;
 		var methGen:CodeGen;
 		var argsIndex:int;
+		var formalsTypes:Array = [];
 		if(methods.count() == 1){
 			var meth:FnMethod = FnMethod(methods.nth(0));
 
-			var formalsTypes:Array = [];
 			meth.reqParams.each(function(ea:Object):void{
 					formalsTypes.push(0/*'*'*/); 
 				});
 			methGen = gen.newMethodCodeGen(
 				formalsTypes,
 				false,
-				true, /*meth.restParam != null || meth.nameLb != null*/
+				true,
 				gen.asm.currentScopeDepth, 
 				name
 			);
+ 			meth.startLabel = methGen.asm.newLabel();
 
-			meth.startLabel = methGen.asm.newLabel();
-			var minArity:int = meth.reqParams.count();
-			argsIndex = minArity + 1;
-			methGen.asm.I_getlocal(argsIndex);
-			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
-			methGen.asm.I_pushuint(methGen.emitter.constants.uint32(minArity));
+ 			var arity:int = meth.reqParams.count();
+ 			argsIndex = arity + 1;
 
-  			if(meth.restParam){
-  				methGen.asm.I_ifge(meth.startLabel);
-				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
-						"Function invoked with invalid arity, expecting at least " + minArity + " argument(s)."
-					));
-				methGen.asm.I_throw();
-   			}
-   			else{
+			if(meth.restParam != null || meth.nameLb != null){
+				methGen.asm.useTemp(argsIndex);
+			}
+
+ 			methGen.asm.I_getlocal(argsIndex);
+ 			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("length"));
+ 			methGen.asm.I_pushuint(methGen.emitter.constants.uint32(arity));
+
+   			if(meth.restParam){
+   				methGen.asm.I_ifge(meth.startLabel);
+ 				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
+ 						"Function invoked with invalid arity, expecting at least " + arity + " argument(s)."
+ 					));
+ 				methGen.asm.I_throw();
+    		}
+    		else{
                 methGen.asm.I_ifeq(meth.startLabel);
-				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
-						"Function invoked with invalid arity, expecting " + minArity + " argument(s)."
-					));
-				methGen.asm.I_throw();
- 			}
-			
+ 				methGen.asm.I_pushstring(methGen.emitter.constants.stringUtf8(
+ 						"Function invoked with invalid arity, expecting " + arity + " argument(s)."
+ 					));
+ 				methGen.asm.I_throw();
+  			}
 
-
-			methGen.asm.I_label(meth.startLabel);
+ 			methGen.asm.I_label(meth.startLabel);
 			meth.emit(context, methGen);
 
 			gen.asm.I_newfunction(methGen.meth.finalize());
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
-
-			methGen = gen.newMethodCodeGen([], false, true, gen.asm.currentScopeDepth, name);
+			methGen = gen.newMethodCodeGen(formalsTypes, false, true, gen.asm.currentScopeDepth, name);
 			argsIndex = 1;
 
-			// Initialize all the jump labels
-			methods.each(function(meth:FnMethod):void{  meth.startLabel = methGen.asm.newLabel(); });
+			// Initialize all the methods
+			methods.each(function(meth:FnMethod):void{
+					meth.startLabel = methGen.asm.newLabel(); 
+					if(meth.restParam != null || meth.nameLb != null){
+						methGen.asm.useTemp(argsIndex);
+					}
+				});
 
 			methods.each(function(meth:FnMethod):void{  
 					methGen.asm.I_getlocal(argsIndex);
@@ -1925,7 +1933,7 @@ class HostExpr implements Expr{
 						tryEnd.address, 
 						catchStart.address, 
 						0, // *
-						gen.emitter.nameFromIdent("name")
+						gen.emitter.nameFromIdent("catch")
 					));
 
 				gen.asm.startCatch(); // Increment max stack by 1, for exception object
@@ -1938,19 +1946,17 @@ class HostExpr implements Expr{
 					clause = CatchClause(catchExprs.nth(i));
 					gen.asm.I_label(clause.label);
 
-					
 					// Exception object should be on top of operand stack...
 					gen.asm.I_dup();
 					gen.asm.I_istype(gen.emitter.nameFromIdent(clause.className));
 					gen.asm.I_iffalse(clause.endLabel);
 
-
 					// Store the exception in an activation slot..
 					var b:LocalBinding = clause.lb;
 					var activationSlot:int = gen.createActivationSlotForLocalBinding(b);
 					gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
-					gen.asm.I_swap(); 
-					gen.asm.I_setslot(activationSlot); 
+					gen.asm.I_swap();
+					gen.asm.I_setslot(activationSlot);
 
 					clause.handler.emit(context, gen);
 					gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..

@@ -263,11 +263,9 @@ package com.hurlant.eval.gen
             this.constants = constants;
             this.useTempRange(0, numberOfFormals + 1); // local 0 is always "this"
 			if(needRest) {
-				this.useTemp(numberOfFormals + 1);
 				need_rest = true;
 			}
 			else if(needArguments) {
-				this.useTemp(numberOfFormals + 1);
 				need_arguments = true;
 			}
 			this.init_scope_depth = initScopeDepth;
