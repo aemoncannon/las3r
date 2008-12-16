@@ -57,9 +57,12 @@ package com.las3r.runtime{
 			);
 
 			dispatchMacros = RT.map(
-				CharUtil.DOUBLE_QUOTE, new RegexReader(this),
 				CharUtil.CARROT, new MetaReader(this),
-				CharUtil.LBRACE, new SetReader(this)
+				CharUtil.DOUBLE_QUOTE, new RegexReader(this),
+				CharUtil.LBRACE, new SetReader(this),
+				CharUtil.SINGLE_QUOTE, new VarReader(this),
+				CharUtil.EQUALS, new EvalReader(this),
+				CharUtil.LESS_THAN, new UnreadableReader(this)
 			);
 
 			GENSYM_ENV = new Var(_rt, null, null, null);
@@ -812,4 +815,82 @@ class WrappingReader implements IReaderMacro{
 		return RT.list(sym, o);
 	}
 
+}
+
+class VarReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+
+	public function VarReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, quote:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+		var o:Object = _reader.read(r, true, null);
+		return RT.list(_reader.rt.THE_VAR, o);
+	}
+}
+
+class UnreadableReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+
+	public function UnreadableReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, leftangle:Object):Object{
+		throw new Error("Unreadable form");
+	}
+}
+
+
+class EvalReader implements IReaderMacro{
+
+	protected var _reader:LispReader;
+
+	public function EvalReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, eq:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+		var o:Object = _reader.read(r, true, null);
+		if(o is Symbol)
+		{
+			return _reader.rt.classForName(o.toString());
+		}
+		else if(o is IList)
+		{
+			var fs:Symbol = Symbol(RT.first(o));
+			if(fs.equals(_reader.rt.THE_VAR))
+			{
+				var vs:Symbol = Symbol(RT.second(o));
+				return _reader.rt.getVar(vs.ns, vs.name);
+			}
+			if(fs.name.match("\.$"))
+			{
+				var args:Array = RT.toArray(RT.rest(o));
+				var className:String = fs.name.substring(0, fs.name.length - 1);
+				var constructor:Class = _reader.rt.classForName(className);
+				return new constructor(); // <--- we don't support args yet!
+			}
+			
+			// 			if(Compiler.namesStaticMember(fs))
+			// 				{
+			// 				Object[] args = RT.toArray(RT.rest(o));
+			// 				return Reflector.invokeStaticMethod(fs.ns, fs.name, args);
+			// 				}
+
+			var v:Var = Var(_reader.rt.resolveIn(_reader.rt.currentNS(), fs));
+			if(v is Var)
+			{
+				return Var(v).fn().apply(null, RT.toArray(RT.rest(o)));
+			}
+			throw new Error("Can't resolve " + fs);
+		}
+		else
+		throw new Error("IllegalArgumentException: Unsupported #= form");
+	}
 }

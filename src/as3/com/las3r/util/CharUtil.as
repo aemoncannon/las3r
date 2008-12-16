@@ -14,7 +14,8 @@ package com.las3r.util
 {
 	public class CharUtil
 	{
-
+		public static var LESS_THAN:int = "<".charCodeAt(0);
+		public static var EQUALS:int = "=".charCodeAt(0);
 		public static var SPACE:int = " ".charCodeAt(0);
 		public static var LF:int = "\n".charCodeAt(0);
 		public static var CR:int = "\r".charCodeAt(0);
