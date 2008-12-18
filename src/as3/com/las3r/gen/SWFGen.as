@@ -28,14 +28,17 @@ package com.las3r.gen{
 	public class SWFGen{
 		private var _emitter:ABCEmitter;
 		private var _script:Script;
-		private var _initGen:CodeGen;
 		private var _exprs:Array = [];
 		private var _moduleId:String;
 		private var _finalized:Boolean = false;
+		private var _vars:IMap;
+		private var _keywords:IMap;
+		private var _constants:IVector;
 
 		protected function emitModule():void{
+			var rtGuid:String = GUID.create();
+			var gen:CodeGen = new CodeGen(rtGuid, _emitter, _script, null, _vars, _keywords, _constants);
 
-			var gen:CodeGen = _initGen;
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
 
@@ -102,12 +105,26 @@ package com.las3r.gen{
 			gen.provideModule(_moduleId);
 		}
 
-		public function addExpr(expr:Expr):void{
+		public function addExpr(expr:Expr, vars:IMap, keywords:IMap, constants:IVector):void{
 			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
+
+			for(var s:ISeq = vars.seq(); s != null; s = s.rest()){
+				var e:MapEntry = MapEntry(s.first());
+				_vars = _vars.cons(e);
+			}
+			for(s = keywords.seq(); s != null; s = s.rest()){
+				e = MapEntry(s.first());
+				_keywords = _keywords.cons(e);
+			}
+			for(s = constants.seq(); s != null; s = s.rest()){
+				var o:Object = s.first();
+				_constants = _constants.cons(o);
+			}
+
 			_exprs.push(expr);
 		}
 
-		public function getSWFBytes():ByteArray{
+		public function emit():ByteArray{
 			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
 			emitModule();
 			var file:ABCFile = _emitter.finalize();
@@ -122,9 +139,6 @@ package com.las3r.gen{
 			_moduleId = moduleId;
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();
-
-			var rtGuid:String = GUID.create();
-			_initGen = new CodeGen(rtGuid, _emitter, _script);
 		}
 
 		

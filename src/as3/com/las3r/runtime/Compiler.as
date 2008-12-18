@@ -28,7 +28,6 @@ package com.las3r.runtime{
 
 	public class Compiler{
 
-		public static var CONST_PREFIX:String = "const__";
 		public static var MAX_POSITIONAL_ARITY:int = 8;
 
 		private var _rt:RT;
@@ -41,11 +40,13 @@ package com.las3r.runtime{
 		public var RECUR_ARGS:Var;
 		public var RECUR_LABEL:Var;
 		public var IN_CATCH_FINALLY:Var;
+		public var AOT_MODULE_SWF:Var;
+
+		public var CONSTANTS:Var;
+		public var VARS:Var;
+		public var KEYWORDS:Var;
 
 		public function get rt():RT{ return _rt; }
-		public function get constants():Dictionary{ return _rt.constants; }
-		public function get keywords():Dictionary{ return _rt.keywords; }
-		public function get vars():Dictionary{ return _rt.vars; }
 
 		public function Compiler(rt:RT){
 			_rt = rt;
@@ -72,6 +73,10 @@ package com.las3r.runtime{
 			RECUR_ARGS = new Var(_rt, null, null, null);
 			RECUR_LABEL = new Var(_rt, null, null, null);
 			IN_CATCH_FINALLY = new Var(_rt, null, null, false);
+			CONSTANTS = new Var(_rt, null, null, null);
+			VARS = new Var(_rt, null, null, null);
+			KEYWORDS = new Var(_rt, null, null, null);
+			AOT_MODULE_SWF = new Var(_rt, null, null, null);
 		}
 
 		public function interpret(form:Object):Object{
@@ -136,16 +141,27 @@ package com.las3r.runtime{
 		}
 
 		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
+			Var.pushBindings(rt,
+				RT.map(
+					KEYWORDS, RT.map(),
+					VARS, RT.map(),
+					CONSTANTS, RT.vector()
+				)
+			);
 			var expr:Expr = analyze(C.EXPRESSION, form);
+			var vars:IMap = VARS.get();
+			var keywords:IMap = KEYWORDS.get();
+			var constants:IVector = CONSTANTS.get();
+			Var.popBindings(rt);
 
 			var aotSwf:SWFGen = SWFGen(rt.AOT_MODULE_SWF.get());
-			if(aotSwf){ aotSwf.addExpr(expr); }
+			if(aotSwf){ aotSwf.addExpr(expr, vars, keywords, constants); }
 
 			var moduleId:String = GUID.create();
 			var swf:SWFGen = new SWFGen(moduleId);
-			swf.addExpr(expr);
+			swf.addExpr(expr, vars, keywords, constants);
 
-			var swfBytes:ByteArray = swf.getSWFBytes();
+			var swfBytes:ByteArray = swf.emit();
 			ByteLoader.loadBytes(swfBytes, function():void{
 					var moduleConstructor:Function = RT.modules[moduleId];
 					if(!(moduleConstructor is Function)) {
@@ -156,6 +172,21 @@ package com.las3r.runtime{
 				true
 			);
 		}
+
+		public function beginAOTCompile(moduleId:String):void{
+			rt.AOT_MODULE_SWF.set(new SWFGen(moduleId));
+		}
+
+		public function endAOTCompile():void{
+			rt.AOT_MODULE_SWF.set(null);
+		}
+
+		public function getAOTCompileBytes():ByteArray{
+			var swf:SWFGen = SWFGen(rt.AOT_MODULE_SWF.get());
+			return swf.emit();
+		}
+
+
 
 		public function currentNS():LispNamespace{
 			return rt.currentNS();
@@ -216,50 +247,39 @@ package com.las3r.runtime{
 		}
 
 		public function registerVar(v:Var):VarExpr{
-			var id:Object = vars[v];
-			if(id == null){
-				vars[v] =  registerConstant(v);
+			if(!VARS.isBound())
+			throw new Error("IllegalStateException: VARS is unbound during compilation.");
+
+			var varsMap:IMap = IPersistentMap(VARS.get());
+			var id:Object = RT.get(varsMap, v);
+			if(id == null)
+			{
+				VARS.set(RT.assoc(varsMap, v, registerConstant(v)));
 			}
-			return new VarExpr(this, v);
+			return new VarExpr(v);
 		}
 
 		public function registerKeyword(keyword:Keyword):KeywordExpr{
-			var id:Object = keywords[keyword];
+			if(!KEYWORDS.isBound())
+			throw new Error("IllegalStateException: KEYWORDS is unbound during compilation.");
+
+			var keywordsMap:IMap = IPersistentMap(KEYWORDS.get());
+			var id:Object = RT.get(keywordsMap, keyword);
 			if(id == null)
 			{
-				keywords[keyword] = registerConstant(keyword);
+				KEYWORDS.set(RT.assoc(keywordsMap, keyword, registerConstant(keyword)));
 			}
-			return new KeywordExpr(this, keyword);
+			return new KeywordExpr(keyword);
 		}
 		
 		public function registerConstant(o:Object):int{
-			var hash:int = Util.hash(o);
-			constants[hash] = o;
-			return hash;
+			if(!CONSTANTS.isBound())
+			return -1;
+			var v:IVector = IVector(CONSTANTS.get());
+			CONSTANTS.set(RT.conj(v, o));
+			return v.count();
 		}
 
-		public function constantName(id:int):String{
-			return CONST_PREFIX + id;
-		}
-
-		public function constantType(id:int):Class{
-			var o:Object = constants[id];
-			return Object(o).constructor;
-		}
-
-		public function emitVar(gen:CodeGen, aVar:Var):void{
-			var i:int = int(vars[aVar]);
-			emitConstant(gen, i);
-		}
-
-		public function emitKeyword(gen:CodeGen, k:Keyword):void {
-			var i:int = int(keywords[k]);
-			emitConstant(gen, i);
-		}
-
-		public function emitConstant(gen:CodeGen, id:int):void {
-			gen.getConstant(id, constantName(id), constantType(id));
-		}
 
 		public function analyze(context:C, form:Object, name:String = null):Expr{
 			// TODO Re-add line-number tracking here (requires metadata).
@@ -580,7 +600,7 @@ class ConstantExpr extends LiteralExpr{
 	}
 
 	override public function emit(context:C, gen:CodeGen):void{
-		_compiler.emitConstant(gen, id);
+		gen.emitConstant(id);
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
@@ -629,7 +649,7 @@ class KeywordExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		_compiler.emitKeyword(gen, k);
+		gen.emitKeyword(k);
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 }
@@ -660,7 +680,7 @@ class VarExpr implements Expr, AssignableExpr{
 	}
 
 	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-		_compiler.emitVar(gen, aVar);
+		gen.emitVar(aVar);
 		val.emit(C.EXPRESSION, gen);
 		gen.setVar();
 		if(context == C.STATEMENT) { gen.asm.I_pop(); }
@@ -681,7 +701,7 @@ class TheVarExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		_compiler.emitVar(gen, aVar);
+		gen.emitVar(aVar);
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
@@ -855,7 +875,7 @@ class DefExpr implements Expr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		_compiler.emitVar(gen, aVar);
+		gen.emitVar(aVar);
 		if(initProvided)
 		{
 			gen.asm.I_dup();
@@ -1671,7 +1691,7 @@ class HostExpr implements Expr{
 		}
 
 		override public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitConstant(gen, this.classId);
+			gen.emitConstant(this.classId);
 			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
 			gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
 			if(context == C.STATEMENT){ gen.asm.I_pop(); }
@@ -1732,14 +1752,14 @@ class HostExpr implements Expr{
 
 
 		override public function emit(context:C, gen:CodeGen):void{
-			_compiler.emitConstant(gen, classId);
+			gen.emitConstant(classId);
 			gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
 			if(context == C.STATEMENT){ gen.asm.I_pop(); }
 		}
 
 
 		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			_compiler.emitConstant(gen, classId);
+			gen.emitConstant(classId);
 			gen.asm.I_dup();
 			val.emit(C.EXPRESSION, gen);
 			gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
@@ -1836,7 +1856,7 @@ class HostExpr implements Expr{
 		override public function emit(context:C, gen:CodeGen):void{
 			// So there's a nil on the stack after the exception is thrown,
 			// required so that in the event that the try is prematurely aborted (because of
-			// this throw) there will still be something on the stack to match the catch's
+				// this throw) there will still be something on the stack to match the catch's
 			// result.
 			gen.asm.I_pushnull();
 			// Then, reconcile with type of ensuing catch expr...

@@ -10,6 +10,8 @@
 
 (in-ns 'las3r)
 
+(def *compiler* (. *runtime* compiler))
+
 
 (def
  #^{:arglists '([& items])
@@ -1899,14 +1901,14 @@
 (defn compile-module
   "Evaluate all forms in src, returns a ByteArray containing compiled swf."
   [src module-id callback]
-  (set! *aot-swf* (new com.las3r.gen.SWFGen module-id))
+  (. *compiler* (beginAOTCompile))
   (eval src
 	(fn [val] 
-	  (callback (. *aot-swf* (getSWFBytes)))
-	  (set! *aot-swf* nil))
+	  (callback (. *compiler* (getAOTCompileBytes)))
+	  (. *compiler* (endAOTCompile)))
 	(fn [err] 
 	  (binding [*out* *err*] (println err))
-	  (set! *aot-swf* nil))
+	  (. *compiler* (endAOTCompile)))
 	(fn [a b] (print "."))
 	))
 

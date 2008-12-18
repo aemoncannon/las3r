@@ -44,9 +44,6 @@ package com.las3r.runtime{
 		private var specials:IMap;
 		public var dvals:Frame = new Frame();
 
-		public var vars:Dictionary;
-		public var keywords:Dictionary;
-		public var constants:Dictionary;
 
 		public var stdout:OutputStream;
 		public var stderr:OutputStream;
@@ -82,7 +79,6 @@ package com.las3r.runtime{
 		public var IN:Var;
 		public var SAVE_BYTECODES:Var;
 		public var PRINT_READABLY:Var;
-		public var AOT_MODULE_SWF:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
 		public var BYTECODES_KEY:Keyword;
@@ -144,10 +140,6 @@ package com.las3r.runtime{
 			stdin = inn || new InputStream();
 			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
 
-			constants = new Dictionary();
-			keywords = new Dictionary();
-			vars = new Dictionary();
-
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
 			BYTECODES_KEY = key1(sym1("bytecodes"));
@@ -165,7 +157,6 @@ package com.las3r.runtime{
 			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*err*"), stderr);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
-			AOT_MODULE_SWF = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*aot-swf*"), null);
 
 			/* 
 			The following symbols will be spliced into macro-generated code, 

@@ -24,6 +24,12 @@ package com.las3r.gen{
 
 
 	public class CodeGen{
+
+		public static var CONST_PREFIX:String = "const__";
+
+		public var vars:IMap;
+		public var keywords:IMap;
+		public var constants:IVector;
 		public var emitter:ABCEmitter;
 		public var asm:AVM2Assembler;
 		public var scr:Script;
@@ -33,18 +39,24 @@ package com.las3r.gen{
 		public var scopeToLocalMap:IVector;
 		protected var _rtGuid:String;
 
-		public function CodeGen(rtGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null){
+		public function CodeGen(rtGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IVector = null){
 			_rtGuid = rtGuid;
 			this.emitter = emitter;
 			this.scr = scr;
 			this.asm = meth ? meth.asm : scr.init.asm;
 			this.meth = meth ? meth : scr.init;
 			this.scopeToLocalMap = RT.vector();
+			this.vars = vars;
+			this.keywords = keywords;
+			this.constants = constants;
 		}
 
 
 		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
-			return new CodeGen(_rtGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
+			var c:CodeGen = new CodeGen(_rtGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
+			c.vars = this.vars;
+			c.keywords = this.keywords;
+			c.constants = this.constants;
 		}
 
 
@@ -105,6 +117,36 @@ package com.las3r.gen{
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
 			scopeToLocalMap = scopeToLocalMap.cons(i);
+		}
+
+
+
+		public function emitVar(aVar:Var):void{
+			var i:int = int(vars.valAt(aVar));
+			emitConstant(i);
+		}
+
+
+
+		public function emitKeyword(k:Keyword):void {
+			var i:int = int(keywords.valAt(k));
+			emitConstant(i);
+		}
+
+
+
+		public function emitConstant(id:int):void {
+			getConstant(id, constantName(id), constantType(id));
+		}
+
+
+		protected function constantName(id:int):String{
+			return CONST_PREFIX + id;
+		}
+
+		protected function constantType(id:int):Class{
+			var o:Object = constants.nth(id);
+			return Object(o).constructor;
 		}
 
 
@@ -237,7 +279,7 @@ package com.las3r.gen{
 		* Stack:   
 		*   ... => const
 		*/
-		public function getConstant(id:int, name:String, type:Class):void{
+		protected function getConstant(id:int, name:String, type:Class):void{
 			getRT();
  			asm.I_getproperty(emitter.nameFromIdent("constants"));
 			asm.I_getproperty(emitter.nameFromIdent(String(id)));
