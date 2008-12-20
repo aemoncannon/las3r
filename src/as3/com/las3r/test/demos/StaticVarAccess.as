@@ -14,6 +14,7 @@ package com.las3r.test.demos{
 
 	public class StaticVarAccess extends Sprite{
 
+
 		public function StaticVarAccess():void{
 			trace(ArrayAccess.dude);
 		}

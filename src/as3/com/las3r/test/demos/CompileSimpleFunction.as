@@ -52,7 +52,7 @@ package com.las3r.test.demos{
 		static function compileFunc(ctx:CompilationContext) {
 			var emitter:ABCEmitter = ctx.emitter, script:Script = ctx.script;
 			var formals_type = [emitter.nameFromIdent("String")];
-			var method = script.newFunction(formals_type, 0);
+			var method = script.newFunction(formals_type, false, false, 0, "kdfj");
 			var asm = method.asm;
 			
 			
@@ -69,9 +69,10 @@ package com.las3r.test.demos{
 			asm.I_findproperty(emitter.nameFromIdent("trace"));
 			// get param
 	        asm.I_getlocal(1);  //account for 'this'
-			var stringId:int = emitter.constants.stringUtf8("");
+			var stringId:int = emitter.constants.stringUtf8("hello");
 			asm.I_pushstring(stringId);
-			asm.I_callproperty(emitter.nameFromIdent("trace"), 2);
+			asm.I_throw();
+
 			asm.I_kill(t);
 			return method.finalize();
 		}

@@ -88,7 +88,8 @@ end
 
 TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   main, target = pair
-  file target => SHARED_SOURCES - TEST_DEMO_SWF_ENTRY_POINTS + [main] do
+  sources = FileList["./src/as3/**/*"].exclude("./src/as3/com/las3r/test/demos") + [main]
+  file target => sources do
     options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
     sh "#{MXMLC} #{options.join(" ")} -file-specs #{main} -output=#{target}"
   end
