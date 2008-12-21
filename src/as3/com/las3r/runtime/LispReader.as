@@ -859,7 +859,7 @@ class EvalReader implements IReaderMacro{
 		var o:Object = _reader.read(r, true, null);
 		if(o is Symbol)
 		{
-			return _reader.rt.classForName(o.toString());
+			return RT.classForName(o.toString());
 		}
 		else if(o is IList)
 		{
@@ -873,7 +873,7 @@ class EvalReader implements IReaderMacro{
 			{
 				var args:Array = RT.toArray(RT.rest(o));
 				var className:String = fs.name.substring(0, fs.name.length - 1);
-				var constructor:Class = _reader.rt.classForName(className);
+				var constructor:Class = RT.classForName(className);
 				return new constructor(); // <--- we don't support args yet!
 			}
 			

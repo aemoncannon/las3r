@@ -38,9 +38,15 @@ package com.las3r.runtime{
 
 
 		public function toString():String {
-			if(ns != null)
-			return "#'" + ns.getName() + "/" + sym;
-			return "#<Var: " + (sym != null ? sym.toString() : "--unnamed--") + ">";
+			if(ns != null){
+				return "#'" + ns.getName() + "/" + sym;
+			}
+			else if(sym){
+				return "#<Var " + _rt.nextID() + ": " + sym + ">";
+			}
+			else{
+				return "#<Var: "  + _rt.nextID() + "--unnamed-- >";
+			}
 		}
 
 		override public function hashCode():int{
@@ -76,7 +82,6 @@ package com.las3r.runtime{
 			var ns:LispNamespace = LispNamespace.findOrCreate(rt, nsName);
 			return internNS(ns, sym);
 		}
-
 
 		public function isBound():Boolean{
 			return hasRoot() || (count > 0 && _rt.dvals.bindings.containsKey(this));

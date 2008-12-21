@@ -20,6 +20,10 @@ package com.las3r.test.demos{
 			var dude:int = a[1];
 			trace(dude);
 		}
+
+		public function howdy():void{
+			trace("howdy");
+		}
 	}
 
 }

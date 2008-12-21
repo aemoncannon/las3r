@@ -326,7 +326,7 @@ package com.las3r.repl{
 
 			try{
 				_rt.evalStr(src, function(val:*):void{ 
-						outputText(_rt.printToString(val) + "\n"); 
+						outputText(_rt.printString(val) + "\n"); 
 					}, 
 					null,
 					function(error:*):void{

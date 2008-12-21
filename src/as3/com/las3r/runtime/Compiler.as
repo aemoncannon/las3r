@@ -40,7 +40,6 @@ package com.las3r.runtime{
 		public var RECUR_ARGS:Var;
 		public var RECUR_LABEL:Var;
 		public var IN_CATCH_FINALLY:Var;
-		public var AOT_MODULE_SWF:Var;
 
 		public var CONSTANTS:Var;
 		public var VARS:Var;
@@ -76,7 +75,6 @@ package com.las3r.runtime{
 			CONSTANTS = new Var(_rt, null, null, null);
 			VARS = new Var(_rt, null, null, null);
 			KEYWORDS = new Var(_rt, null, null, null);
-			AOT_MODULE_SWF = new Var(_rt, null, null, null);
 		}
 
 		public function interpret(form:Object):Object{
@@ -149,16 +147,16 @@ package com.las3r.runtime{
 				)
 			);
 			var expr:Expr = analyze(C.EXPRESSION, form);
-			var vars:IMap = VARS.get();
-			var keywords:IMap = KEYWORDS.get();
-			var constants:IVector = CONSTANTS.get();
+			var vars:IMap = IMap(VARS.get());
+			var keywords:IMap = IMap(KEYWORDS.get());
+			var constants:IVector = IVector(CONSTANTS.get());
 			Var.popBindings(rt);
 
 			var aotSwf:SWFGen = SWFGen(rt.AOT_MODULE_SWF.get());
 			if(aotSwf){ aotSwf.addExpr(expr, vars, keywords, constants); }
 
 			var moduleId:String = GUID.create();
-			var swf:SWFGen = new SWFGen(moduleId);
+			var swf:SWFGen = new SWFGen(rt, moduleId);
 			swf.addExpr(expr, vars, keywords, constants);
 
 			var swfBytes:ByteArray = swf.emit();
@@ -174,7 +172,7 @@ package com.las3r.runtime{
 		}
 
 		public function beginAOTCompile(moduleId:String):void{
-			rt.AOT_MODULE_SWF.set(new SWFGen(moduleId));
+			rt.AOT_MODULE_SWF.set(new SWFGen(rt, moduleId));
 		}
 
 		public function endAOTCompile():void{
@@ -250,26 +248,26 @@ package com.las3r.runtime{
 			if(!VARS.isBound())
 			throw new Error("IllegalStateException: VARS is unbound during compilation.");
 
-			var varsMap:IMap = IPersistentMap(VARS.get());
+			var varsMap:IMap = IMap(VARS.get());
 			var id:Object = RT.get(varsMap, v);
 			if(id == null)
 			{
 				VARS.set(RT.assoc(varsMap, v, registerConstant(v)));
 			}
-			return new VarExpr(v);
+			return new VarExpr(this, v);
 		}
 
 		public function registerKeyword(keyword:Keyword):KeywordExpr{
 			if(!KEYWORDS.isBound())
 			throw new Error("IllegalStateException: KEYWORDS is unbound during compilation.");
 
-			var keywordsMap:IMap = IPersistentMap(KEYWORDS.get());
+			var keywordsMap:IMap = IMap(KEYWORDS.get());
 			var id:Object = RT.get(keywordsMap, keyword);
 			if(id == null)
 			{
 				KEYWORDS.set(RT.assoc(keywordsMap, keyword, registerConstant(keyword)));
 			}
-			return new KeywordExpr(keyword);
+			return new KeywordExpr(this, keyword);
 		}
 		
 		public function registerConstant(o:Object):int{
@@ -670,7 +668,7 @@ class VarExpr implements Expr, AssignableExpr{
 	}
 
 	public function emit(context:C, gen:CodeGen):void{
-		_compiler.emitVar(gen, aVar);
+		gen.emitVar(aVar);
 		gen.getVar();
 		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
@@ -1651,7 +1649,7 @@ class HostExpr implements Expr{
 			if(sym.ns == null) //if ns-qualified can't be classname
 			{
 				if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '['){
-						c = compiler.rt.classForName(sym.name);
+						c = RT.classForName(sym.name);
 					}
 					else
 					{
@@ -1662,7 +1660,7 @@ class HostExpr implements Expr{
 				}
 			}
 			else if(stringOk && form is String)
-			c = compiler.rt.classForName(String(form));
+			c = RT.classForName(String(form));
 			return c;
 		}
 

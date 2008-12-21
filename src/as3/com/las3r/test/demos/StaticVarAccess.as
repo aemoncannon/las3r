@@ -16,7 +16,14 @@ package com.las3r.test.demos{
 
 
 		public function StaticVarAccess():void{
+			hello();
+		}
+
+
+		private function hello():void{			
 			trace(ArrayAccess.dude);
+			var a:ArrayAccess = new ArrayAccess();
+			a.howdy();
 		}
 	}
 

@@ -34,16 +34,93 @@ package com.las3r.gen{
 		private var _vars:IMap;
 		private var _keywords:IMap;
 		private var _constants:IVector;
+		private var _rt:RT;
+
+		protected function emitStatics(gen:CodeGen, staticsGuid:String, rtTmpIndex:int):void{
+            var basename = gen.emitter.qname({ns: "", id: "Object" }, false);
+			var classname = gen.emitter.qname({ns: "", id: staticsGuid }, false);
+
+			var cls = gen.scr.newClass(classname, basename);
+
+            /* Static initializer, we can't init fields here, as we don't have an RT instance. */
+            var cinit = cls.getCInit();
+			var asm = cinit.asm;
+			asm.I_returnvoid();
+			
+
+			/* Constructor, just a place holder. */
+			var inst = cls.getInstance();
+			var method = new Method(gen.emitter, [], false, false, 2, "$construct", false);
+			asm = method.asm;
+			asm.I_getlocal(0);
+			asm.I_pushscope();
+			asm.I_getlocal(0);
+            asm.I_constructsuper(0);
+            asm.I_returnvoid();
+			inst.setIInit(method.finalize());
+
+			var clsidx:int = cls.finalize(); 
+
+			/* Instantiate the class and store it in global*/
+            gen.asm.I_getlocal(0);
+            gen.asm.I_pushscope();
+            gen.asm.I_findpropstrict(basename);
+            gen.asm.I_getproperty(basename);
+            gen.asm.I_dup();
+            gen.asm.I_pushscope();
+            gen.asm.I_newclass(clsidx);
+            gen.asm.I_popscope();
+            gen.asm.I_getglobalscope();
+            gen.asm.I_swap();
+            gen.asm.I_initproperty(classname);
+
+
+			/* For each constant, populate a static field on our newly created class */
+            for(var i:int = 0; i < _constants.count(); i++){
+				var obj:Object = _constants.nth(i);
+                var cs:String = null;
+                try
+                {
+                    cs = _rt.printString(obj);
+                }
+                catch (e:Error)
+                {
+                    throw new Error("RuntimeException: Can't embed object in code, maybe print-dup not defined: " + obj);
+                }
+                if (cs.length == 0)
+                throw new Error("RuntimeException: Can't embed unreadable object in code: " + obj);
+				
+                if (cs.match("^#<"))
+                throw new Error("RuntimeException: Can't embed unreadable object in code: " + cs);
+
+				// 			var parts:Array = clazz.split(".");
+				// 			var className:String = parts.pop();
+				cls.addTrait(new ABCSlotTrait(
+						gen.emitter.nameFromIdent(CodeGen.constantName(i)), /*field name*/
+						0, /*attrs*/
+						false, /*const?*/
+						i + 1, /*slot_id 0 tells AVM to auto-assign*/
+						0, /* any type */ //gen.emitter.qname({ns: "com.las3r.runtime", id: "RT" }, false), 
+						0, /* static value lookup */
+						0 /*kind, var*/
+					));
+ 				gen.asm.I_getlex(classname);
+				gen.asm.I_getlocal(rtTmpIndex);
+ 				gen.asm.I_pushstring(cs);
+				gen.asm.I_callproperty(gen.emitter.nameFromIdent("readString"), 1);
+ 				gen.asm.I_setslot(i + 1);
+            }
+		}
+
 
 		protected function emitModule():void{
-			var rtGuid:String = GUID.create();
-			var gen:CodeGen = new CodeGen(rtGuid, _emitter, _script, null, _vars, _keywords, _constants);
+			var staticsGuid:String = GUID.create();
+			var gen:CodeGen = new CodeGen(staticsGuid, _emitter, _script, null, _vars, _keywords, _constants);
 
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
 
 			/* Define module constructor function.. */
-
 			var formalsTypes:Array = [0, 0, 0]; //rt:*, callback:*, errorCallback*
 			var methGen = gen.newMethodCodeGen(formalsTypes, false, false, gen.asm.currentScopeDepth, _moduleId);
 			methGen.pushThisScope();
@@ -53,7 +130,11 @@ package com.las3r.gen{
 			var callbackTmp:int = 2;
 			var errorCallbackTmp:int = 3;
 
-			methGen.registerRTInstance(rtTmp);
+			emitStatics(gen, staticsGuid, rtTmp);
+
+ 	        methGen.asm.I_getlex(staticsGuid);
+			methGen.asm.I_getlocal(rtTmp);
+			methGen.asm.I_setproperty(gen.emitter.nameFromIdent("rt"));
 
 			var tryStart:Object = methGen.asm.I_label(undefined);
 			methGen.asm.I_getlocal(callbackTmp); // the result callback
@@ -120,7 +201,6 @@ package com.las3r.gen{
 				var o:Object = s.first();
 				_constants = _constants.cons(o);
 			}
-
 			_exprs.push(expr);
 		}
 
@@ -135,7 +215,8 @@ package com.las3r.gen{
 		}
 
 
-		public function SWFGen(moduleId:String){
+		public function SWFGen(rt:RT, moduleId:String){
+			_rt = rt;
 			_moduleId = moduleId;
 			_emitter = new ABCEmitter();
 			_script = _emitter.newScript();

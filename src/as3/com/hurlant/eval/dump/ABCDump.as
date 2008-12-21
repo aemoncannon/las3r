@@ -49,6 +49,7 @@ package com.hurlant.eval.dump
 				var abc:Abc = new Abc(data)
 				abc.dump()
 				break
+			case 67|87<<8|83<<16|10<<24: // SWC10
 			case 67|87<<8|83<<16|9<<24: // SWC9
 			case 67|87<<8|83<<16|8<<24: // SWC8
 			case 67|87<<8|83<<16|7<<24: // SWC7
@@ -63,6 +64,7 @@ package com.hurlant.eval.dump
 				udata.position = 0
 			    /*var swf:Swf =*/ new Swf(udata)
 				break
+			case 70|87<<8|83<<16|10<<24: // SWF10
 			case 70|87<<8|83<<16|9<<24: // SWF9
 			case 70|87<<8|83<<16|8<<24: // SWF8
 			case 70|87<<8|83<<16|7<<24: // SWF7

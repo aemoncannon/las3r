@@ -27,6 +27,7 @@ package com.las3r.runtime{
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.getTimer;
 	import com.hurlant.eval.ByteLoader;
+	import org.pranaframework.reflection.Type;
 
 	public class RT extends EventDispatcher{
 
@@ -78,6 +79,7 @@ package com.las3r.runtime{
 		public var OUT:Var;
 		public var IN:Var;
 		public var SAVE_BYTECODES:Var;
+		public var AOT_MODULE_SWF:Var;
 		public var PRINT_READABLY:Var;
 		public var TAG_KEY:Keyword;
 		public var MACRO_KEY:Keyword;
@@ -157,6 +159,7 @@ package com.las3r.runtime{
 			OUT = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*err*"), stderr);
 			PRINT_READABLY = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*print-readably*"), T);
 			SAVE_BYTECODES = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*save-bytecodes*"), F);
+			AOT_MODULE_SWF = Var.internWithRoot(LAS3R_NAMESPACE, sym1("*aot-swf*"), null);
 
 			/* 
 			The following symbols will be spliced into macro-generated code, 
@@ -443,7 +446,7 @@ package com.las3r.runtime{
 			}
 			else if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '[')
 			{
-				return classForName(sym.name);
+				return RT.classForName(sym.name);
 			}
 			else
 			{
@@ -461,8 +464,18 @@ package com.las3r.runtime{
 			return LispNamespace(CURRENT_NS.get());
 		}
 
-		public function classForName(name:String):Class{
+		public static function classForName(name:String):Class{
 			return (getDefinitionByName(name) as Class);
+		}
+
+		public static function nameForClass(clazz:Class):String{
+			var t:Type = Type.forClass(clazz);
+			return t.fullName;
+		}
+
+		public static function nameForInstanceClass(obj:Object):String{
+			var t:Type = Type.forInstance(obj);
+			return t.fullName;
 		}
 
 		public function writeToStdout(str:String):void{
@@ -823,7 +836,12 @@ package com.las3r.runtime{
 			return instance[property] = value;
 		}
 
-		public function printToString(x:Object):String {
+		public function readString(str:String):Object {
+			var r:LineNumberingPushbackReader = new LineNumberingPushbackReader(new StringReader(str));
+			return lispReader.read(r);
+		}
+
+		public function printString(x:Object):String {
 			var w:NaiveStringWriter = new NaiveStringWriter();
 			print(x, w);
 			return w.toString();
@@ -837,8 +855,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-					printInnerSeq(seq(x), w);
-					w.write(')');
+				printInnerSeq(seq(x), w);
+				w.write(')');
 			}
 			else if(x is String)
 			{
@@ -885,39 +903,49 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-					{
-						var v:MapEntry = MapEntry(sq.first());
-						print(v.key, w);
-						w.write(' ');
-						print(v.value, w);
-						if(sq.rest() != null)
-						w.write(", ");
-					}
-					w.write('}');
+				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+				{
+					var v:MapEntry = MapEntry(sq.first());
+					print(v.key, w);
+					w.write(' ');
+					print(v.value, w);
+					if(sq.rest() != null)
+					w.write(", ");
+				}
+				w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-					for(i = 0; i < a.count(); i++)
-					{
-						print(a.nth(i), w);
-						if(i < a.count() - 1)
-						w.write(' ');
-					}
-					w.write(']');
+				for(i = 0; i < a.count(); i++)
+				{
+					print(a.nth(i), w);
+					if(i < a.count() - 1)
+					w.write(' ');
+				}
+				w.write(']');
 			}
 			else if(x is ISet)
 			{
 				w.write("#{");
-					for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-					{
-						print(setSq.first(), w);
-						if(setSq.rest() != null)
-						w.write(" ");
-					}
-					w.write('}');
+				for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+				{
+					print(setSq.first(), w);
+					if(setSq.rest() != null)
+					w.write(" ");
+				}
+				w.write('}');
+			}
+			else if(x is Class)
+			{
+				w.write("#=");
+				w.write(nameForClass(Class(x)));
+			}
+			else if(x is Var)
+			{
+				var vr:Var = Var(x);
+				w.write("#=(var " + vr.ns.name + "/" + vr.sym + ")");
 			}
 			else w.write(x.toString());
 		}

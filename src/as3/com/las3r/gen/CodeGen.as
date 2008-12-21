@@ -37,10 +37,10 @@ package com.las3r.gen{
 		public var currentActivation:Object;
 		public var cachedRTTempIndex:int = -1;
 		public var scopeToLocalMap:IVector;
-		protected var _rtGuid:String;
+		protected var _staticsGuid:String;
 
-		public function CodeGen(rtGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IVector = null){
-			_rtGuid = rtGuid;
+		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IVector = null){
+			_staticsGuid = staticsGuid;
 			this.emitter = emitter;
 			this.scr = scr;
 			this.asm = meth ? meth.asm : scr.init.asm;
@@ -53,24 +53,11 @@ package com.las3r.gen{
 
 
 		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
-			var c:CodeGen = new CodeGen(_rtGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
+			var c:CodeGen = new CodeGen(_staticsGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
 			c.vars = this.vars;
 			c.keywords = this.keywords;
 			c.constants = this.constants;
-		}
-
-
-		/*
-		* Register an RT instance for lookup at _rtGuid
-		*
-		* Stack:   
-		*   .... => ...
-		*/		
-		public function registerRTInstance(tmpIndex:int):void{
-			getRTClass();
-			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_getlocal(tmpIndex);
-			asm.I_setproperty(emitter.nameFromIdent(_rtGuid));
+			return c;
 		}
 
 
@@ -134,19 +121,13 @@ package com.las3r.gen{
 		}
 
 
-
 		public function emitConstant(id:int):void {
-			getConstant(id, constantName(id), constantType(id));
+			getConstant(constantName(id), RT.nameForInstanceClass(constants.nth(id)));
 		}
 
 
-		protected function constantName(id:int):String{
+		public static function constantName(id:int):String{
 			return CONST_PREFIX + id;
-		}
-
-		protected function constantType(id:int):Class{
-			var o:Object = constants.nth(id);
-			return Object(o).constructor;
 		}
 
 
@@ -251,9 +232,8 @@ package com.las3r.gen{
 				asm.I_getlocal(cachedRTTempIndex);
 			}
 			else{
-				getRTClass();
-				asm.I_getproperty(emitter.nameFromIdent("instances"));
-				asm.I_getproperty(emitter.nameFromIdent(_rtGuid));
+ 				asm.I_getlex(_staticsGuid);
+				asm.I_getproperty(emitter.nameFromIdent("rt"));
 			}
 		}
 
@@ -265,9 +245,8 @@ package com.las3r.gen{
 		*   ... => ...
 		*/
 		public function cacheRTInstance():void{
-			getRTClass();
-			asm.I_getproperty(emitter.nameFromIdent("instances"));
-			asm.I_getproperty(emitter.nameFromIdent(_rtGuid));
+ 			asm.I_getlex(_staticsGuid);
+			asm.I_getproperty(emitter.nameFromIdent("rt"));
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
 			cachedRTTempIndex = i;
@@ -279,10 +258,9 @@ package com.las3r.gen{
 		* Stack:   
 		*   ... => const
 		*/
-		protected function getConstant(id:int, name:String, type:Class):void{
-			getRT();
- 			asm.I_getproperty(emitter.nameFromIdent("constants"));
-			asm.I_getproperty(emitter.nameFromIdent(String(id)));
+		protected function getConstant(name:String, classFullName:String):void{
+ 			asm.I_getlex(_staticsGuid);
+			asm.I_getproperty(name);
 		}
 
 

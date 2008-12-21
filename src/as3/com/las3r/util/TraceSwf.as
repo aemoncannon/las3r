@@ -14,6 +14,7 @@ package com.las3r.util{
 	import com.hurlant.eval.ByteLoader;
 	import com.hurlant.eval.dump.ABCDump;
 	import flash.utils.ByteArray;
+	import com.las3r.test.demos.StaticVarAccess;
 
 
 	public class TraceSwf extends Sprite{
@@ -23,6 +24,7 @@ package com.las3r.util{
 		private const SWF:Class;
 
 		public function TraceSwf() {
+			var forceImport:Array = [StaticVarAccess];
 			var swf:ByteArray = new SWF() as ByteArray;
 			throw ABCDump.dump(swf);
 		}
