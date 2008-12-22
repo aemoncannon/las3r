@@ -120,9 +120,9 @@ package com.las3r.gen{
 			emitConstant(i);
 		}
 
-
+		
 		public function emitConstant(id:int):void {
-			getConstant(constantName(id), RT.nameForInstanceClass(constants.nth(id)));
+			getConstant(constantName(id), "Object"/*RT.nameForInstanceClass(constants.nth(id))*/);
 		}
 
 
@@ -232,7 +232,7 @@ package com.las3r.gen{
 				asm.I_getlocal(cachedRTTempIndex);
 			}
 			else{
- 				asm.I_getlex(_staticsGuid);
+ 				asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
 				asm.I_getproperty(emitter.nameFromIdent("rt"));
 			}
 		}
@@ -245,7 +245,7 @@ package com.las3r.gen{
 		*   ... => ...
 		*/
 		public function cacheRTInstance():void{
- 			asm.I_getlex(_staticsGuid);
+ 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
 			asm.I_getproperty(emitter.nameFromIdent("rt"));
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
@@ -259,8 +259,8 @@ package com.las3r.gen{
 		*   ... => const
 		*/
 		protected function getConstant(name:String, classFullName:String):void{
- 			asm.I_getlex(_staticsGuid);
-			asm.I_getproperty(name);
+ 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
+			asm.I_getproperty(emitter.nameFromIdent(name));
 		}
 
 

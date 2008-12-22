@@ -95,6 +95,7 @@ package com.las3r.runtime{
 		public var WITH_META:Symbol;
 		public var META:Symbol;
 		public var SLASH:Symbol;
+		public var LAS3R_SLASH:Symbol;
 		public var DEREF:Symbol;
 
 
@@ -241,6 +242,7 @@ package com.las3r.runtime{
 			DEREF = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "deref");
 
 			SLASH = sym2(null, "/"); // Don't want namespace.
+			LAS3R_SLASH = sym2(LispNamespace.LAS3R_NAMESPACE_NAME, "/");
 
 
 			DEF = sym1("def");
@@ -470,12 +472,12 @@ package com.las3r.runtime{
 
 		public static function nameForClass(clazz:Class):String{
 			var t:Type = Type.forClass(clazz);
-			return t.fullName;
+			return t.fullName.replace("::", ".");
 		}
 
 		public static function nameForInstanceClass(obj:Object):String{
 			var t:Type = Type.forInstance(obj);
-			return t.fullName;
+			return t.fullName.replace("::", ".");
 		}
 
 		public function writeToStdout(str:String):void{

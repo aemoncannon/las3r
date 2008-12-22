@@ -28,7 +28,7 @@ package com.hurlant.eval.gen
 
         public function getCInit() {
             if(cinit == null )
-                cinit = new Method(s.e, [], false, false, 0, "$cinit", true);
+                cinit = new Method(s.e, [], false, false, 0, "$cinit", false);
             return cinit;
         }
 

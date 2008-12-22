@@ -1231,7 +1231,7 @@
 	  classes (rfirst import-lists)]
       
       (doseq c classes
-	(. ns (importClass c (. *runtime* (classForName (str pkg "." c)))))))
+	(. ns (importClass c (. com.las3r.runtime.RT (classForName (str pkg "." c)))))))
     (apply import (rest import-lists))))
 
 

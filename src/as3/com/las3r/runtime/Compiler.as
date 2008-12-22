@@ -146,10 +146,12 @@ package com.las3r.runtime{
 					CONSTANTS, RT.vector()
 				)
 			);
+
 			var expr:Expr = analyze(C.EXPRESSION, form);
 			var vars:IMap = IMap(VARS.get());
 			var keywords:IMap = IMap(KEYWORDS.get());
 			var constants:IVector = IVector(CONSTANTS.get());
+
 			Var.popBindings(rt);
 
 			var aotSwf:SWFGen = SWFGen(rt.AOT_MODULE_SWF.get());
@@ -272,7 +274,8 @@ package com.las3r.runtime{
 		
 		public function registerConstant(o:Object):int{
 			if(!CONSTANTS.isBound())
-			return -1;
+				throw new Error("IllegalStateException: CONSTANTS is unbound during compilation.");
+
 			var v:IVector = IVector(CONSTANTS.get());
 			CONSTANTS.set(RT.conj(v, o));
 			return v.count();

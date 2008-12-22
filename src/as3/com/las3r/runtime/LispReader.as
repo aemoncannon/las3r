@@ -227,6 +227,10 @@ package com.las3r.runtime{
 			{
 				return _rt.SLASH;
 			}
+			else if(s == LispNamespace.LAS3R_NAMESPACE_NAME + "//")
+			{
+				return _rt.LAS3R_SLASH;
+			}
 			var ret:Object = null;
 			ret = matchSymbol(s);
 			if(ret != null)

@@ -95,6 +95,45 @@ package com.las3r.test{
 		}
 
 
+		public function testBindUnInternedVars():void{
+			var rt:RT = new RT();
+			var ALPHA:Var = new Var(rt, null, null, null);
+			var BETA:Var = new Var(rt, null, null, null);
+
+			Var.pushBindings(rt, RT.map(
+					ALPHA, 1,
+					BETA, 2
+				));
+
+			assertTrue("alpha is bound", ALPHA.isBound());
+			assertTrue("alpha.get should return 1", ALPHA.get() == 1);
+			assertTrue("beta is bound", BETA.isBound());
+			assertTrue("beta.get should return 2", BETA.get() == 2);
+
+			Var.pushBindings(rt, RT.map(
+					ALPHA, 5,
+					BETA, 6
+				));
+
+			assertTrue("alpha is bound", ALPHA.isBound());
+			assertTrue("alpha.get should return 5", ALPHA.get() == 5);
+			assertTrue("beta is bound", BETA.isBound());
+			assertTrue("beta.get should return 6", BETA.get() == 6);
+
+			Var.popBindings(rt);
+
+			assertTrue("alpha is bound", ALPHA.isBound());
+			assertTrue("alpha.get should return 1", ALPHA.get() == 1);
+			assertTrue("beta is bound", BETA.isBound());
+			assertTrue("beta.get should return 2", BETA.get() == 2);
+
+			Var.popBindings(rt);
+
+			assertFalse("alpha is not bound", ALPHA.isBound());
+			assertFalse("beta is not bound", BETA.isBound());
+		}
+
+
 	}
 
 }

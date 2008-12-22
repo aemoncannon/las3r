@@ -13,11 +13,12 @@
 package com.las3r.runtime{
 	public class Frame{
 		//Var->Box
+		public var frameBindings:IMap;
 		public var bindings:IMap;
-
 		public var prev:Frame;
 
-		public function Frame(bindings:IMap = null, prev:Frame = null){
+		public function Frame(frameBindings:IMap = null, bindings:IMap = null, prev:Frame = null){
+			this.frameBindings = frameBindings || RT.map();
 			this.bindings = bindings || RT.map();
 			this.prev = prev || null;
 		}

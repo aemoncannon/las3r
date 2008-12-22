@@ -119,6 +119,7 @@ package com.las3r.runtime{
 		//binding root always clears macro flag
 		public function bindRoot(root:Object):void{
 			this.root = root;
+			_meta = _meta.assoc(_rt.MACRO_KEY, RT.F);
 		}
 
 		public function unbindRoot():void{
@@ -131,21 +132,26 @@ package com.las3r.runtime{
 
 		public static function pushBindings(rt:RT, bindings:IMap):void{
 			var f:Frame = rt.dvals;
-			var newMap:IMap = RT.map();
-			bindings.each(function(v:Var, val:*):void{
-					v.count += 1;
-					newMap = newMap.assoc(v, new Box(val));
-				});
-			rt.dvals = new Frame(newMap, f);
+			var bmap:IMap = f.bindings;
+			for(var bs:ISeq = bindings.seq(); bs != null; bs = bs.rest())
+			{
+				var e:MapEntry = MapEntry(bs.first());
+				var v:Var = Var(e.key);
+				v.count += 1;
+				bmap = bmap.assoc(v, new Box(e.value));
+			}
+			rt.dvals = new Frame(bindings, bmap, f);
 		}
 
 		public static function popBindings(rt:RT):void{
 			var f:Frame = rt.dvals;
 			if(f.prev == null)
 			throw new Error("IllegalStateException: Pop without matching push");
-			f.bindings.each(function(v:Var, val:Box):void{
-					v.count -= 1;
-				});
+			for(var bs:ISeq = RT.keys(f.frameBindings); bs != null; bs = bs.rest())
+			{
+				var v:Var = Var(bs.first());
+				v.count -= 1;
+			}
 			rt.dvals = f.prev;
 		}
 
@@ -153,21 +159,20 @@ package com.las3r.runtime{
 			var f:Frame = rt.dvals;
 			if(f.prev == null)
 			throw new Error("IllegalStateException: Release without full unwind");
-
-			f.bindings.each(function(v:Var, val:Box):void{
-					v.count -= 1;
-				});
+			for(var bs:ISeq = RT.keys(f.bindings); bs != null; bs = bs.rest())
+			{
+				var v:Var = Var(bs.first());
+				v.count -= 1;
+			}
 			rt.dvals = null;
 		}
 
 		public function getBinding():Box{
 			if(count > 0)
 			{
-				for(var f:Frame = _rt.dvals; f != null; f = f.prev){
-					var val:Object = f.bindings.valAt(this);
-					if(val != null){
-						return Box(val);
-					}
+				var e:MapEntry = _rt.dvals.bindings.entryAt(this);
+				if(e != null){
+					return Box(e.value);
 				}
 			}
 			return null;
@@ -192,7 +197,7 @@ package com.las3r.runtime{
 		}
 
 		public function isMacro():Boolean{
-			return (_meta.valAt(_rt.MACRO_KEY) != null);
+			return (_meta.valAt(_rt.MACRO_KEY) === RT.T);
 		}
 
 		public function isPublic():Boolean{

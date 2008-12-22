@@ -31,9 +31,9 @@ package com.las3r.gen{
 		private var _exprs:Array = [];
 		private var _moduleId:String;
 		private var _finalized:Boolean = false;
-		private var _vars:IMap;
-		private var _keywords:IMap;
-		private var _constants:IVector;
+		private var _vars:IMap = RT.map();
+		private var _keywords:IMap = RT.map();
+		private var _constants:IVector = RT.vector();
 		private var _rt:RT;
 
 		protected function emitStatics(gen:CodeGen, staticsGuid:String, rtTmpIndex:int):void{
@@ -59,40 +59,9 @@ package com.las3r.gen{
             asm.I_returnvoid();
 			inst.setIInit(method.finalize());
 
-			var clsidx:int = cls.finalize(); 
-
-			/* Instantiate the class and store it in global*/
-            gen.asm.I_getlocal(0);
-            gen.asm.I_pushscope();
-            gen.asm.I_findpropstrict(basename);
-            gen.asm.I_getproperty(basename);
-            gen.asm.I_dup();
-            gen.asm.I_pushscope();
-            gen.asm.I_newclass(clsidx);
-            gen.asm.I_popscope();
-            gen.asm.I_getglobalscope();
-            gen.asm.I_swap();
-            gen.asm.I_initproperty(classname);
-
-
-			/* For each constant, populate a static field on our newly created class */
+			/* For each constant, create a slot on the class */
             for(var i:int = 0; i < _constants.count(); i++){
 				var obj:Object = _constants.nth(i);
-                var cs:String = null;
-                try
-                {
-                    cs = _rt.printString(obj);
-                }
-                catch (e:Error)
-                {
-                    throw new Error("RuntimeException: Can't embed object in code, maybe print-dup not defined: " + obj);
-                }
-                if (cs.length == 0)
-                throw new Error("RuntimeException: Can't embed unreadable object in code: " + obj);
-				
-                if (cs.match("^#<"))
-                throw new Error("RuntimeException: Can't embed unreadable object in code: " + cs);
-
 				// 			var parts:Array = clazz.split(".");
 				// 			var className:String = parts.pop();
 				cls.addTrait(new ABCSlotTrait(
@@ -104,12 +73,52 @@ package com.las3r.gen{
 						0, /* static value lookup */
 						0 /*kind, var*/
 					));
- 				gen.asm.I_getlex(classname);
+            }
+
+			var clsidx:int = cls.finalize(); 
+
+			/* Instantiate the class and store it in global*/
+            gen.asm.I_findpropstrict(basename);
+            gen.asm.I_getproperty(basename);
+            gen.asm.I_dup();
+            gen.asm.I_pushscope();
+            gen.asm.I_newclass(clsidx);
+            gen.asm.I_dup(); // We'll need this class object later..
+            gen.asm.I_popscope();
+            gen.asm.I_getglobalscope();
+            gen.asm.I_swap();
+            gen.asm.I_initproperty(classname);
+
+			//Dup'ed object should now be on TOS
+
+
+			/* For each constant, populate a static field on our newly created class */
+            for(i = 0; i < _constants.count(); i++){
+				obj = _constants.nth(i);
+                var cs:String = null;
+                try
+                {
+                    cs = _rt.printString(obj);
+                }
+                catch (e:Error)
+                {
+					throw e;
+//                    throw new Error("RuntimeException: Can't embed object in code, maybe print-dup not defined: " + obj);
+                }
+                if (cs.length == 0)
+                throw new Error("RuntimeException: Can't embed unreadable object in code: " + obj);
+				
+                if (cs.match("^#<"))
+                throw new Error("RuntimeException: Can't embed unreadable object in code: " + cs);
+
+ 				gen.asm.I_dup(); // Keep a copy of the class object on the stack..
 				gen.asm.I_getlocal(rtTmpIndex);
- 				gen.asm.I_pushstring(cs);
+ 				gen.asm.I_pushstring(gen.emitter.constants.stringUtf8(cs));
 				gen.asm.I_callproperty(gen.emitter.nameFromIdent("readString"), 1);
  				gen.asm.I_setslot(i + 1);
             }
+
+			gen.asm.I_pop(); // Get rid of the class object..
 		}
 
 
@@ -130,11 +139,11 @@ package com.las3r.gen{
 			var callbackTmp:int = 2;
 			var errorCallbackTmp:int = 3;
 
-			emitStatics(gen, staticsGuid, rtTmp);
+			emitStatics(methGen, staticsGuid, rtTmp);
 
- 	        methGen.asm.I_getlex(staticsGuid);
+ 	        methGen.asm.I_getlex(methGen.emitter.qname({ns: "", id: staticsGuid }, false));
 			methGen.asm.I_getlocal(rtTmp);
-			methGen.asm.I_setproperty(gen.emitter.nameFromIdent("rt"));
+			methGen.asm.I_setproperty(methGen.emitter.nameFromIdent("rt"));
 
 			var tryStart:Object = methGen.asm.I_label(undefined);
 			methGen.asm.I_getlocal(callbackTmp); // the result callback

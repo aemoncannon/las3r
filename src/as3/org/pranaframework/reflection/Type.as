@@ -106,7 +106,7 @@ package org.pranaframework.reflection {
 						result = Type.forClass(Class(getDefinitionByName(name)));
 					}
 					catch (e:ReferenceError) {
-						trace("Type.forName error: " + e.message + " The class '" + name + "' is probably an internal class or it may not have been compiled.");
+						//trace("Type.forName error: " + e.message + " The class '" + name + "' is probably an internal class or it may not have been compiled.");
 					}
 					
 			}
