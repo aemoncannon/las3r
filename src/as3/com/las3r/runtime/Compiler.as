@@ -143,14 +143,14 @@ package com.las3r.runtime{
 				RT.map(
 					KEYWORDS, RT.map(),
 					VARS, RT.map(),
-					CONSTANTS, RT.vector()
+					CONSTANTS, RT.map()
 				)
 			);
 
 			var expr:Expr = analyze(C.EXPRESSION, form);
 			var vars:IMap = IMap(VARS.get());
 			var keywords:IMap = IMap(KEYWORDS.get());
-			var constants:IVector = IVector(CONSTANTS.get());
+			var constants:IMap = IMap(CONSTANTS.get());
 
 			Var.popBindings(rt);
 
@@ -252,7 +252,7 @@ package com.las3r.runtime{
 
 			var varsMap:IMap = IMap(VARS.get());
 			var id:Object = RT.get(varsMap, v);
-			if(id == null)
+			if(id === null)
 			{
 				VARS.set(RT.assoc(varsMap, v, registerConstant(v)));
 			}
@@ -265,7 +265,7 @@ package com.las3r.runtime{
 
 			var keywordsMap:IMap = IMap(KEYWORDS.get());
 			var id:Object = RT.get(keywordsMap, keyword);
-			if(id == null)
+			if(id === null)
 			{
 				KEYWORDS.set(RT.assoc(keywordsMap, keyword, registerConstant(keyword)));
 			}
@@ -276,9 +276,10 @@ package com.las3r.runtime{
 			if(!CONSTANTS.isBound())
 				throw new Error("IllegalStateException: CONSTANTS is unbound during compilation.");
 
-			var v:IVector = IVector(CONSTANTS.get());
-			CONSTANTS.set(RT.conj(v, o));
-			return v.count();
+			var v:IMap = IMap(CONSTANTS.get());
+			var id:int = rt.nextID();
+			CONSTANTS.set(RT.assoc(v, id, o));
+			return id;
 		}
 
 

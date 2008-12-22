@@ -33,7 +33,7 @@ package com.las3r.gen{
 		private var _finalized:Boolean = false;
 		private var _vars:IMap = RT.map();
 		private var _keywords:IMap = RT.map();
-		private var _constants:IVector = RT.vector();
+		private var _constants:IMap = RT.map();
 		private var _rt:RT;
 
 		protected function emitStatics(gen:CodeGen, staticsGuid:String, rtTmpIndex:int):void{
@@ -60,20 +60,21 @@ package com.las3r.gen{
 			inst.setIInit(method.finalize());
 
 			/* For each constant, create a slot on the class */
-            for(var i:int = 0; i < _constants.count(); i++){
-				var obj:Object = _constants.nth(i);
-				// 			var parts:Array = clazz.split(".");
-				// 			var className:String = parts.pop();
-				cls.addTrait(new ABCSlotTrait(
-						gen.emitter.nameFromIdent(CodeGen.constantName(i)), /*field name*/
-						0, /*attrs*/
-						false, /*const?*/
-						i + 1, /*slot_id 0 tells AVM to auto-assign*/
-						0, /* any type */ //gen.emitter.qname({ns: "com.las3r.runtime", id: "RT" }, false), 
-						0, /* static value lookup */
-						0 /*kind, var*/
-					));
-            }
+			var i:int = 0;
+            _constants.each(function(id:int, obj:Object):void{
+					//var parts:Array = clazz.split(".");
+					//var className:String = parts.pop();
+					cls.addTrait(new ABCSlotTrait(
+							gen.emitter.nameFromIdent(CodeGen.constantName(id)), /*field name*/
+							0, /*attrs*/
+							false, /*const?*/
+							i + 1, /*slot_id 0 tells AVM to auto-assign*/
+							0, /* any type */ //gen.emitter.qname({ns: "com.las3r.runtime", id: "RT" }, false), 
+							0, /* static value lookup */
+							0 /*kind, var*/
+						));
+					i++;
+				});
 
 			var clsidx:int = cls.finalize(); 
 
@@ -94,30 +95,30 @@ package com.las3r.gen{
 
 			/* For each constant, populate a static field on our newly created class */
             Var.pushBindings(_rt, RT.map(_rt.PRINT_READABLY, RT.T));
-            for(i = 0; i < _constants.count(); i++){
-				obj = _constants.nth(i);
-                var cs:String = null;
-                try
-                {
-                    cs = _rt.printString(obj);
-                }
-                catch (e:Error)
-                {
-					throw e;
-//                    throw new Error("RuntimeException: Can't embed object in code, maybe print-dup not defined: " + obj);
-                }
-                if (cs.length == 0)
-                throw new Error("RuntimeException: Can't embed unreadable object in code: " + obj);
-				
-                if (cs.match("^#<"))
-                throw new Error("RuntimeException: Can't embed unreadable object in code: " + cs);
+			i = 0;
+            _constants.each(function(id:int, obj:Object):void{
+					var cs:String = null;
+					try
+					{
+						cs = _rt.printString(obj);
+					}
+					catch (e:Error)
+					{
+						throw new Error("RuntimeException: Can't embed object in code, maybe print-dup not defined: " + obj);
+					}
+					if (cs.length == 0)
+					throw new Error("RuntimeException: Can't embed unreadable object in code: " + obj);
+					
+					if (cs.match("^#<"))
+					throw new Error("RuntimeException: Can't embed unreadable object in code: " + cs);
 
- 				gen.asm.I_dup(); // Keep a copy of the class object on the stack..
-				gen.asm.I_getlocal(rtTmpIndex);
- 				gen.asm.I_pushstring(gen.emitter.constants.stringUtf8(cs));
-				gen.asm.I_callproperty(gen.emitter.nameFromIdent("readString"), 1);
- 				gen.asm.I_setslot(i + 1);
-            }
+ 					gen.asm.I_dup(); // Keep a copy of the class object on the stack..
+					gen.asm.I_getlocal(rtTmpIndex);
+ 					gen.asm.I_pushstring(gen.emitter.constants.stringUtf8(cs));
+					gen.asm.I_callproperty(gen.emitter.nameFromIdent("readString"), 1);
+ 					gen.asm.I_setslot(i + 1);
+					i++;
+				});
             Var.popBindings(_rt);
 
 			gen.asm.I_pop(); // Get rid of the class object..
@@ -197,7 +198,7 @@ package com.las3r.gen{
 			gen.provideModule(_moduleId);
 		}
 
-		public function addExpr(expr:Expr, vars:IMap, keywords:IMap, constants:IVector):void{
+		public function addExpr(expr:Expr, vars:IMap, keywords:IMap, constants:IMap):void{
 			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
 
 			for(var s:ISeq = vars.seq(); s != null; s = s.rest()){
@@ -209,8 +210,8 @@ package com.las3r.gen{
 				_keywords = _keywords.cons(e);
 			}
 			for(s = constants.seq(); s != null; s = s.rest()){
-				var o:Object = s.first();
-				_constants = _constants.cons(o);
+				e = MapEntry(s.first());
+				_constants = _constants.cons(e);
 			}
 			_exprs.push(expr);
 		}

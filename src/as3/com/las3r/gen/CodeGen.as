@@ -29,7 +29,7 @@ package com.las3r.gen{
 
 		public var vars:IMap;
 		public var keywords:IMap;
-		public var constants:IVector;
+		public var constants:IMap;
 		public var emitter:ABCEmitter;
 		public var asm:AVM2Assembler;
 		public var scr:Script;
@@ -39,7 +39,7 @@ package com.las3r.gen{
 		public var scopeToLocalMap:IVector;
 		protected var _staticsGuid:String;
 
-		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IVector = null){
+		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IMap = null){
 			_staticsGuid = staticsGuid;
 			this.emitter = emitter;
 			this.scr = scr;
