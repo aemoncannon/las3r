@@ -35,7 +35,9 @@ package com.hurlant.eval.abc
 			else{
 				emit(x);
 				pool.push(x);
-				return (pool.length - 1);
+				var id:int = (pool.length - 1);
+				dict[x] = id;
+				return id;
 			}
         }
 
