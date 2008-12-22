@@ -1851,17 +1851,17 @@
   ([port]
      (let [socket (new Socket)
 	   buffer (new StringBuffer)]
-       (. socket (addEventListener (. Event CONNECT) (fn [e] (println "Connected to eval_pipe."))))
-       (. socket (addEventListener (. Event CLOSE) (fn [e] (println "Disconnected from eval_pipe."))))
-       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (println "Error on eval_pipe."))))
+       (. socket (addEventListener (. Event CONNECT) (fn [e] (prn "Connected to eval_pipe."))))
+       (. socket (addEventListener (. Event CLOSE) (fn [e] (prn "Disconnected from eval_pipe."))))
+       (. socket (addEventListener (. IOErrorEvent IO_ERROR) (fn [e] (prn "Error on eval_pipe."))))
        (. socket (addEventListener 
 		  (. ProgressEvent SOCKET_DATA)
 		  (fn [e]
 		    (doseq src (read-bytes socket buffer)
 		      (eval src 
-			    (fn [val] (println val))
+			    (fn [val] (prn val))
 			    (fn [err] (binding [*out* *err*]
-					(println err)))))
+					(prn err)))))
 		    )))
        (. socket (connect "localhost" port))
        socket
@@ -1901,13 +1901,13 @@
 (defn compile-module
   "Evaluate all forms in src, returns a ByteArray containing compiled swf."
   [src module-id callback]
-  (. *compiler* (beginAOTCompile))
+  (. *compiler* (beginAOTCompile module-id))
   (eval src
 	(fn [val] 
 	  (callback (. *compiler* (getAOTCompileBytes)))
 	  (. *compiler* (endAOTCompile)))
 	(fn [err] 
-	  (binding [*out* *err*] (println err))
+	  (binding [*out* *err*] (prn err))
 	  (. *compiler* (endAOTCompile)))
 	(fn [a b] (print "."))
 	))
@@ -1942,9 +1942,24 @@
        (. *runtime*
 	  (loadModule 
 	   module-id (. f data)
-	   (fn [val] (println val))
+	   (fn [val] (prn val))
 	   (fn [err] (binding [*out* *err*]
-		       (println err)))))
+		       (prn err)))))
+       ))))
+
+(defn browse-src
+  "1. Browse to a lsr source file on the local file system.
+   2. Load the lisp forms contained inside."
+  [] 
+  (let [filters [(new flash.net.FileFilter "lsr" "*.lsr")]]
+    (browse-file 
+     filters
+     (fn [f]
+       (let [src (str (. f data))]
+       (eval src
+	   (fn [val] (prn val))
+	   (fn [err] (binding [*out* *err*]
+		       (prn err)))))
        ))))
 
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
@@ -1953,16 +1968,16 @@
   [form]
   `(try (if ~form
 	  (print ".")
-	  (println (list "Failure:  " '~form "   Expecting truthy")))
-	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+	  (prn (list "Failure:  " '~form "   Expecting truthy")))
+	(catch Error e# (prn (list "Error in:  " '~form "   " (. e# message))))))
 
 
 (defmacro assert-false
   [form]
   `(try (if (not ~form)
 	  (print ".")
-	  (println (list "Failure:  " '~form "   Expecting falsy")))
-	(catch Error e# (println (list "Error in:  " '~form "   " (. e# message))))))
+	  (prn (list "Failure:  " '~form "   Expecting falsy")))
+	(catch Error e# (prn (list "Error in:  " '~form "   " (. e# message))))))
 
 
 (defn run-tests []

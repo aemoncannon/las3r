@@ -312,7 +312,7 @@ package com.las3r.runtime{
 					if(!(moduleConstructor is Function)) {
 						throw new Error("IllegalStateException: no module constructor at " + moduleId);
 					}
-					moduleConstructor(this, callback, errorCallback);
+					moduleConstructor(_this, callback, errorCallback);
 				}, 
 				true
 			);

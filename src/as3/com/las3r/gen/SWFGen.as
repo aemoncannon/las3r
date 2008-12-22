@@ -93,6 +93,7 @@ package com.las3r.gen{
 
 
 			/* For each constant, populate a static field on our newly created class */
+            Var.pushBindings(_rt, RT.map(_rt.PRINT_READABLY, RT.T));
             for(i = 0; i < _constants.count(); i++){
 				obj = _constants.nth(i);
                 var cs:String = null;
@@ -117,6 +118,7 @@ package com.las3r.gen{
 				gen.asm.I_callproperty(gen.emitter.nameFromIdent("readString"), 1);
  				gen.asm.I_setslot(i + 1);
             }
+            Var.popBindings(_rt);
 
 			gen.asm.I_pop(); // Get rid of the class object..
 		}
