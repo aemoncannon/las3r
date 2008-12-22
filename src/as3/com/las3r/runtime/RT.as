@@ -31,9 +31,12 @@ package com.las3r.runtime{
 
 	public class RT extends EventDispatcher{
 
-		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
-		protected const BootLsr:Class;
-		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
+		[Embed(source="../../../../../bin/boot.swf", mimeType="application/octet-stream")]
+		protected const BootSwf:Class;
+
+// 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
+// 		protected const BootLsr:Class;
+// 		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
 		public static var instances:Object = {};
 		public static var modules:Object = {};
@@ -302,7 +305,8 @@ package com.las3r.runtime{
 
 
 		public function loadStdLib(onComplete:Function = null, progress:Function = null, failure:Function = null):void{
-			evalStr(BOOT_LSR, onComplete, progress, failure);
+			var bytes:ByteArray = new BootSwf() as ByteArray;
+			loadModule("boot", bytes, onComplete, failure);
 		}
 
 
