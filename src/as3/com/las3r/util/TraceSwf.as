@@ -20,11 +20,11 @@ package com.las3r.util{
 	public class TraceSwf extends Sprite{
 
 
-		[Embed(source="../../../../../bin/StaticVarAccess.swf", mimeType="application/octet-stream")]
+		[Embed(source="../../../../../bin/boot.swf", mimeType="application/octet-stream")]
 		private const SWF:Class;
 
 		public function TraceSwf() {
-			var forceImport:Array = [StaticVarAccess];
+			var forceImport:Array = [];
 			var swf:ByteArray = new SWF() as ByteArray;
 			throw ABCDump.dump(swf);
 		}
