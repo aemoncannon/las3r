@@ -90,8 +90,7 @@ package com.las3r.gen{
             gen.asm.I_swap();
             gen.asm.I_initproperty(classname);
 
-			//Dup'ed object should now be on TOS
-
+			//Dup'ed class object should now be on TOS
 
 			/* For each constant, populate a static field on our newly created class */
             Var.pushBindings(_rt, RT.map(_rt.PRINT_READABLY, RT.T));
