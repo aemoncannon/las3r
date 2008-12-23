@@ -64,16 +64,13 @@ package com.las3r.repl{
 				});
 
 
-			outputText("Initing");
 			try{
 				_rt.loadStdLib(function(val:*):void{
-						outputText(" .\n");
+						outputText("Ready.\n");
 						dispatchEvent(new Event(INITED));
 						showInput();
 					},
-					function(i:int, total:int):void{
-						outputText(" .");
-					},
+					function(i:int, total:int):void{},
 					function(error:*):void{
 						outputError(error);
 					}
@@ -323,6 +320,8 @@ package com.las3r.repl{
 
 			_inputHistory.push(src);
 			_inputHistoryPos = _inputHistory.length;
+
+			outputText("-> " + src + "\n");
 
 			try{
 				_rt.evalStr(src, function(val:*):void{ 
