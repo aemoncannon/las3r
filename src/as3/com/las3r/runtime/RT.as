@@ -409,7 +409,7 @@ package com.las3r.runtime{
 				return sym2(currentNS().name.name, sym.name);
 			}
 			else if(o is Class){
-				return sym2(null, getQualifiedClassName(Class(o)));
+				return sym2(null, nameForClass(Class(o)));
 			}
 			else if(o is Var)
 			{
@@ -475,13 +475,13 @@ package com.las3r.runtime{
 		}
 
 		public static function nameForClass(clazz:Class):String{
-			var t:Type = Type.forClass(clazz);
-			return t.fullName.replace("::", ".");
+			var s:String = getQualifiedClassName(clazz);
+			return s.replace("::", ".");
 		}
 
 		public static function nameForInstanceClass(obj:Object):String{
-			var t:Type = Type.forInstance(obj);
-			return t.fullName.replace("::", ".");
+			var s:String = getQualifiedClassName(obj);
+			return s.replace("::", ".");
 		}
 
 		public function writeToStdout(str:String):void{
