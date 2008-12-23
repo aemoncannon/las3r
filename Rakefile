@@ -39,10 +39,10 @@ SWC_OPTIONS = [
                "-source-path #{SHARED_CLASS_PATH.join(" ")}"
               ]
 
-
 SHARED_SOURCES = FileList["./src/as3/**/*"]
 LAS3R_STDLIB = FileList["./src/lsr/**/*"]
 THIS_RAKEFILE = FileList["./Rakefile"]
+
 TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
 TEST_DEMO_SWF_TARGETS = TEST_DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
 
@@ -58,33 +58,32 @@ file DEMO_GARDEN_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
 end
 
+
 REPL_TARGET = "./bin/repl.swf"
-file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file REPL_TARGET => SHARED_SOURCES + FileList["./lib/*.swf"] do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
 end
+
 
 SWC_TARGET = "./bin/las3r.swc"
 file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
 end
 
-LISP_UNITS_TARGET = "./bin/lisp_units.swf"
-file LISP_UNITS_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
-  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/LispTestRunner.as -output=#{LISP_UNITS_TARGET}"
-end
 
 task :dist => [REPL_TARGET, UNIT_TEST_RUNNER_TARGET] do
   cp REPL_TARGET, "dist"
   cp UNIT_TEST_RUNNER_TARGET, "dist"
 end
 
+
 TRACE_SWF = "./bin/trace_swf.swf"
 file TRACE_SWF => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/util/TraceSwf.as -output=#{TRACE_SWF}"
 end
+
 
 TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   main, target = pair
@@ -95,8 +94,10 @@ TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   end
 end
 
+
 task :swc => [SWC_TARGET] do
 end
+
 
 task :repl => [REPL_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{REPL_TARGET}"
@@ -106,12 +107,7 @@ task :garden => [DEMO_GARDEN_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{DEMO_GARDEN_TARGET}"
 end
 
-task :lisp_units => [LISP_UNITS_TARGET] do
-  sh "#{DEBUG_PROJECTOR} #{LISP_UNITS_TARGET}"
-end
-
 task :test_demos => TEST_DEMO_SWF_TARGETS do end
-
 
 task :trace_swf => [TRACE_SWF] do end
 

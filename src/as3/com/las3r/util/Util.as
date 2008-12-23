@@ -13,6 +13,7 @@
 package com.las3r.util{
 
 	import com.las3r.runtime.IHashable;
+	import com.las3r.runtime.RT;
 
 	public class Util{
 
@@ -61,6 +62,9 @@ package com.las3r.util{
 				var h:int = o.hashCode();
 				if(h == -1){ throw  o + " is hashed to -1."; }
 				return h;
+			}
+			else if(o is Class){
+				return stringHash(RT.nameForClass(Class(o)));
 			}
 			else{
 				return stringHash(String(o));

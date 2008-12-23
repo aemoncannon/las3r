@@ -31,7 +31,7 @@ package com.las3r.runtime{
 
 	public class RT extends EventDispatcher{
 
-		[Embed(source="../../../../../bin/boot.swf", mimeType="application/octet-stream")]
+		[Embed(source="../../../../../lib/boot.swf", mimeType="application/octet-stream")]
 		protected const BootSwf:Class;
 
 // 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]

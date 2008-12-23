@@ -26,9 +26,6 @@ package com.las3r.gen{
 	public class CodeGen{
 
 		public static var CONST_PREFIX:String = "const__";
-
-		public var vars:IMap;
-		public var keywords:IMap;
 		public var constants:IMap;
 		public var emitter:ABCEmitter;
 		public var asm:AVM2Assembler;
@@ -39,24 +36,19 @@ package com.las3r.gen{
 		public var scopeToLocalMap:IVector;
 		protected var _staticsGuid:String;
 
-		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, vars:IMap = null, keywords:IMap = null, constants:IMap = null){
+		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, constants:IMap = null){
 			_staticsGuid = staticsGuid;
 			this.emitter = emitter;
 			this.scr = scr;
 			this.asm = meth ? meth.asm : scr.init.asm;
 			this.meth = meth ? meth : scr.init;
 			this.scopeToLocalMap = RT.vector();
-			this.vars = vars;
-			this.keywords = keywords;
-			this.constants = constants;
+			this.constants = constants || RT.map();
 		}
 
 
 		public function newMethodCodeGen(formals:Array, needRest:Boolean, needArguments:Boolean, scopeDepth:int, name:String):CodeGen{
-			var c:CodeGen = new CodeGen(_staticsGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name));
-			c.vars = this.vars;
-			c.keywords = this.keywords;
-			c.constants = this.constants;
+			var c:CodeGen = new CodeGen(_staticsGuid, this.emitter, this.scr, this.scr.newFunction(formals, needRest, needArguments, scopeDepth, name), constants);
 			return c;
 		}
 
@@ -106,22 +98,13 @@ package com.las3r.gen{
 			scopeToLocalMap = scopeToLocalMap.cons(i);
 		}
 
-
-
-		public function emitVar(aVar:Var):void{
-			var i:int = int(vars.valAt(aVar));
-			emitConstant(i);
+		public function emitConstant(o:Object):void{
+			var i:int = int(constants.valAt(o));
+			emitConstantById(i);
 		}
 
 
-
-		public function emitKeyword(k:Keyword):void {
-			var i:int = int(keywords.valAt(k));
-			emitConstant(i);
-		}
-
-		
-		public function emitConstant(id:int):void {
+		public function emitConstantById(id:int):void {
 			getConstant(constantName(id), "Object"/*RT.nameForInstanceClass(constants.nth(id))*/);
 		}
 

@@ -26,17 +26,17 @@ package com.hurlant.eval.abc
 			poolDict[multiname_pool] = new Dictionary();
         }
 
-        private function findOrAdd(x:*, pool:Array, cmp:Function, emit:Function):int {
+        private function findOrAdd(x:*, hashKey:*, pool:Array, cmp:Function, emit:Function):int {
 			var dict:Dictionary = poolDict[pool];
-			var existing:* = dict[x];
-			if(existing && existing is int){
+			var existing:* = dict[hashKey];
+			if(existing !== null && existing is int){
 				return existing;
 			}
 			else{
 				emit(x);
 				pool.push(x);
 				var id:int = (pool.length - 1);
-				dict[x] = id;
+				dict[hashKey] = id;
 				return id;
 			}
         }
@@ -45,22 +45,23 @@ package com.hurlant.eval.abc
 
         public function int32(n:int):uint {
             function temp_func (x) { int_bytes.int32(x) };
-            return findOrAdd( n, int_pool, cmp, temp_func );
+            return findOrAdd( n, n, int_pool, cmp, temp_func );
         }
 
         public function uint32(n:uint):uint {
             function temp_func(x) { uint_bytes.uint32(x) }
-            return findOrAdd( n, uint_pool, cmp, temp_func );
+            return findOrAdd( n, n, uint_pool, cmp, temp_func );
         }
 
         public function float64(n: Number):uint {
             function temp_func(x) { double_bytes.float64(x) } 
-            return findOrAdd( n, double_pool, cmp, temp_func);
+            return findOrAdd( n, n, double_pool, cmp, temp_func);
         }
 
         public function stringUtf8(s/*FIXME ES4: string*/)/*:uint*/ {
             function temp_func(x) { utf8_bytes.uint30(x.length); utf8_bytes.utf8(x) }
-            return findOrAdd( ""+s,  // FIXME need to make sure its a string
+            return findOrAdd( "" + s,  // FIXME need to make sure its a string
+				s,
                 utf8_pool,
                 cmp,
                 temp_func )
@@ -75,6 +76,7 @@ package com.hurlant.eval.abc
 				namespace_bytes.uint8(x.kind);
 				namespace_bytes.uint30(x.name); }
             return findOrAdd( { "kind": kind, "name": name },
+				kind + "_" + name,
                 namespace_pool,
                 cmpname,
                 temp_func );
@@ -97,29 +99,34 @@ package com.hurlant.eval.abc
                 namespaceset_bytes.uint30(x[i]);
             }
             return findOrAdd( Util.copyArray(namespaces),
+				namespaces.join("_"),
                 namespaceset_pool,
                 cmparray,
                 temp_func );
         }
 
-        public function QName(ns/*: uint*/, name/*: uint*/, is_attr: Boolean /*FIXME ES4: boolean*/) {
+        public function QName(ns/*: uint*/, name/*: uint*/, is_attr: Boolean) {
             function temp_func(x) {
 				multiname_bytes.uint8(x.kind);
 				multiname_bytes.uint30(x.ns);
 				multiname_bytes.uint30(x.name); 
             }
-            return findOrAdd( { "kind": is_attr ? AVM2Assembler.CONSTANT_QNameA : AVM2Assembler.CONSTANT_QName, "ns": ns, "name": name },
+			var kind = is_attr ? AVM2Assembler.CONSTANT_QNameA : AVM2Assembler.CONSTANT_QName;
+            return findOrAdd( { "kind": kind, "ns": ns, "name": name },
+				kind + "_" + ns + "_" + name,
                 multiname_pool,
                 cmpname,
                 temp_func );
         }
 
-        public function RTQName(name/*: uint*/, is_attr: Boolean /*FIXME ES4: boolean*/) {
+        public function RTQName(name/*: uint*/, is_attr: Boolean) {
             function temp_func(x) {
 				multiname_bytes.uint8(x.kind);
 				multiname_bytes.uint30(x.name); 
             }
-            return findOrAdd( { "kind": is_attr ? AVM2Assembler.CONSTANT_RTQNameA : AVM2Assembler.CONSTANT_RTQName, "name": name },
+			var kind = is_attr ? AVM2Assembler.CONSTANT_RTQNameA : AVM2Assembler.CONSTANT_RTQName;
+            return findOrAdd( { "kind": kind, "name": name },
+				kind + "_" + name,
                 multiname_pool,
                 cmpname,
                 temp_func );
@@ -127,7 +134,9 @@ package com.hurlant.eval.abc
 
         public function RTQNameL(is_attr: Boolean /*FIXME ES4: boolean*/) {
             function temp_func (x) { multiname_bytes.uint8(x.kind) } 
-            return findOrAdd( { "kind": is_attr ? AVM2Assembler.CONSTANT_RTQNameLA : AVM2Assembler.CONSTANT_RTQNameL },
+			var kind = is_attr ? AVM2Assembler.CONSTANT_RTQNameLA : AVM2Assembler.CONSTANT_RTQNameL;
+            return findOrAdd( { "kind": kind },
+				kind + "",
                 multiname_pool,
                 cmpname,
                 temp_func);
@@ -139,7 +148,9 @@ package com.hurlant.eval.abc
                 multiname_bytes.uint30(x.name);
                 multiname_bytes.uint30(x.ns); 
             } 
-            return findOrAdd( { "kind": is_attr ? AVM2Assembler.CONSTANT_MultinameA : AVM2Assembler.CONSTANT_Multiname, "name": name, "ns":nsset },
+			var kind = is_attr ? AVM2Assembler.CONSTANT_MultinameA : AVM2Assembler.CONSTANT_Multiname;
+            return findOrAdd( { "kind": kind, "name": name, "ns":nsset },
+				kind + "_" + name + "_" + nsset,
                 multiname_pool,
                 cmpname,
                 temp_func);
@@ -150,7 +161,9 @@ package com.hurlant.eval.abc
 				multiname_bytes.uint8(x.kind);
 				multiname_bytes.uint30(x.ns); 
             }
-            return findOrAdd( { "kind": is_attr ? AVM2Assembler.CONSTANT_MultinameLA : AVM2Assembler.CONSTANT_MultinameL, "ns":nsset },
+			var kind = is_attr ? AVM2Assembler.CONSTANT_MultinameLA : AVM2Assembler.CONSTANT_MultinameL;
+            return findOrAdd( { "kind": kind, "ns":nsset },
+				kind + "_" + nsset,
                 multiname_pool,
                 cmpname,
                 temp_func );
@@ -211,22 +224,22 @@ package com.hurlant.eval.abc
             return bs;
         }
 
-        private const int_pool:Array = new Array;
-        private const uint_pool:Array = new Array;
-        private const double_pool:Array = new Array;
-        private const utf8_pool:Array = new Array;
-        private const namespace_pool:Array = new Array;
-        private const namespaceset_pool:Array = new Array;
-        private const multiname_pool:Array = new Array;
+        private const int_pool:Array = new Array();
+        private const uint_pool:Array = new Array();
+        private const double_pool:Array = new Array();
+        private const utf8_pool:Array = new Array();
+        private const namespace_pool:Array = new Array();
+        private const namespaceset_pool:Array = new Array();
+        private const multiname_pool:Array = new Array();
 
-		private const poolDict:Dictionary = new Dictionary;
+		private const poolDict:Dictionary = new Dictionary();
 
-        private const int_bytes:ABCByteStream = new ABCByteStream;
-        private const uint_bytes:ABCByteStream = new ABCByteStream;
-        private const double_bytes:ABCByteStream = new ABCByteStream;
-        private const utf8_bytes:ABCByteStream = new ABCByteStream;
-        private const namespace_bytes:ABCByteStream = new ABCByteStream;
-        private const namespaceset_bytes:ABCByteStream = new ABCByteStream;
-        private const multiname_bytes:ABCByteStream = new ABCByteStream;
+        private const int_bytes:ABCByteStream = new ABCByteStream();
+        private const uint_bytes:ABCByteStream = new ABCByteStream();
+        private const double_bytes:ABCByteStream = new ABCByteStream();
+        private const utf8_bytes:ABCByteStream = new ABCByteStream();
+        private const namespace_bytes:ABCByteStream = new ABCByteStream();
+        private const namespaceset_bytes:ABCByteStream = new ABCByteStream();
+        private const multiname_bytes:ABCByteStream = new ABCByteStream();
     }
 }

@@ -1898,7 +1898,7 @@
 		 (eval (.. e target data) callback err-callback))
 	       err-callback)))
 
-(defn compile-module
+(defn compile-str
   "Evaluate all forms in src, returns a ByteArray containing compiled swf."
   [src module-id callback]
   (. *compiler* (beginAOTCompile module-id))
@@ -1906,21 +1906,21 @@
 	(fn [val] 
 	  (callback (. *compiler* (getAOTCompileBytes)))
 	  (. *compiler* (endAOTCompile)))
-	(fn [err] 
+	(fn [err]
 	  (binding [*out* *err*] (prn err))
 	  (. *compiler* (endAOTCompile)))
 	(fn [a b] (print "."))
 	))
 
-(defn save-module
+(defn compile-str-and-save
   "Evaluate all forms in src, create a ByteArray containing compiled forms, 
    initiate saving of those bytes as a SWF file."
   [src module-id]
-  (compile-module src module-id (fn [bytes]
-				  (let [f (new flash.net.FileReference)]
-				    (. f (save bytes (str module-id ".swf")))))))
+  (compile-str src module-id (fn [bytes]
+			       (let [f (new flash.net.FileReference)]
+				 (. f (save bytes (str module-id ".swf")))))))
 
-(defn save-file-to-module
+(defn compile-file-and-save
   "1. Browse to a source file. 
    2. Compile all forms in the source file. 
    3. Browse a location to save the compiled swf module."
@@ -1929,10 +1929,10 @@
     (browse-file filters 
 		 (fn [f]
 		   (let [src (str (. f data))]
-		     (save-module src module-id))))))
+		     (compile-str-and-save src module-id))))))
 
-(defn browse-module
-  "1. Browse to a swf on the local file system.
+(defn load-module
+  "1. Browse to a swf module on the local file system.
    2. Load the compiled lisp forms contained inside."
   [module-id] 
   (let [filters [(new flash.net.FileFilter "swf" "*.swf")]]
@@ -1947,7 +1947,7 @@
 		       (prn err)))))
        ))))
 
-(defn browse-src
+(defn load-file
   "1. Browse to a lsr source file on the local file system.
    2. Load the lisp forms contained inside."
   [] 
@@ -1956,13 +1956,17 @@
      filters
      (fn [f]
        (let [src (str (. f data))]
-       (eval src
-	   (fn [val] (prn val))
-	   (fn [err] (binding [*out* *err*]
-		       (prn err)))))
+	 (eval src
+	       (fn [val] (prn val))
+	       (fn [err] (binding [*out* *err*]
+			   (prn err)))
+	       (fn [a b] (print "."))
+	       ))
        ))))
 
+
 ;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
+
 
 (defmacro assert-true
   [form]

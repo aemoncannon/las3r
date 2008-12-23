@@ -31,8 +31,6 @@ package com.las3r.gen{
 		private var _exprs:Array = [];
 		private var _moduleId:String;
 		private var _finalized:Boolean = false;
-		private var _vars:IMap = RT.map();
-		private var _keywords:IMap = RT.map();
 		private var _constants:IMap = RT.map();
 		private var _rt:RT;
 
@@ -61,7 +59,7 @@ package com.las3r.gen{
 
 			/* For each constant, create a slot on the class */
 			var i:int = 0;
-            _constants.each(function(id:int, obj:Object):void{
+            _constants.each(function(obj:Object, id:int):void{
 					//var parts:Array = clazz.split(".");
 					//var className:String = parts.pop();
 					cls.addTrait(new ABCSlotTrait(
@@ -95,7 +93,7 @@ package com.las3r.gen{
 			/* For each constant, populate a static field on our newly created class */
             Var.pushBindings(_rt, RT.map(_rt.PRINT_READABLY, RT.T));
 			i = 0;
-            _constants.each(function(id:int, obj:Object):void{
+            _constants.each(function(obj:Object, id:int):void{
 					var cs:String = null;
 					try
 					{
@@ -126,7 +124,7 @@ package com.las3r.gen{
 
 		protected function emitModule():void{
 			var staticsGuid:String = GUID.create();
-			var gen:CodeGen = new CodeGen(staticsGuid, _emitter, _script, null, _vars, _keywords, _constants);
+			var gen:CodeGen = new CodeGen(staticsGuid, _emitter, _script, null, _constants);
 
 			gen.pushThisScope();
 			gen.pushNewActivationScope();
@@ -197,20 +195,13 @@ package com.las3r.gen{
 			gen.provideModule(_moduleId);
 		}
 
-		public function addExpr(expr:Expr, vars:IMap, keywords:IMap, constants:IMap):void{
+		public function addExpr(expr:Expr, constants:IMap):void{
 			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
-
-			for(var s:ISeq = vars.seq(); s != null; s = s.rest()){
+			for(var s:ISeq = constants.seq(); s != null; s = s.rest()){
 				var e:MapEntry = MapEntry(s.first());
-				_vars = _vars.cons(e);
-			}
-			for(s = keywords.seq(); s != null; s = s.rest()){
-				e = MapEntry(s.first());
-				_keywords = _keywords.cons(e);
-			}
-			for(s = constants.seq(); s != null; s = s.rest()){
-				e = MapEntry(s.first());
-				_constants = _constants.cons(e);
+				if(!_constants.containsKey(e.key)){
+					_constants = _constants.cons(e);
+				}
 			}
 			_exprs.push(expr);
 		}
