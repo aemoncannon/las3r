@@ -145,6 +145,9 @@ package com.las3r.gen{
 			methGen.asm.I_getlocal(rtTmp);
 			methGen.asm.I_setproperty(methGen.emitter.nameFromIdent("rt"));
 
+			methGen.cacheStaticsClass();
+			methGen.cacheRTInstance();
+
 			var tryStart:Object = methGen.asm.I_label(undefined);
 			methGen.asm.I_getlocal(callbackTmp); // the result callback
 			methGen.asm.I_pushnull(); // the receiver

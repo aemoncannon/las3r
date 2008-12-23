@@ -32,8 +32,10 @@ package com.las3r.gen{
 		public var scr:Script;
 		public var meth:Method;
 		public var currentActivation:Object;
-		public var cachedRTTempIndex:int = -1;
-		public var scopeToLocalMap:IVector;
+
+		private var cachedRTTempIndex:int = -1;
+		private var cachedStaticsTempIndex:int = -1;
+		private var scopeToLocalMap:IVector;
 		protected var _staticsGuid:String;
 
 		public function CodeGen(staticsGuid:String, emitter:ABCEmitter, scr:Script, meth:Method = null, constants:IMap = null){
@@ -100,12 +102,7 @@ package com.las3r.gen{
 
 		public function emitConstant(o:Object):void{
 			var i:int = int(constants.valAt(o));
-			emitConstantById(i);
-		}
-
-
-		public function emitConstantById(id:int):void {
-			getConstant(constantName(id), "Object"/*RT.nameForInstanceClass(constants.nth(id))*/);
+			lookupConstantByName(constantName(i), "Object"/*RT.nameForInstanceClass(constants.nth(id))*/);
 		}
 
 
@@ -207,7 +204,7 @@ package com.las3r.gen{
 		/*
 		* Get the active instance of RT.
 		*
-		* Stack:   
+		* Stack:
 		*   ... => anRT
 		*/
 		protected function getRT():void{
@@ -215,8 +212,23 @@ package com.las3r.gen{
 				asm.I_getlocal(cachedRTTempIndex);
 			}
 			else{
- 				asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
+				getStatics();
 				asm.I_getproperty(emitter.nameFromIdent("rt"));
+			}
+		}
+
+		/*
+		* Get the statics class.
+		*
+		* Stack:
+		*   ... => aClass
+		*/
+		protected function getStatics():void{
+			if(cachedStaticsTempIndex > -1){
+				asm.I_getlocal(cachedStaticsTempIndex);
+			}
+			else{
+ 				asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
 			}
 		}
 
@@ -236,13 +248,26 @@ package com.las3r.gen{
 		}
 
 
+		/*
+		* Store the statics class in a temp
+		*
+		* Stack:   
+		*   ... => ...
+		*/
+		public function cacheStaticsClass():void{
+ 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
+			var i:int = asm.getTemp();
+			asm.I_setlocal(i);
+			cachedStaticsTempIndex = i;
+		}
+
 
 		/*
 		* Stack:   
 		*   ... => const
 		*/
-		protected function getConstant(name:String, classFullName:String):void{
- 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
+		protected function lookupConstantByName(name:String, classFullName:String):void{
+			getStatics();
 			asm.I_getproperty(emitter.nameFromIdent(name));
 		}
 

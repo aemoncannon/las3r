@@ -984,6 +984,7 @@ class FnMethod{
 	public function emit(context:C, methGen:CodeGen):void{
 		methGen.pushThisScope();
 		methGen.pushNewActivationScope();
+		methGen.cacheStaticsClass();
 		methGen.cacheRTInstance();
 
 		var i:int = 1;
@@ -1043,7 +1044,7 @@ class FnExpr implements Expr{
 	public var line:int;
 	public var nameSym:Symbol;
 	public var methods:IVector;
-
+	public var constants:ISeq;
 	private var _compiler:Compiler;
 
 	public function FnExpr(c:Compiler){
@@ -1074,6 +1075,9 @@ class FnExpr implements Expr{
 		for(var s:ISeq = RT.rest(form); s != null; s = RT.rest(s)){
 			f.methods = f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
 		}
+
+		var consts:IMap = IMap(c.CONSTANTS.get());
+		f.constants = RT.keys(consts);
 
 		return f;
 	}
