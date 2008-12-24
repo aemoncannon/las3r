@@ -64,7 +64,7 @@
 ;;; tests
 
 (defn run-tests []
-  (let [XML (. *runtime* (classForName "XML"))
+  (let [XML (. com.las3r.runtime.RT (classForName "XML"))
 	s (parse (new XML "<mx:Application xmlns:mx='http://www.adobe.com/2006/mxml' mx:v='val'><b attr='val'/>text</mx:Application>"))]
     (assert-true (= (get s :tag) (keyword "http://www.adobe.com/2006/mxml" "Application")))
     (assert-true (= (get (get s :attrs) (keyword "http://www.adobe.com/2006/mxml" "v")) "val"))
