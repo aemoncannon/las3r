@@ -75,6 +75,7 @@ package com.las3r.repl{
 						outputError(error);
 					}
 				);
+				_rt.evalStr("(ctep)");
 			}
 			catch(e:LispError){
 				// Suppress these.. we're already listening for error events.

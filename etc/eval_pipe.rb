@@ -36,17 +36,21 @@ def handle_socket_client(client)
     puts "Flash client connected: #{name}:#{port}"
     begin
       loop do
+        if client.closed?
+          raise RuntimeError.new()
+        end
         if @eval_q.length > 0
           src = @eval_q.pop
           client.write(src)
           client.write("\0")
-          puts "POP: #{src[0..20]}......"
+          puts "POP #{name}:#{port}: #{src[0..20]}......"
         end
         sleep 0.1
       end
     rescue RuntimeError
       puts "Flash client #{name}:#{port} disconnected."
     ensure
+      puts "Ensuring close of #{name}:#{port}."
       client.close # close socket on error
     end
     puts "Done with #{name}:#{port}."
@@ -65,6 +69,7 @@ Thread.start do
           puts "Only one flash client at a time, disconnecting existing client."
           client.close
         end
+        @eval_q = []
         client = new_client
         handle_socket_client(client)
       end

@@ -86,7 +86,7 @@ package com.las3r.runtime{
 
 
 		/**
-		* Don't call this directly. User interface in RT.
+		* Don't call this directly. Use interface in RT.
 		* 
 		* @param rdr 
 		* @param _onComplete 
