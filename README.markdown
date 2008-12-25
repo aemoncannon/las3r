@@ -11,11 +11,11 @@ Features:
 
 
 [Documentation][api]
+
 [FAQ & Demo][faq]
 
 
 [faq]: http://github.com/aemoncannon/las3r/wikis
-
 [api]: http://github.com/aemoncannon/las3r/wikis/api
 
 
