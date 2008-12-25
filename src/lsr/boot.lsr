@@ -1531,6 +1531,9 @@
   [name & decls]
   (list* `defn (with-meta name (assoc (or (meta name) {}) :private true)) decls))
 
+
+
+
 (defn destructure [bindings]
   (let [bmap (apply array-map bindings)
         pb (fn pb [bvec b v]
@@ -1888,6 +1891,17 @@
     (. f (addEventListener (. Event COMPLETE) data-handler))
     (. f (browse (to-array filters)))))
 
+
+(defn browse-save-file
+  "Browse to a file. Apply callback to the loaded FileReference."
+  ([data name] (browse-save-file data name (fn [d] )))
+  ([data name callback]
+  (let [f (new flash.net.FileReference)
+	data-handler
+	(fn [e] (callback f))]
+    (. f (addEventListener (. Event COMPLETE) data-handler))
+    (. f (save data name)))))
+
 (defn eval-url
   "Evaluate the code in the provided URL and call back with the result or error if callbacks are provided."
   ([url] (eval-url url (fn [e] nil) (fn [e] nil)))
@@ -1965,7 +1979,73 @@
        ))))
 
 
-;;;;;;;;;;;;;;;;;; crude testing, until we're able to run real unit tests
+;;;;;;;;;;;;;;;;;;;; Generating Documentation ;;;;;;;;;;;;;;;;;;;;
+
+
+(defn print-doc [v]
+  (println "-------------------------")
+  (println (str (ns-name (get ^v :ns)) "/" (get ^v :name)))
+  (prn (get ^v :arglists))
+  (when (get ^v :macro)
+    (println "Macro"))
+  (println " " (get ^v :doc))
+  )
+
+
+(defn print-textile-doc [v]
+  (println (str "**" (ns-name (get ^v :ns)) "/" (get ^v :name) "**") "<br>")
+  (println "<notextile>" (get ^v :arglists) "</notextile>" "<br>")
+  (when (get ^v :macro)
+    (println "Macro"))
+  (newline)
+  (println "<notextile>" (get ^v :doc) "</notextile>")
+  (println "<br>")
+  (println "<br>")
+  )
+
+
+(defn print-special-doc
+  [name type anchor]
+  (println "-------------------------")
+  (println name)
+  (println type))
+
+(defmacro doc
+  "Prints documentation for a var or special form given its name"
+  [name]
+  (cond
+   (special-symbol? `~name)
+   `(print-special-doc '~name "Special Form")
+   :else
+   `(print-doc (var ~name))))
+
+
+(defn doc-all-publics
+  "Prints documentation for all public vars in the given namespace."
+  [ns]
+  (doseq ea (vals (ns-publics ns))
+    (print-doc ea))
+  )
+
+(defn textile-doc-all-publics
+  "Prints documentation for all public vars in the given namespace."
+  [ns]
+  (doseq ea (vals (ns-publics ns))
+    (print-textile-doc ea))
+  )
+
+
+(defn generate-api-doc
+  "Write all api documentation for the given namespace. Save that string to a file."
+  [ns] 
+  (let [output (new com.las3r.io.NaiveStringWriter)]
+    (binding [*out* output]
+      (textile-doc-all-publics ns))
+    (browse-save-file (str output) (str (. ns name) "_doc.txt"))))
+
+
+
+;;;;;;;;;;;;;;;;;; Crude testing, until we're able to run real unit tests
 
 
 (defmacro assert-true

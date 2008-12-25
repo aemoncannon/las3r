@@ -1,0 +1,1583 @@
+**las3r/keyword?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x is a Keyword </notextile>
+<br>
+<br>
+**las3r/val** <br>
+<notextile> ([e]) </notextile> <br>
+
+<notextile> Returns the value in the map entry. </notextile>
+<br>
+<br>
+**las3r/max-key** <br>
+<notextile> ([k x] [k x y] [k x y & more]) </notextile> <br>
+
+<notextile> Returns the x for which (k x), a number, is greatest. </notextile>
+<br>
+<br>
+**las3r/list*** <br>
+<notextile> ([item & more]) </notextile> <br>
+
+<notextile> Creates a new list containing the item prepended to more. </notextile>
+<br>
+<br>
+**las3r/ns-aliases** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of the aliases for the namespace. </notextile>
+<br>
+<br>
+**las3r/==** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns non-nil if nums all have the same value, otherwise false </notextile>
+<br>
+<br>
+**las3r/print-textile-doc** <br>
+<notextile> ([v]) </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/bit-shl** <br>
+<notextile> ([x n]) </notextile> <br>
+
+<notextile> Bitwise shift left </notextile>
+<br>
+<br>
+**las3r/instance?** <br>
+<notextile> ([c x]) </notextile> <br>
+
+<notextile> Evaluates x and tests if it is an instance of the class
+    c. Returns true or false </notextile>
+<br>
+<br>
+**las3r/compile-file-and-save** <br>
+<notextile> ([module-id]) </notextile> <br>
+
+<notextile> 1. Browse to a source file. 
+   2. Compile all forms in the source file. 
+   3. Browse a location to save the compiled swf module. </notextile>
+<br>
+<br>
+**las3r/dorun** <br>
+<notextile> ([coll] [n coll]) </notextile> <br>
+
+<notextile> When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. dorun can
+  be used to force any effects. Walks through the successive rests of
+  the seq, does not retain the head and returns nil. </notextile>
+<br>
+<br>
+**las3r/time** <br>
+<notextile> ([expr]) </notextile> <br>
+Macro
+
+<notextile> Evaluates expr and prints the time it took.  Returns the value of
+   expr. </notextile>
+<br>
+<br>
+**las3r/gensym** <br>
+<notextile> ([] [prefix-string]) </notextile> <br>
+
+<notextile> Returns a new symbol with a unique name. If a prefix string is
+  supplied, the name is prefix# where # is some unique number. If
+  prefix is not supplied, the prefix is 'G'. </notextile>
+<br>
+<br>
+**las3r/not=** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Same as (not (= obj1 obj2)) </notextile>
+<br>
+<br>
+**las3r/browse-save-file** <br>
+<notextile> ([data name] [data name callback]) </notextile> <br>
+
+<notextile> Browse to a file. Apply callback to the loaded FileReference. </notextile>
+<br>
+<br>
+**las3r/get-property-values** <br>
+<notextile> ([obj]) </notextile> <br>
+
+<notextile> Return a list of all the values of an object's dynamic properties, wrapper for actionscript's for each(...) construct. </notextile>
+<br>
+<br>
+**las3r/doseq** <br>
+<notextile> ([item list & body]) </notextile> <br>
+Macro
+
+<notextile> Repeatedly executes body (presumably for side-effects) with
+  binding-form bound to successive items from coll.  Does not retain
+  the head of the sequence. Returns nil. </notextile>
+<br>
+<br>
+**las3r/bit-or** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Bitwise or </notextile>
+<br>
+<br>
+**las3r/hash-set** <br>
+<notextile> ([& vals]) </notextile> <br>
+
+<notextile> Returns a new hash set with supplied values. </notextile>
+<br>
+<br>
+**las3r/some** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns the first logical true value of (pred x) for any x in coll,
+  else nil. </notextile>
+<br>
+<br>
+**las3r/nil?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if x is nil, false otherwise. </notextile>
+<br>
+<br>
+**las3r/string?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x is a String </notextile>
+<br>
+<br>
+**las3r/second** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Same as (first (rest x)) </notextile>
+<br>
+<br>
+**las3r/keys** <br>
+<notextile> ([map]) </notextile> <br>
+
+<notextile> Returns a sequence of the map's keys. </notextile>
+<br>
+<br>
+**las3r/for** <br>
+<notextile> ([seq-exprs expr]) </notextile> <br>
+Macro
+
+<notextile> List comprehension. Takes a vector of one or more
+ binding-form/collection-expr pairs, each followed by an optional filtering
+ :when/:while expression (:when test or :while test), and yields a
+ lazy sequence of evaluations of expr. Collections are iterated in a
+ nested fashion, rightmost fastest, and nested coll-exprs can refer to
+ bindings created in prior binding-forms.
+ (take 100 (for [x (range 100000000) y (range 1000000) :while (< y x)]  [x y])) </notextile>
+<br>
+<br>
+**las3r/cond** <br>
+<notextile> ([& clauses]) </notextile> <br>
+Macro
+
+<notextile> Takes a set of test/expr pairs. It evaluates each test one at a
+  time.  If a test returns logical true, cond evaluates and returns
+  the value of the corresponding expr and doesn't evaluate any of the
+  other tests or exprs. (cond) returns nil. </notextile>
+<br>
+<br>
+**las3r/fn** <br>
+<notextile> ([& sigs]) </notextile> <br>
+Macro
+
+<notextile> (fn name? [params* ] exprs*)
+  (fn name? ([params* ] exprs*)+)
+
+  params => positional-params* , or positional-params* & rest-param
+  positional-param => binding-form
+  rest-param => binding-form
+  name => symbol
+
+  Defines a function </notextile>
+<br>
+<br>
+**las3r/ns-unalias** <br>
+<notextile> ([ns sym]) </notextile> <br>
+
+<notextile> Removes the alias for the symbol from the namespace. </notextile>
+<br>
+<br>
+**las3r/ns-publics** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of the public intern mappings for the namespace. </notextile>
+<br>
+<br>
+**las3r/all-ns** <br>
+<notextile> ([]) </notextile> <br>
+
+<notextile> Returns a sequence of all namespaces. </notextile>
+<br>
+<br>
+**las3r/*runtime*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/textile-doc-all-publics** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Prints documentation for all public vars in the given namespace. </notextile>
+<br>
+<br>
+**las3r/false?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if x is the value false, false otherwise. </notextile>
+<br>
+<br>
+**las3r/apply*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/true?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if x is the value true, false otherwise. </notextile>
+<br>
+<br>
+**las3r/ns-unmap** <br>
+<notextile> ([ns sym]) </notextile> <br>
+
+<notextile> Removes the mappings for the symbol from the namespace. </notextile>
+<br>
+<br>
+**las3r/repeat** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns a lazy (infinite!) seq of xs. </notextile>
+<br>
+<br>
+**las3r/zipmap** <br>
+<notextile> ([keys vals]) </notextile> <br>
+
+<notextile> Returns a map with the keys mapped to the corresponding vals. </notextile>
+<br>
+<br>
+**las3r/distinct** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns a lazy sequence of the elements of coll with duplicates removed </notextile>
+<br>
+<br>
+**las3r/bit-xor** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Bitwise exclusive or </notextile>
+<br>
+<br>
+**las3r/complement** <br>
+<notextile> ([f]) </notextile> <br>
+
+<notextile> Takes a fn f and returns a fn that takes the same arguments as f,
+  has the same effects, if any, and returns the opposite truth value. </notextile>
+<br>
+<br>
+**las3r/let** <br>
+<notextile> ([bindings & body]) </notextile> <br>
+Macro
+
+<notextile> Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein. </notextile>
+<br>
+<br>
+**las3r/dotimes** <br>
+<notextile> ([i n & body]) </notextile> <br>
+Macro
+
+<notextile> Repeatedly executes body (presumably for side-effects) with name
+  bound to integers from 0 through n-1. </notextile>
+<br>
+<br>
+**las3r/*ns*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/lazy-cat** <br>
+<notextile> ([coll] [coll & colls]) </notextile> <br>
+Macro
+
+<notextile> Expands to code which yields a lazy sequence of the concatenation
+  of the supplied colls.  Each coll expr is not evaluated until it is
+  needed. </notextile>
+<br>
+<br>
+**las3r/get-property-names** <br>
+<notextile> ([obj]) </notextile> <br>
+
+<notextile> Return a list of all the names of an object's dynamic properties, wrapper for actionscript's for(.. in ..) construct. </notextile>
+<br>
+<br>
+**las3r/rem** <br>
+<notextile> ([num div]) </notextile> <br>
+
+<notextile> rem[ainder] of dividing numerator by denominator. </notextile>
+<br>
+<br>
+**las3r/connect-to-eval-pipe** <br>
+<notextile> ([] [port]) </notextile> <br>
+
+<notextile> Connect to eval_pipe, reading and evaluating strings as they arrive. </notextile>
+<br>
+<br>
+**las3r/odd?** <br>
+<notextile> ([n]) </notextile> <br>
+
+<notextile> Returns true if n is odd, throws an exception if n is not an integer </notextile>
+<br>
+<br>
+**las3r/bit-shr** <br>
+<notextile> ([x n]) </notextile> <br>
+
+<notextile> Bitwise shift right </notextile>
+<br>
+<br>
+**las3r/symbol?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x is a Symbol </notextile>
+<br>
+<br>
+**las3r/bit-sar** <br>
+<notextile> ([x n]) </notextile> <br>
+
+<notextile> Bitwise shift arithmetic right </notextile>
+<br>
+<br>
+**las3r/ns-interns** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of the intern mappings for the namespace. </notextile>
+<br>
+<br>
+**las3r/split-with** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns a vector of [(take-while pred coll) (drop-while pred coll)] </notextile>
+<br>
+<br>
+**las3r/loop** <br>
+<notextile> ([bindings & body]) </notextile> <br>
+Macro
+
+<notextile> Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein. Acts as a recur target. </notextile>
+<br>
+<br>
+**las3r/rfirst** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Same as (rest (first x)) </notextile>
+<br>
+<br>
+**las3r/import** <br>
+<notextile> ([& import-lists]) </notextile> <br>
+
+<notextile> import-list => (package-symbol class-name-symbols*)
+
+  For each name in class-name-symbols, adds a mapping from name to the
+  class named by package.name to the current namespace. Use :import in the ns
+  macro in preference to calling this directly. </notextile>
+<br>
+<br>
+**las3r/symbol** <br>
+<notextile> ([name] [ns name]) </notextile> <br>
+
+<notextile> Returns a Symbol with the given namespace and name. </notextile>
+<br>
+<br>
+**las3r/vals** <br>
+<notextile> ([map]) </notextile> <br>
+
+<notextile> Returns a sequence of the map's values. </notextile>
+<br>
+<br>
+**las3r/print-doc** <br>
+<notextile> ([v]) </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/select-keys** <br>
+<notextile> ([map keyseq]) </notextile> <br>
+
+<notextile> Returns a map containing only those entries in map whose key is in keys </notextile>
+<br>
+<br>
+**las3r/rand** <br>
+<notextile> ([] [n]) </notextile> <br>
+
+<notextile> Returns a random floating point number between 0 (inclusive) and
+  1 (exclusive). </notextile>
+<br>
+<br>
+**las3r/+** <br>
+<notextile> ([] [x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns the sum of nums. (+) returns 0. </notextile>
+<br>
+<br>
+**las3r/set-property!** <br>
+<notextile> ([instance property value]) </notextile> <br>
+
+<notextile> Set an instance's property to value using the array access [] operator. </notextile>
+<br>
+<br>
+**las3r/*stage*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/last** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Return the last item in coll, in linear time </notextile>
+<br>
+<br>
+**las3r/prn** <br>
+<notextile> ([& more]) </notextile> <br>
+
+<notextile> Same as pr followed by (newline). </notextile>
+<br>
+<br>
+**las3r/with-meta** <br>
+<notextile> ([obj m]) </notextile> <br>
+
+<notextile> Returns an object of the same type and value as obj, with
+    map m as its metadata. </notextile>
+<br>
+<br>
+**las3r/*** <br>
+<notextile> ([] [x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns the product of nums. (*) returns 1. </notextile>
+<br>
+<br>
+**las3r/when-not** <br>
+<notextile> ([test & body]) </notextile> <br>
+Macro
+
+<notextile> Evaluates test. If logical false, evaluates body in an implicit do. </notextile>
+<br>
+<br>
+**las3r/generate-api-doc** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Write all api documentation for the given namespace. Save that string to a file. </notextile>
+<br>
+<br>
+**las3r/butlast** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Return a sequence of all but the last item in coll, in linear time </notextile>
+<br>
+<br>
+**las3r/-** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> If no ys are supplied, returns the negation of x, else subtracts
+  the ys from x and returns the result. </notextile>
+<br>
+<br>
+**las3r/compile-str** <br>
+<notextile> ([src module-id callback]) </notextile> <br>
+
+<notextile> Evaluate all forms in src, returns a ByteArray containing compiled swf. </notextile>
+<br>
+<br>
+**las3r/seq?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x implements ISeq </notextile>
+<br>
+<br>
+**las3r/identical?** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/..** <br>
+<notextile> ([x form] [x form & more]) </notextile> <br>
+Macro
+
+<notextile> form => fieldName-symbol or (instanceMethodName-symbol args*)
+
+  Expands into a member access (.) of the first member on the first
+  argument, followed by the next member on the result, etc. For
+  instance:
+
+  (.. System (getProperties) (get "os.name"))
+
+  expands to:
+
+  (. (. System (getProperties)) (get "os.name"))
+
+  but is easier to write, read, and understand. </notextile>
+<br>
+<br>
+**las3r/print** <br>
+<notextile> ([& more]) </notextile> <br>
+
+<notextile> Trace out the object(s). print and println produce output for human consumption. </notextile>
+<br>
+<br>
+**las3r/zero?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if num is zero, else false </notextile>
+<br>
+<br>
+**las3r/bit-and** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Bitwise and </notextile>
+<br>
+<br>
+**las3r/newline** <br>
+<notextile> ([]) </notextile> <br>
+
+<notextile> Writes a newline to the output stream that is the current value of
+  *out* </notextile>
+<br>
+<br>
+**las3r/replicate** <br>
+<notextile> ([n x]) </notextile> <br>
+
+<notextile> Returns a lazy seq of n xs. </notextile>
+<br>
+<br>
+**las3r/remove-ns** <br>
+<notextile> ([sym]) </notextile> <br>
+
+<notextile> Removes the namespace named by the symbol. Use with caution.
+  Cannot be used to remove the clojure namespace. </notextile>
+<br>
+<br>
+**las3r/vec** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Creates a new vector containing the contents of coll. </notextile>
+<br>
+<br>
+**las3r/compile-str-and-save** <br>
+<notextile> ([src module-id]) </notextile> <br>
+
+<notextile> Evaluate all forms in src, create a ByteArray containing compiled forms, 
+   initiate saving of those bytes as a SWF file. </notextile>
+<br>
+<br>
+**las3r/concat** <br>
+<notextile> ([] [x] [x y] [x y & zs]) </notextile> <br>
+
+<notextile> Returns a lazy seq representing the concatenation of	the elements in the supplied colls. </notextile>
+<br>
+<br>
+**las3r/vector** <br>
+<notextile> ([& args]) </notextile> <br>
+
+<notextile> Creates a new vector containing the args. </notextile>
+<br>
+<br>
+**las3r/conj** <br>
+<notextile> ([coll x] [coll x & xs]) </notextile> <br>
+
+<notextile> conj[oin]. Returns a new collection with the xs
+    'added'. (conj nil item) returns (item).  The 'addition' may
+    happen at different 'places' depending on the concrete type. </notextile>
+<br>
+<br>
+**las3r//** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> If no denominators are supplied, returns 1/numerator,
+  else returns numerator divided by all of the denominators. </notextile>
+<br>
+<br>
+**las3r/assoc** <br>
+<notextile> ([map key val] [map key val & kvs]) </notextile> <br>
+
+<notextile> assoc[iate]. When applied to a map, returns a new map of the
+    same (hashed/sorted) type, that contains the mapping of key(s) to
+    val(s). When applied to a vector, returns a new vector that
+    contains val at index. Note - index must be <= (count vector). </notextile>
+<br>
+<br>
+**las3r/neg?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if num is less than zero, else false </notextile>
+<br>
+<br>
+**las3r/doto** <br>
+<notextile> ([x & members]) </notextile> <br>
+Macro
+
+<notextile> Evaluates x then calls all of the methods with the supplied
+  arguments in succession on the resulting object, returning it.
+
+  (doto (new java.util.HashMap) (put "a" 1) (put "b" 2)) </notextile>
+<br>
+<br>
+**las3r/ctep** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/*out*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/vector?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x implements IVector  </notextile>
+<br>
+<br>
+**las3r/split-at** <br>
+<notextile> ([n coll]) </notextile> <br>
+
+<notextile> Returns a vector of [(take n coll) (drop n coll)] </notextile>
+<br>
+<br>
+**las3r/ns-refers** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of the refer mappings for the namespace. </notextile>
+<br>
+<br>
+**las3r/assert-false** <br>
+<notextile> ([form]) </notextile> <br>
+Macro
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/rrest** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Same as (rest (rest x)) </notextile>
+<br>
+<br>
+**las3r/map** <br>
+<notextile> ([f coll] [f coll & colls]) </notextile> <br>
+
+<notextile> Returns a lazy seq consisting of the result of applying f to the
+  set of first items of each coll, followed by applying f to the set
+  of second items in each coll, until any one of the colls is
+  exhausted.  Any remaining items in other colls are ignored. Function
+  f should accept number-of-colls arguments. </notextile>
+<br>
+<br>
+**las3r/char-code->str** <br>
+<notextile> ([code]) </notextile> <br>
+
+<notextile> Return the string corresponding to the numeric code. </notextile>
+<br>
+<br>
+**las3r/memfn** <br>
+<notextile> ([name & args]) </notextile> <br>
+Macro
+
+<notextile> Expands into code that creates a fn that expects to be passed an
+  object and any args and calls the named instance method on the
+  object passing the args. Use when you want to treat a Java method as
+  a first-class fn. </notextile>
+<br>
+<br>
+**las3r/rand-int** <br>
+<notextile> ([n]) </notextile> <br>
+
+<notextile> Returns a random integer between 0 (inclusive) and n (exclusive). </notextile>
+<br>
+<br>
+**las3r/iterate** <br>
+<notextile> ([f x]) </notextile> <br>
+
+<notextile> Returns a lazy seq of x, (f x), (f (f x)) etc. f must be free of side-effects </notextile>
+<br>
+<br>
+**las3r/when-first** <br>
+<notextile> ([bindings & body]) </notextile> <br>
+Macro
+
+<notextile> bindings => x xs
+
+  Same as (when (seq xs) (let [x (first xs)] body)) </notextile>
+<br>
+<br>
+**las3r/mapcat** <br>
+<notextile> ([f & colls]) </notextile> <br>
+
+<notextile> Returns the result of applying concat to the result of applying map
+  to f and colls.  Thus function f should return a collection. </notextile>
+<br>
+<br>
+**las3r/special-symbol?** <br>
+<notextile> ([s]) </notextile> <br>
+
+<notextile> Returns true if s names a special form </notextile>
+<br>
+<br>
+**las3r/find-var** <br>
+<notextile> ([sym]) </notextile> <br>
+
+<notextile> Returns the global var named by the namespace-qualified symbol, or
+  nil if no var with that name. </notextile>
+<br>
+<br>
+**las3r/inc** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns a number one greater than num. </notextile>
+<br>
+<br>
+**las3r/ns-name** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns the name of the namespace, a symbol. </notextile>
+<br>
+<br>
+**las3r/defn-** <br>
+<notextile> ([name & decls]) </notextile> <br>
+Macro
+
+<notextile> same as defn, yielding non-public def </notextile>
+<br>
+<br>
+**las3r/*aot-swf*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/bit-not** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Bitwise complement </notextile>
+<br>
+<br>
+**las3r/destructure** <br>
+<notextile> ([bindings]) </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/seq** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Sequence. Returns a new ISeq on the collection. If the
+    collection is empty, returns nil.  (seq nil) returns nil. seq also
+    works on Strings and native arrays. </notextile>
+<br>
+<br>
+**las3r/browse-file** <br>
+<notextile> ([filters callback]) </notextile> <br>
+
+<notextile> Browse to a file. Apply callback to the loaded FileReference. </notextile>
+<br>
+<br>
+**las3r/filter** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of the items in coll for which
+  (pred item) returns true. pred must be free of side-effects. </notextile>
+<br>
+<br>
+**las3r/comment** <br>
+<notextile> ([& body]) </notextile> <br>
+Macro
+
+<notextile> Ignores body, yields nil </notextile>
+<br>
+<br>
+**las3r/key** <br>
+<notextile> ([e]) </notextile> <br>
+
+<notextile> Returns the key of the map entry. </notextile>
+<br>
+<br>
+**las3r/run-tests** <br>
+<notextile> ([]) </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/create-ns** <br>
+<notextile> ([sym]) </notextile> <br>
+
+<notextile> Create a new namespace named by the symbol if one doesn't already
+  exist, returns it or the already-existing namespace of the same
+  name. </notextile>
+<br>
+<br>
+**las3r/name** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns the name String of a symbol or keyword. </notextile>
+<br>
+<br>
+**las3r/nthrest** <br>
+<notextile> ([coll n]) </notextile> <br>
+
+<notextile> Returns the nth rest of coll, (seq coll) when n is 0. </notextile>
+<br>
+<br>
+**las3r/doall** <br>
+<notextile> ([coll] [n coll]) </notextile> <br>
+
+<notextile> When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. doall can
+  be used to force any effects. Walks through the successive rests of
+  the seq, retains the head and returns it, thus causing the entire
+  seq to reside in memory at one time. </notextile>
+<br>
+<br>
+**las3r/macroexpand-1** <br>
+<notextile> ([form]) </notextile> <br>
+
+<notextile> If form represents a macro form, returns its expansion,
+  else returns form. </notextile>
+<br>
+<br>
+**las3r/not-any?** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns false if (pred x) is logical true for any x in coll,
+  else true. </notextile>
+<br>
+<br>
+**las3r/into** <br>
+<notextile> ([to from]) </notextile> <br>
+
+<notextile> Returns a new coll consisting of to-coll with all of the items of
+  from-coll conjoined. </notextile>
+<br>
+<br>
+**las3r/ffirst** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Same as (first (first x)) </notextile>
+<br>
+<br>
+**las3r/or** <br>
+<notextile> ([] [x] [x & rest]) </notextile> <br>
+Macro
+
+<notextile> Evaluates exprs one at a time, from left to right. If a form
+  returns a logical true value, or returns that value and doesn't
+  evaluate any of the other expressions, otherwise it returns the
+  value of the last expression. (or) returns nil. </notextile>
+<br>
+<br>
+**las3r/drop-last** <br>
+<notextile> ([s] [n s]) </notextile> <br>
+
+<notextile> Return a lazy seq of all but the last n (default 1) items in coll </notextile>
+<br>
+<br>
+**las3r/defn** <br>
+<notextile> ([name doc-string? attr-map? [params*] body] [name doc-string? attr-map? ([params*] body) + attr-map?]) </notextile> <br>
+Macro
+
+<notextile> Same as (def name (fn [params* ] exprs*)) with any doc-string or attrs added
+    to the var metadata </notextile>
+<br>
+<br>
+**las3r/map?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Return true if x implements IMap </notextile>
+<br>
+<br>
+**las3r/with-local-vars** <br>
+<notextile> ([name-vals-vec & body]) </notextile> <br>
+Macro
+
+<notextile> varbinding=> symbol init-expr
+
+  Executes the exprs in a context in which the symbols are bound to
+  vars with per-thread bindings to the init-exprs.  The symbols refer
+  to the var objects themselves, and must be accessed with var-get and
+  var-set </notextile>
+<br>
+<br>
+**las3r/reverse** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns a seq of the items in coll in reverse order. Not lazy. </notextile>
+<br>
+<br>
+**las3r/count** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns the number of items in the collection. (count nil) returns
+  0.  Also works on strings, arrays and maps </notextile>
+<br>
+<br>
+**las3r/set** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns a set of the distinct elements of coll. </notextile>
+<br>
+<br>
+**las3r/assert-true** <br>
+<notextile> ([form]) </notextile> <br>
+Macro
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/when-let** <br>
+<notextile> ([binding-form test & body]) </notextile> <br>
+Macro
+
+<notextile> when test is true, evaluates body with binding-form bound to the value of test </notextile>
+<br>
+<br>
+**las3r/comp** <br>
+<notextile> ([& fs]) </notextile> <br>
+
+<notextile> Takes a set of functions and returns a fn that is the composition
+  of those fns.  The returned fn takes a variable number of args,
+  applies the rightmost of fns to the args, the next
+  fn (right-to-left) to the result, etc. </notextile>
+<br>
+<br>
+**las3r/nth** <br>
+<notextile> ([coll index] [coll index not-found]) </notextile> <br>
+
+<notextile> Returns the value at the index. get returns nil if index out of
+  bounds, nth throws an exception unless not-found is supplied.  nth
+  also works for strings, Java arrays, regex Matchers and Lists, and,
+  in O(n) time, for sequences. </notextile>
+<br>
+<br>
+**las3r/load-url** <br>
+<notextile> ([url on-complete on-error]) </notextile> <br>
+
+<notextile> Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners. </notextile>
+<br>
+<br>
+**las3r/*err*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/constantly** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns a function that takes any number of arguments and returns x. </notextile>
+<br>
+<br>
+**las3r/namespace** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns the namespace String of a symbol or keyword, or nil if not present. </notextile>
+<br>
+<br>
+**las3r/<** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns non-nil if nums are in monotonically increasing order,
+  otherwise false. </notextile>
+<br>
+<br>
+**las3r/cycle** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns a lazy (infinite!) seq of repetitions of the items in
+  coll. </notextile>
+<br>
+<br>
+**las3r/reduce** <br>
+<notextile> ([f coll] [f val coll]) </notextile> <br>
+
+<notextile> f should be a function of 2 arguments. If val is not supplied,
+  returns the result of applying f to the first 2 items in coll, then
+  applying f to that result and the 3rd item, etc. If coll contains no
+  items, f must accept no arguments as well, and reduce returns the
+  result of calling f with no arguments.  If coll has only 1 item, it
+  is returned and f is not called.  If val is supplied, returns the
+  result of applying f to val and the first item in coll, then
+  applying f to that result and the 2nd item, etc. If coll contains no
+  items, returns val and f is not called. </notextile>
+<br>
+<br>
+**las3r/interleave** <br>
+<notextile> ([& colls]) </notextile> <br>
+
+<notextile> Returns a lazy seq of the first item in each coll, then the second
+  etc. </notextile>
+<br>
+<br>
+**las3r/->** <br>
+<notextile> ([x form] [x form & more]) </notextile> <br>
+Macro
+
+<notextile> Macro. Threads the expr through the forms. Inserts x as the
+  second item in the first form, making a list of it if it is not a
+  list already. If there are more forms, inserts the first form as the
+  second item in second form, etc. </notextile>
+<br>
+<br>
+**las3r/cons** <br>
+<notextile> ([x seq]) </notextile> <br>
+
+<notextile> Returns a new seq where x is the first element and seq is
+    the rest. </notextile>
+<br>
+<br>
+**las3r/macroexpand** <br>
+<notextile> ([form]) </notextile> <br>
+
+<notextile> Repeatedly calls macroexpand-1 on form until it no longer
+  represents a macro form, then returns it.  Note neither
+  macroexpand-1 nor macroexpand expand macros in subforms. </notextile>
+<br>
+<br>
+**las3r/var-set** <br>
+<notextile> ([x val]) </notextile> <br>
+
+<notextile> Sets the value in the var object to val. The var must be
+ thread-locally bound. </notextile>
+<br>
+<br>
+**las3r/str** <br>
+<notextile> ([] [x] [x & ys]) </notextile> <br>
+
+<notextile> With no args, returns the empty string. With one arg x, returns
+  x.toString().  (str nil) returns the empty string. With more than
+  one arg, returns the concatenation of the str values of the args. </notextile>
+<br>
+<br>
+**las3r/ns-imports** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of the import mappings for the namespace. </notextile>
+<br>
+<br>
+**las3r/first** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns the first item in the collection. Calls seq on its
+    argument. If coll is nil, returns nil. </notextile>
+<br>
+<br>
+**las3r/=** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Equality. Returns true if x equals y, false if not. Same as
+  Java x.equals(y) except it also works for nil, and compares
+  numbers in a type-independent manner.  Clojure's immutable data
+  structures define equals() (and thus =) as a value, not an identity,
+  comparison. </notextile>
+<br>
+<br>
+**las3r/var-get** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Gets the value in the var object </notextile>
+<br>
+<br>
+**las3r/range** <br>
+<notextile> ([end] [start end] [start end step]) </notextile> <br>
+
+<notextile> Returns a lazy seq of nums from start (inclusive) to end
+  (exclusive), by step, where start defaults to 0 and step to 1. </notextile>
+<br>
+<br>
+**las3r/defmacro** <br>
+<notextile> ([name doc-string? attr-map? [params*] body] [name doc-string? attr-map? ([params*] body) + attr-map?]) </notextile> <br>
+Macro
+
+<notextile> Like defn, but the resulting function name is declared as a
+  macro and will be used as a macro by the compiler when it is
+  called. </notextile>
+<br>
+<br>
+**las3r/eval-url** <br>
+<notextile> ([url] [url callback] [url callback err-callback]) </notextile> <br>
+
+<notextile> Evaluate the code in the provided URL and call back with the result or error if callbacks are provided. </notextile>
+<br>
+<br>
+**las3r/find-ns** <br>
+<notextile> ([sym]) </notextile> <br>
+
+<notextile> Returns the namespace named by the symbol or nil if it doesn't exist. </notextile>
+<br>
+<br>
+**las3r/not-every?** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns false if (pred x) is logical true for every x in 
+  coll, else true. </notextile>
+<br>
+<br>
+**las3r/load-module** <br>
+<notextile> ([module-id]) </notextile> <br>
+
+<notextile> 1. Browse to a swf module on the local file system.
+   2. Load the compiled lisp forms contained inside. </notextile>
+<br>
+<br>
+**las3r/>** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns non-nil if nums are in monotonically decreasing order,
+  otherwise false. </notextile>
+<br>
+<br>
+**las3r/max** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns the greatest of the nums. </notextile>
+<br>
+<br>
+**las3r/identity** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns its argument. </notextile>
+<br>
+<br>
+**las3r/min-key** <br>
+<notextile> ([k x] [k x y] [k x y & more]) </notextile> <br>
+
+<notextile> Returns the x for which (k x), a number, is least. </notextile>
+<br>
+<br>
+**las3r/subs** <br>
+<notextile> ([s start] [s start end]) </notextile> <br>
+
+<notextile> Returns the substring of s beginning at start inclusive, and ending
+  at end (defaults to length of string), exclusive. </notextile>
+<br>
+<br>
+**las3r/>=** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns non-nil if nums are in monotonically non-increasing order,
+  otherwise false. </notextile>
+<br>
+<br>
+**las3r/even?** <br>
+<notextile> ([n]) </notextile> <br>
+
+<notextile> Returns true if n is even, throws an exception if n is not an integer </notextile>
+<br>
+<br>
+**las3r/bit-shift-left** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/*save-bytecodes*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/compare** <br>
+<notextile> ([x y]) </notextile> <br>
+
+<notextile> Comparator. Returns 0 if x equals y, -1 if x is logically 'less
+  than' y, else 1. Same as Java x.compareTo(y) except it also works
+  for nil, and compares numbers in a type-independent manner. x must
+  implement Comparable </notextile>
+<br>
+<br>
+**las3r/cast** <br>
+<notextile> ([c x]) </notextile> <br>
+
+<notextile> Throws an Error if x is not a c, else returns x. </notextile>
+<br>
+<br>
+**las3r/get** <br>
+<notextile> ([map key] [map key not-found]) </notextile> <br>
+
+<notextile> Returns the value mapped to key, not-found or nil if key not present. </notextile>
+<br>
+<br>
+**las3r/<=** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns non-nil if nums are in monotonically non-decreasing order,
+  otherwise false. </notextile>
+<br>
+<br>
+**las3r/*compiler*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/partial** <br>
+<notextile> ([f arg1] [f arg1 arg2] [f arg1 arg2 arg3] [f arg1 arg2 arg3 & more]) </notextile> <br>
+
+<notextile> Takes a function f and fewer than the normal arguments to f, and
+  returns a fn that takes a variable number of additional args. When
+  called, the returned function calls f with args + additional args. </notextile>
+<br>
+<br>
+**las3r/if-let** <br>
+<notextile> ([binding-form test then] [binding-form test then else]) </notextile> <br>
+Macro
+
+<notextile> if test is true, evaluates then with binding-form bound to the value of test, if not, yields else </notextile>
+<br>
+<br>
+**las3r/pos?** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if num is greater than zero, else false </notextile>
+<br>
+<br>
+**las3r/get-property** <br>
+<notextile> ([instance property]) </notextile> <br>
+
+<notextile> Return an instance's property value using the array access [] operator. </notextile>
+<br>
+<br>
+**las3r/take-while** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of successive items from coll while
+  (pred item) returns true. pred must be free of side-effects. </notextile>
+<br>
+<br>
+**las3r/and** <br>
+<notextile> ([] [x] [x & rest]) </notextile> <br>
+Macro
+
+<notextile> Evaluates exprs one at a time, from left to right. If a form
+  returns logical false (nil or false), and returns that value and
+  doesn't evaluate any of the other expressions, otherwise it returns
+  the value of the last expr. (and) returns true. </notextile>
+<br>
+<br>
+**las3r/lazy-cons** <br>
+<notextile> ([first-expr & rest-expr]) </notextile> <br>
+Macro
+
+<notextile> Expands to code which produces a seq object whose first is
+  first-expr and whose rest is rest-expr, neither of which is
+  evaluated until first/rest is called. Each expr will be evaluated at most
+  once per step in the sequence, e.g. calling first/rest repeatedly on the
+  same node of the seq evaluates first/rest-expr once - the values they yield are
+  cached. </notextile>
+<br>
+<br>
+**las3r/refer** <br>
+<notextile> ([ns-sym & filters]) </notextile> <br>
+
+<notextile> refers to all public vars of ns, subject to filters.
+  filters can include at most one each of:
+
+  :exclude list-of-symbols
+  :only list-of-symbols
+  :rename map-of-fromsymbol-tosymbol
+
+  For each public interned var in the namespace named by the symbol,
+  adds a mapping from the name of the var to the var to the current
+  namespace.  Throws an exception if name is already mapped to
+  something else in the current namespace. Filters can be used to
+  select a subset, via inclusion or exclusion, or to provide a mapping
+  to a symbol different from the var's name, in order to prevent
+  clashes. Use :use in the ns macro in preference to calling this directly. </notextile>
+<br>
+<br>
+**las3r/in-ns** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/contains?** <br>
+<notextile> ([map key]) </notextile> <br>
+
+<notextile> Returns true if key is present, else false. </notextile>
+<br>
+<br>
+**las3r/load-file** <br>
+<notextile> ([]) </notextile> <br>
+
+<notextile> 1. Browse to a lsr source file on the local file system.
+   2. Load the lisp forms contained inside. </notextile>
+<br>
+<br>
+**las3r/apply** <br>
+<notextile> ([f args* argseq]) </notextile> <br>
+
+<notextile> Applies fn f to the argument list formed by prepending args to argseq. </notextile>
+<br>
+<br>
+**las3r/rest** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns a seq of the items after the first. Calls seq on its
+  argument.  If there are no more items, returns nil. </notextile>
+<br>
+<br>
+**las3r/keyword** <br>
+<notextile> ([name] [ns name]) </notextile> <br>
+
+<notextile> Returns a Keyword with the given namespace and name.  Do not use :
+  in the keyword strings, it will be added automatically. </notextile>
+<br>
+<br>
+**las3r/ns-map** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Returns a map of all the mappings for the namespace. </notextile>
+<br>
+<br>
+**las3r/doc-all-publics** <br>
+<notextile> ([ns]) </notextile> <br>
+
+<notextile> Prints documentation for all public vars in the given namespace. </notextile>
+<br>
+<br>
+**las3r/int** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Coerce to int </notextile>
+<br>
+<br>
+**las3r/array-map** <br>
+<notextile> ([& keyvals]) </notextile> <br>
+
+<notextile> keyval => key val
+  Returns a new array map with supplied mappings. </notextile>
+<br>
+<br>
+**las3r/dec** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns a number one less than num. </notextile>
+<br>
+<br>
+**las3r/println** <br>
+<notextile> ([& more]) </notextile> <br>
+
+<notextile> Same as print followed by (newline) </notextile>
+<br>
+<br>
+**las3r/pr** <br>
+<notextile> ([] [x] [x & more]) </notextile> <br>
+
+<notextile> Trace out the object. By default, pr and prn print in a way that objects
+  can be read by the reader </notextile>
+<br>
+<br>
+**las3r/drop** <br>
+<notextile> ([n coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of all but the first n items in coll. </notextile>
+<br>
+<br>
+**las3r/eval** <br>
+<notextile> ([form] [form callback] [form callback err-callback] [form callback err-callback progress]) </notextile> <br>
+
+<notextile> Evaluates the form data structure (provided as a string!) and calls back with the result
+   if callback is provided. </notextile>
+<br>
+<br>
+**las3r/loop*** <br>
+<notextile> nil </notextile> <br>
+Macro
+
+<notextile> Loop macro that expands into a let expression with a body that
+          applies a function to the bound locals. </notextile>
+<br>
+<br>
+**las3r/bit-shift-right** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/num** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Coerce to Number </notextile>
+<br>
+<br>
+**las3r/*print-readably*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/merge-with** <br>
+<notextile> ([f & maps]) </notextile> <br>
+
+<notextile> Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping(s)
+  from the latter (left-to-right) will be combined with the mapping in
+  the result by calling (f val-in-result val-in-latter). </notextile>
+<br>
+<br>
+**las3r/take-nth** <br>
+<notextile> ([n coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of every nth item in coll. </notextile>
+<br>
+<br>
+**las3r/*in*** <br>
+<notextile> nil </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/line-seq** <br>
+<notextile> ([rdr]) </notextile> <br>
+
+<notextile> Returns the lines of text from rdr as a lazy sequence of strings.
+  rdr must implement java.io.BufferedReader. </notextile>
+<br>
+<br>
+**las3r/take** <br>
+<notextile> ([n coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of the first n items in coll, or all items if
+  there are fewer than n. </notextile>
+<br>
+<br>
+**las3r/when** <br>
+<notextile> ([test & body]) </notextile> <br>
+Macro
+
+<notextile> Evaluates test. If logical true, evaluates body in an implicit do. </notextile>
+<br>
+<br>
+**las3r/alias** <br>
+<notextile> ([alias namespace-sym]) </notextile> <br>
+
+<notextile> Add an alias in the current namespace to another
+  namespace. Arguments are two symbols: the alias to be used, and
+  the symbolic name of the target namespace. Use :as in the ns macro in preference 
+  to calling this directly. </notextile>
+<br>
+<br>
+**las3r/to-array** <br>
+<notextile> ([coll]) </notextile> <br>
+
+<notextile> Returns an array of Objects containing the contents of coll, which
+  can be any Collection. </notextile>
+<br>
+<br>
+**las3r/hash-map** <br>
+<notextile> ([& keyvals]) </notextile> <br>
+
+<notextile> keyval => key val
+  Returns a new hash map with supplied mappings. </notextile>
+<br>
+<br>
+**las3r/frest** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Same as (first (rest x)) </notextile>
+<br>
+<br>
+**las3r/find** <br>
+<notextile> ([map key]) </notextile> <br>
+
+<notextile> Returns the map entry for key, or nil if key not present. </notextile>
+<br>
+<br>
+**las3r/drop-while** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns a lazy seq of the items in coll starting from the first
+  item for which (pred item) returns nil. </notextile>
+<br>
+<br>
+**las3r/print-special-doc** <br>
+<notextile> ([name type anchor]) </notextile> <br>
+
+<notextile> nil </notextile>
+<br>
+<br>
+**las3r/list** <br>
+<notextile> ([& items]) </notextile> <br>
+
+<notextile> Creates a new list containing the items. </notextile>
+<br>
+<br>
+**las3r/every?** <br>
+<notextile> ([pred coll]) </notextile> <br>
+
+<notextile> Returns true if (pred x) is logical true for every x in coll, else
+  false. </notextile>
+<br>
+<br>
+**las3r/dissoc** <br>
+<notextile> ([map] [map key] [map key & ks]) </notextile> <br>
+
+<notextile> dissoc[iate]. Returns a new map of the same (hashed/sorted) type,
+  that does not contain a mapping for key(s). </notextile>
+<br>
+<br>
+**las3r/not** <br>
+<notextile> ([x]) </notextile> <br>
+
+<notextile> Returns true if x is logical false, false otherwise. </notextile>
+<br>
+<br>
+**las3r/binding** <br>
+<notextile> ([bindings & body]) </notextile> <br>
+Macro
+
+<notextile> binding => var-symbol init-expr 
+
+  Creates new bindings for the (already-existing) vars, with the
+  supplied initial values, executes the exprs in an implicit do, then
+  re-establishes the bindings that existed before. </notextile>
+<br>
+<br>
+**las3r/doc** <br>
+<notextile> ([name]) </notextile> <br>
+Macro
+
+<notextile> Prints documentation for a var or special form given its name </notextile>
+<br>
+<br>
+**las3r/merge** <br>
+<notextile> ([& maps]) </notextile> <br>
+
+<notextile> Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping from
+  the latter (left-to-right) will be the mapping in the result. </notextile>
+<br>
+<br>
+**las3r/min** <br>
+<notextile> ([x] [x y] [x y & more]) </notextile> <br>
+
+<notextile> Returns the least of the nums. </notextile>
+<br>
+<br>
+**las3r/meta** <br>
+<notextile> ([obj]) </notextile> <br>
+
+<notextile> Returns the metadata of obj, returns nil if there is no metadata. </notextile>
+<br>
+<br>
