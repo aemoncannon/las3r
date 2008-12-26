@@ -16,6 +16,7 @@ package com.las3r.demo.garden{
 	import com.las3r.runtime.RT;
 	import com.las3r.io.*;
 	import com.las3r.errors.LispError;
+	import com.las3r.repl.Repl;
 
 	public class Garden extends Sprite{
 
@@ -27,17 +28,12 @@ package com.las3r.demo.garden{
 
 		public function Garden(){
 			stage.scaleMode = StageScaleMode.NO_SCALE;
-
-			var stdout:OutputStream = new OutputStream(function(str:String):void{
-					trace(str);
-				});
-			var stderr:OutputStream = new OutputStream(function(str:String):void{
-					trace("stderr: " + str);
-				});
-			_rt = new RT(stage, stdout, stderr);
-			
-			_rt.loadStdLib(function(val:*):void{},function(a:int, b:int):void{});
-			_rt.evalStr(GARDEN_LSR);
+			var repl:Repl = new Repl(350, 200, stage);
+			repl.x = stage.stageWidth - repl.width;
+			repl.y = stage.stageHeight - repl.height;
+			addChild(repl);
+			_rt = repl.rt;
+			repl.evalLibrary(GARDEN_LSR);
 		}
 
 

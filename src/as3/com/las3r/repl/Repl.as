@@ -43,6 +43,8 @@ package com.las3r.repl{
 		protected var _grabbedObjectVars:Array = [];
 		protected var _grabbedCounter:int = 0;
 
+		public function get rt():RT { return _rt }
+
 		public function Repl(w:int, h:int, stage:Stage = null){
 			_width = w;
 			_height = h;

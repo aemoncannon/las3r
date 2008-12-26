@@ -54,7 +54,7 @@ end
 
 DEMO_GARDEN_TARGET = "./bin/garden.swf"
 file DEMO_GARDEN_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 700 600"]
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 1000 600"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
 end
 

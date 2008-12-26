@@ -14,20 +14,16 @@
 	'(flash.utils Timer))
 
 (defn stage-w [] (. *stage* stageWidth))
-
 (defn stage-h [] (. *stage* stageHeight))
 
-(def *plants* (map (fn [i] {:x (rand-int (stage-w)) :y (rand-int (stage-h))}) (range 50)))
+(def *world* (let [w (new Object)] w))
+(defn earth [] (. *world* earth))
 
-(def *earth* (let [earth (new Sprite)] (. *stage* (addChild earth))))
-
-(def *ticker* (new Timer 1000))
-
-(defn update-plants [])
-
-(defn update-view []
-  (let [g (. *earth* graphics)]
-    (doseq plant *plants*
+(defn update [earth]
+  (let [ground (. earth ground)
+	g (. ground graphics)
+	plants (. earth plants)]
+    (doseq plant plants
       (let [x (get plant :x)
 	    y (get plant :y)
 	    leaf-x (+ x (- (rand-int 20) (rand-int 40)))
@@ -38,18 +34,38 @@
 	  (drawCircle leaf-x leaf-y leaf-size)
 	  (endFill))
 	))
-    ))
+    )
+)
 
+(defn dispose-plant [earth plant])
+(defn dispose-earth [earth]
+  (doseq p (. earth plants) (dispose-plant earth p))
+  (. (. earth ticker) (removeEventListener "timer" update))
+  (. (. earth ticker) (stop))
+  (. *stage* (removeChild (. earth ground)))
+  )
 
 (defn init []
   "The main entry point."
-  (. *ticker* 
-     (addEventListener 
-      "timer" 
-      (fn [e] 
-	(update-plants)
-	(update-view))))
-  (. *ticker* (start)))
-
+  (if (earth) (dispose-earth (earth)))
+  (let [earth (new Object)
+	ticker (new Timer 100)
+	ticker-listener (fn [e] (update earth))
+	ground (new Sprite)
+	plants (for [i (range 50)] {:x (rand-int (stage-w)) :y (rand-int (stage-h))})
+	]
+    (. ticker (addEventListener "timer" ticker-listener))
+    (set! (. earth ticker) ticker)
+    (set! (. earth plants) plants)
+    (set! (. earth ground) ground)
+    (let [g (. ground graphics)]
+      (doto g
+	(beginFill 0x222222 1.0)
+	(drawRect 0 0 (stage-w) (stage-h))
+	(endFill)))
+    (. *stage* (addChildAt ground 0))
+    (set! (. *world* earth) earth)
+    (. ticker (start))
+    ))
 
 (init)
