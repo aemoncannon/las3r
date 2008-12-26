@@ -227,9 +227,6 @@ package com.las3r.runtime{
 					throw new Error("Expecting var, but " + sym + " is mapped to " + o);
 				}
 			}
-			if(v != null){
-				registerConstant(v);
-			}
 			return v;
 		}
 
@@ -680,9 +677,12 @@ class TheVarExpr implements Expr{
 	public static function parse(c:Compiler, context:C, form:Object):Expr{
 		var sym:Symbol = Symbol(RT.second(form));
 		var v:Var = c.lookupVar(sym, false);
-		if(v != null)
-		return new TheVarExpr(c, v);
+
+		if(v == null)
 		throw new Error("Unable to resolve var: " + sym + " in this context");
+
+		c.registerConstant(v);
+		return new TheVarExpr(c, v);
 	}
 
 }
@@ -887,6 +887,8 @@ class DefExpr implements Expr{
 				throw new Error("Can't create defs outside of current ns");
 			}
 		}
+
+		compiler.registerConstant(v);
 
 		var mm:IMap = sym.meta || RT.map();
 		// TODO: Aemon add line info here..
