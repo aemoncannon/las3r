@@ -236,6 +236,7 @@
   "Returns an array of Objects containing the contents of coll, which
   can be any Collection."
   [coll] (. com.las3r.runtime.RT (toArray coll)))
+(def ary to-array)
 
 (defn cast
   "Throws an Error if x is not a c, else returns x."
@@ -1893,8 +1894,7 @@
 	to-eval
 	))))
 
-
-(defn connect-to-eval-pipe
+(defn- connect-to-eval-pipe
   "Connect to eval_pipe, reading and evaluating strings as they arrive."
   ([] (connect-to-eval-pipe 9877))
   ([port]
@@ -1917,7 +1917,12 @@
        socket
        )))
 
-(def ctep connect-to-eval-pipe)
+(def *ctep-sockets* (ary []))
+(defn ctep 
+  []
+  (let [s (connect-to-eval-pipe)]
+    (. *ctep-sockets* (push s))))
+
 
 (defn load-url 
   "Load data from a URL using flash.net.URLLoader, setup on-complete and on-error as event listeners."
