@@ -1,0 +1,19 @@
+;; Collected Flash helpers
+
+(in-ns 'las3r.flash)
+(las3r.core/refer 'las3r.core :exclude '(run-tests))
+
+(import '(flash.display Graphics Sprite DisplayObject DisplayObjectContainer))
+
+;; Display List helpers:
+
+(defn remove-all-children
+  "Remove all children from a DisplayObjectContainer."
+  [#^DisplayObject s]
+  (loop [] (if (> (. s numChildren) 0)
+	     (do (. s (removeChildAt 0))
+		 (recur))))
+  s
+  )
+
+

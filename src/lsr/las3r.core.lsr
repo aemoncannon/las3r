@@ -8,7 +8,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 
-(in-ns 'las3r)
+(in-ns 'las3r.core)
 
 (def *compiler* (. *runtime* compiler))
 

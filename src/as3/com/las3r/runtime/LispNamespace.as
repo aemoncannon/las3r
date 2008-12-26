@@ -22,7 +22,7 @@ package com.las3r.runtime{
 		private var _rt:RT;
 		private var hash:int;
 
-		public static var LAS3R_NAMESPACE_NAME:String = "las3r";
+		public static var LAS3R_NAMESPACE_NAME:String = "las3r.core";
 
 		public function equals(val:Object):Boolean{
 			return val == this;

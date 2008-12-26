@@ -2,8 +2,8 @@
 ;;
 ;; TODO: Write a sequence->XML function.
 
-(in-ns 'las3r.xml)
-(las3r/refer 'las3r :exclude '(run-tests))
+(las3r.core/in-ns 'las3r.xml)
+(las3r.core/refer 'las3r.core :exclude '(run-tests))
 
 (defn parse [node]
   "Return a sequence representing the XML node (like clojure.xml/parse)."

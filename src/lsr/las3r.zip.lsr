@@ -9,8 +9,8 @@
 ;functional hierarchical zipper, with navigation, editing and enumeration
 ;see Huet
 
-(las3r/in-ns 'las3r.zip)
-(las3r/refer 'las3r :exclude '(replace remove run-tests))
+(las3r.core/in-ns 'las3r.zip)
+(las3r.core/refer 'las3r.core :exclude '(replace remove run-tests))
 
 ;; TODO: Use real peek and pop?
 

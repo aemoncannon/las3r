@@ -8,7 +8,7 @@
 
 (in-ns 'garden)
 (las3r/refer 'las3r)
-;;(las3r/refer 'las3r.flash)
+(las3r/refer 'las3r.flash)
 
 (import '(flash.display Graphics Sprite DisplayObject)
 	'(flash.events Event EventDispatcher)
@@ -59,9 +59,7 @@
   (let [s (get plant :sprite)]
     (. (. s graphics) (clear))
     (. (. s parent) (removeChild s))
-    (loop [] (if (> (. s numChildren) 0)
-	       (do (. s (removeChildAt 0))
-		   (recur))))
+    (remove-all-children s)
     ))
 
 (def *earth* (let [earth (new Object)

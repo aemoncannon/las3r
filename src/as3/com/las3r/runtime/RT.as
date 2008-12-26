@@ -31,12 +31,14 @@ package com.las3r.runtime{
 
 	public class RT extends EventDispatcher{
 
-		[Embed(source="../../../../../lib/boot.swf", mimeType="application/octet-stream")]
-		protected const BootSwf:Class;
-
-		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
-		protected const BootLsr:Class;
-		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
+		[Embed(source="../../../../../lib/las3r.core.swf", mimeType="application/octet-stream")]
+		protected const CoreSwf:Class;
+		[Embed(source="../../../../../lib/las3r.flash.swf", mimeType="application/octet-stream")]
+		protected const FlashSwf:Class;
+		[Embed(source="../../../../lsr/las3r.core.lsr", mimeType="application/octet-stream")]
+		protected const CoreLsr:Class;
+		[Embed(source="../../../../lsr/las3r.flash.lsr", mimeType="application/octet-stream")]
+		protected const FlashLsr:Class;
 
 		public static var instances:Object = {};
 		public static var modules:Object = {};
@@ -310,12 +312,22 @@ package com.las3r.runtime{
 
 
 		public function loadStdLib(onComplete:Function = null, progress:Function = null, failure:Function = null, fromSrc:Boolean = false):void{
+			var src:String;
+			var bytes:ByteArray;
+
 			if(fromSrc){
-				evalStr(BOOT_LSR, onComplete, progress, failure);
+				src = ByteArray(new CoreLsr).toString();
+				evalStr(src, function(val:*):void{}, progress, failure);
+
+				src = ByteArray(new FlashLsr).toString();
+				evalStr(src, onComplete, progress, failure);
 			}
 			else{
-				var bytes:ByteArray = new BootSwf() as ByteArray;
-				loadModule("boot", bytes, onComplete, failure);
+				bytes = ByteArray(new CoreSwf);
+				loadModule("las3r.core", bytes, function(val:*):void{}, failure);
+
+				bytes = ByteArray(new FlashSwf);
+				loadModule("las3r.flash", bytes, onComplete, failure);
 			}
 		}
 

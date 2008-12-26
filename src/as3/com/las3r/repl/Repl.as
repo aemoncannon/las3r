@@ -78,7 +78,7 @@ package com.las3r.repl{
 					function(error:*):void{
 						outputError(error);
 					},
-					true
+					false
 				);
 				_rt.evalStr("(ctep)");
 			}
