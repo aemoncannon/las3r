@@ -61,5 +61,5 @@
 	       ))
 
 
-
-(. *earth* (start))
+;;(. *earth* (start))
+;;(. *earth* (stop))
