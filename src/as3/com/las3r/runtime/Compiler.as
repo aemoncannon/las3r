@@ -723,9 +723,9 @@ class IfExpr implements Expr{
 		var falseLabel:Object = gen.asm.newLabel();
 		gen.asm.I_dup();
 		gen.asm.I_pushnull();
-		gen.asm.I_ifstricteq(nullLabel);
+		gen.asm.I_ifeq(nullLabel);
 		gen.asm.I_pushfalse();
-		gen.asm.I_ifstricteq(falseLabel);
+		gen.asm.I_ifeq(falseLabel);
 
 		/* TODO: Is it necessary to coerce_a the return values of the then and else?
 		Getting a verification error without the coersion, if return types are different.
