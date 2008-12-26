@@ -1919,9 +1919,13 @@
 
 (def *ctep-sockets* (ary []))
 (defn ctep 
+  "Connect to the eval pipe. If we don't hold a reference to the socket, it'll get GC'd, so we
+   push it onto a global, mutable array."
   []
   (let [s (connect-to-eval-pipe)]
-    (. *ctep-sockets* (push s))))
+    (. *ctep-sockets* (push s))
+    s
+    ))
 
 
 (defn load-url 
@@ -2030,6 +2034,12 @@
 	       (fn [a b] (print "."))
 	       ))
        ))))
+
+(defn comp-std
+  "Little helper to save keystrokes when recompiling the standard libraries.
+   Doesn't really automate anything."
+  []
+  (compile-file-and-save "boot"))
 
 
 ;;;;;;;;;;;;;;;;;;;; Generating Documentation ;;;;;;;;;;;;;;;;;;;;
