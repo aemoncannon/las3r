@@ -6,9 +6,9 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(in-ns 'garden)
-(las3r/refer 'las3r)
-(las3r/refer 'las3r.flash)
+(las3r.core/in-ns 'garden)
+(las3r.core/refer 'las3r.core)
+(las3r.core/refer 'las3r.flash)
 
 (import '(flash.display Graphics Sprite DisplayObject)
 	'(flash.events Event EventDispatcher)

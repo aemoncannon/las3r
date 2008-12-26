@@ -363,7 +363,7 @@ package com.las3r.runtime{
 
 		protected function evalNextInQ():void{
 			if(_evalQ.length > 0){
-				var next:EvalUnit = EvalUnit(_evalQ[_evalQ.length - 1]);
+				var next:EvalUnit = EvalUnit(_evalQ[0]);
 
 				var completeWrapper:Function = function(val:*){
 					next.finished(val);					

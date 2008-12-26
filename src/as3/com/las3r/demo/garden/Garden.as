@@ -22,7 +22,6 @@ package com.las3r.demo.garden{
 
 		[Embed(source="garden.lsr", mimeType="application/octet-stream")]
 		protected const GardenLsr:Class;
-		public var GARDEN_LSR:String = (ByteArray(new GardenLsr).toString());
 
 		protected var _rt:RT;
 
@@ -33,7 +32,7 @@ package com.las3r.demo.garden{
 			repl.y = stage.stageHeight - repl.height;
 			addChild(repl);
 			_rt = repl.rt;
-			repl.evalLibrary(GARDEN_LSR);
+			repl.evalLibrary(ByteArray(new GardenLsr).toString());
 		}
 
 
