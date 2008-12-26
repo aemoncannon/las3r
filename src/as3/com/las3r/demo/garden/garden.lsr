@@ -16,56 +16,50 @@
 (defn stage-w [] (. *stage* stageWidth))
 (defn stage-h [] (. *stage* stageHeight))
 
-(def *world* (let [w (new Object)] w))
-(defn earth [] (. *world* earth))
+(def *earth* (let [earth (new Object)
+		   ground (new Sprite)
+		   plants (for [i (range 50)] {:x (rand-int (stage-w)) :y (rand-int (stage-h))})
+		   ticker (new Timer 100)
 
-(defn update [earth]
-  (let [ground (. earth ground)
-	g (. ground graphics)
-	plants (. earth plants)]
-    (doseq plant plants
-      (let [x (get plant :x)
-	    y (get plant :y)
-	    leaf-x (+ x (- (rand-int 20) (rand-int 40)))
-	    leaf-y (+ y (- (rand-int 20) (rand-int 40)))
-	    leaf-size (rand-int 20)]
-	(doto g
-	  (beginFill 0x00AA00 1.0)
-	  (drawCircle leaf-x leaf-y leaf-size)
-	  (endFill))
-	))
-    )
-)
+		   update (fn [e]
+			    (let [g (. ground graphics)]
+			      (doseq plant plants
+				(let [x (get plant :x)
+				      y (get plant :y)
+				      leaf-x (+ x (- (rand-int 20) (rand-int 40)))
+				      leaf-y (+ y (- (rand-int 20) (rand-int 40)))
+				      leaf-size (rand-int 20)]
+				  (doto g
+				    (beginFill 0x00AA00 1.0)
+				    (drawCircle leaf-x leaf-y leaf-size)
+				    (endFill))
+				  ))))
 
-(defn dispose-plant [earth plant])
-(defn dispose-earth [earth]
-  (doseq p (. earth plants) (dispose-plant earth p))
-  (. (. earth ticker) (removeEventListener "timer" update))
-  (. (. earth ticker) (stop))
-  (. *stage* (removeChild (. earth ground)))
-  )
+		   stop (fn []
+			  (. (. ground graphics) (clear))
+			  (. *stage* (removeChild ground))
+			  (. ticker (removeEventListener "timer" update))
+			  (. ticker (stop))
+			  )
 
-(defn init []
-  "The main entry point."
-  (if (earth) (dispose-earth (earth)))
-  (let [earth (new Object)
-	ticker (new Timer 100)
-	ticker-listener (fn [e] (update earth))
-	ground (new Sprite)
-	plants (for [i (range 50)] {:x (rand-int (stage-w)) :y (rand-int (stage-h))})
-	]
-    (. ticker (addEventListener "timer" ticker-listener))
-    (set! (. earth ticker) ticker)
-    (set! (. earth plants) plants)
-    (set! (. earth ground) ground)
-    (let [g (. ground graphics)]
-      (doto g
-	(beginFill 0x222222 1.0)
-	(drawRect 0 0 (stage-w) (stage-h))
-	(endFill)))
-    (. *stage* (addChildAt ground 0))
-    (set! (. *world* earth) earth)
-    (. ticker (start))
-    ))
+		   start (fn []
+			   (let [g (. ground graphics)]
+			     (doto g
+			       (beginFill 0x222222 1.0)
+			       (drawRect 0 0 (stage-w) (stage-h))
+			       (endFill)))
+			   (. *stage* (addChildAt ground 0))
+			   (. ticker (addEventListener "timer" update))
+			   (. ticker (start))
+			   )
+		   ]
+	       (set! (. earth ground) ground)
+	       (set! (. earth plants) plants)
+	       (set! (. earth start) start)
+	       (set! (. earth stop) stop)
+	       earth
+	       ))
 
-(init)
+
+
+(. *earth* (start))
