@@ -136,16 +136,18 @@ package com.las3r.runtime{
 		}
 
 		protected function loadForm(form:Object, callback:Function, errorCallback:Function):void{
-			Var.pushBindings(rt,
-				RT.map(
-					CONSTANTS, RT.map()
-				)
-			);
-
-			var expr:Expr = analyze(C.EXPRESSION, form);
-			var constants:IMap = IMap(CONSTANTS.get());
-
-			Var.popBindings(rt);
+			try{
+				Var.pushBindings(rt,
+					RT.map(
+						CONSTANTS, RT.map()
+					)
+				);
+				var expr:Expr = analyze(C.EXPRESSION, form);
+				var constants:IMap = IMap(CONSTANTS.get());
+			}
+			finally{
+				Var.popBindings(rt);
+			}
 
 			var aotSwf:SWFGen = SWFGen(rt.AOT_MODULE_SWF.get());
 			if(aotSwf){ aotSwf.addExpr(expr, constants); }
@@ -1832,7 +1834,7 @@ class ThrowExpr extends UntypedExpr{
 	override public function emit(context:C, gen:CodeGen):void{
 		// So there's a nil on the stack after the exception is thrown,
 		// required so that in the event that the try is prematurely aborted (because of
-		// this throw) there will still be something on the stack to match the catch's
+			// this throw) there will still be something on the stack to match the catch's
 		// result.
 		gen.asm.I_pushnull();
 		// Then, reconcile with type of ensuing catch expr...
