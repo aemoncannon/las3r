@@ -11,35 +11,69 @@
 
 (import '(flash.display Graphics Sprite DisplayObject)
 	'(flash.events Event EventDispatcher)
-	'(flash.utils Timer))
+	'(flash.utils Timer)
+	'(flash.filters DropShadowFilter)
+	)
 
 (defn stage-w [] (. *stage* stageWidth))
 (defn stage-h [] (. *stage* stageHeight))
 
+(defstruct plant :x :y :sprite)
+
+(defn new-random-plant []
+  (struct plant 
+	  (rand-int (stage-w)) 
+	  (rand-int (stage-w))
+	  (new Sprite)
+	  ))
+
+(defn add-drop-shadow! [s]
+  (let [d (new DropShadowFilter 4, 0, 0x000000, 0.3, 3, 3, 1, 1, false, false, false)]
+    (set! (. s filters) (to-array [d]))))
+
+(defn update-plant [plant]
+  (when (> (rand) 0.95)
+    (let [x (get plant :x)
+	  y (get plant :y)
+	  host-sprite (get plant :sprite)
+	  leaf-x (+ x (- (rand-int 20) (rand-int 40)))
+	  leaf-y (+ y (- (rand-int 20) (rand-int 40)))
+	  leaf-size (rand-int 20)
+	  leaf-sprite (let [s (new Sprite)] 
+			(. host-sprite (addChild s)) 
+			(set! (. s x) leaf-x)
+			(set! (. s y) leaf-y)
+			(add-drop-shadow! s)
+			s)
+	  g (. leaf-sprite graphics)
+	  ]
+      (doto g
+	(beginFill 0x00AA00 1.0)
+	(drawCircle 0 0 leaf-size)
+	(endFill))
+      )))
+
+(defn reset-plant [plant]
+  (let [s (get plant :sprite)]
+    (. (. s graphics) (clear))
+    (. (. s parent) (removeChild s))))
+
 (def *earth* (let [earth (new Object)
 		   ground (new Sprite)
-		   plants (for [i (range 50)] {:x (rand-int (stage-w)) :y (rand-int (stage-h))})
-		   ticker (new Timer 100)
+		   plants (for [i (range 50)] 
+			    (new-random-plant))
 
 		   update (fn [e]
-			    (let [g (. ground graphics)]
-			      (doseq plant plants
-				(let [x (get plant :x)
-				      y (get plant :y)
-				      leaf-x (+ x (- (rand-int 20) (rand-int 40)))
-				      leaf-y (+ y (- (rand-int 20) (rand-int 40)))
-				      leaf-size (rand-int 20)]
-				  (doto g
-				    (beginFill 0x00AA00 1.0)
-				    (drawCircle leaf-x leaf-y leaf-size)
-				    (endFill))
-				  ))))
+			    (doseq plant plants
+			      (update-plant plant)
+			      ))
 
 		   stop (fn []
 			  (. (. ground graphics) (clear))
+			  (doseq plant plants
+			    (reset-plant plant))
 			  (. *stage* (removeChild ground))
-			  (. ticker (removeEventListener "timer" update))
-			  (. ticker (stop))
+			  (. *stage* (removeEventListener "enterFrame" update))
 			  )
 
 		   start (fn []
@@ -48,9 +82,10 @@
 			       (beginFill 0x222222 1.0)
 			       (drawRect 0 0 (stage-w) (stage-h))
 			       (endFill)))
+			   (doseq plant plants
+			     (. ground (addChild (get plant :sprite))))
 			   (. *stage* (addChildAt ground 0))
-			   (. ticker (addEventListener "timer" update))
-			   (. ticker (start))
+			   (. *stage* (addEventListener "enterFrame" update))
 			   )
 		   ]
 	       (set! (. earth ground) ground)
@@ -61,5 +96,6 @@
 	       ))
 
 
-;;(. *earth* (start))
+
+(. *earth* (start))
 ;;(. *earth* (stop))

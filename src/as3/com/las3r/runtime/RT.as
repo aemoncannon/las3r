@@ -144,7 +144,7 @@ package com.las3r.runtime{
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
-			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap];
+			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap, PersistentStructMap];
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));

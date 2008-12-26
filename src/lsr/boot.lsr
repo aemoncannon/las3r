@@ -1263,6 +1263,52 @@
       (macroexpand ex))))
 
 
+(defn create-struct
+  "Returns a structure basis object."
+  [& keys]
+  (. com.las3r.runtime.PersistentStructMap (createSlotMap keys)))
+ 
+(defmacro defstruct
+  "Same as (def name (create-struct keys...))"
+  [name & keys]
+  `(def ~name (create-struct ~@keys)))
+  
+(defn struct-map
+  "Returns a new structmap instance with the keys of the
+  structure-basis. keyvals may contain all, some or none of the basis
+  keys - where values are not supplied they will default to nil.
+  keyvals can also contain keys not in the basis."
+  [s & inits]
+  (. com.las3r.runtime.PersistentStructMap (create s inits)))
+
+(defn struct
+  "Returns a new structmap instance with the keys of the
+  structure-basis. vals must be supplied for basis keys in order -
+  where values are not supplied they will default to nil."
+  [s & vals]
+  (. com.las3r.runtime.PersistentStructMap (construct s vals)))
+
+(defn accessor
+  "Returns a fn that, given an instance of a structmap with the basis,
+  returns the value at the key.  The key must be in the basis. The
+  returned function should be (slightly) more efficient than using
+  get, but such use of accessors should be limited to known
+  performance-critical areas."
+  [s key]
+  (. com.las3r.runtime.PersistentStructMap (getAccessor s key)))
+
+(defn subvec
+  "Returns a persistent vector of the items in vector from
+  start (inclusive) to end (exclusive).  If end is not supplied,
+  defaults to (count vector). This operation is O(1) and very fast, as
+  the resulting vector shares structure with the original and no
+  trimming is done."
+  ([v start]
+     (subvec v start (count v)))
+  ([v start end]
+     (. com.las3r.runtime.RT (subvec v start end))))
+
+
 (defn #^{:private true}
   filter-key [keyfn pred amap]
   (loop* [ret {} es (seq amap)]
