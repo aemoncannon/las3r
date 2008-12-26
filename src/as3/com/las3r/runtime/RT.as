@@ -34,9 +34,9 @@ package com.las3r.runtime{
 		[Embed(source="../../../../../lib/boot.swf", mimeType="application/octet-stream")]
 		protected const BootSwf:Class;
 
-		// 		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
-		// 		protected const BootLsr:Class;
-		// 		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
+		[Embed(source="../../../../lsr/boot.lsr", mimeType="application/octet-stream")]
+		protected const BootLsr:Class;
+		public var BOOT_LSR:String = (ByteArray(new BootLsr).toString());
 
 		public static var instances:Object = {};
 		public static var modules:Object = {};
@@ -309,9 +309,14 @@ package com.las3r.runtime{
 		}
 
 
-		public function loadStdLib(onComplete:Function = null, progress:Function = null, failure:Function = null):void{
-			var bytes:ByteArray = new BootSwf() as ByteArray;
-			loadModule("boot", bytes, onComplete, failure);
+		public function loadStdLib(onComplete:Function = null, progress:Function = null, failure:Function = null, fromSrc:Boolean = false):void{
+			if(fromSrc){
+				evalStr(BOOT_LSR, onComplete, progress, failure);
+			}
+			else{
+				var bytes:ByteArray = new BootSwf() as ByteArray;
+				loadModule("boot", bytes, onComplete, failure);
+			}
 		}
 
 

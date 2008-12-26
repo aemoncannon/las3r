@@ -8,6 +8,7 @@
 
 (in-ns 'garden)
 (las3r/refer 'las3r)
+;;(las3r/refer 'las3r.flash)
 
 (import '(flash.display Graphics Sprite DisplayObject)
 	'(flash.events Event EventDispatcher)
@@ -53,10 +54,15 @@
 	(endFill))
       )))
 
+
 (defn reset-plant [plant]
   (let [s (get plant :sprite)]
     (. (. s graphics) (clear))
-    (. (. s parent) (removeChild s))))
+    (. (. s parent) (removeChild s))
+    (loop [] (if (> (. s numChildren) 0)
+	       (do (. s (removeChildAt 0))
+		   (recur))))
+    ))
 
 (def *earth* (let [earth (new Object)
 		   ground (new Sprite)
