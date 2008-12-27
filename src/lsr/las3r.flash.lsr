@@ -13,7 +13,13 @@
   (loop [] (if (> (. s numChildren) 0)
 	     (do (. s (removeChildAt 0))
 		 (recur))))
-  s
-  )
+  s)
+
+(defn set-pos!
+  "Set x and y of given DisplayObject."
+  [#^DisplayObject s x y]
+  (set! (. s x) x)
+  (set! (. s y) y)
+  s)
 
 
