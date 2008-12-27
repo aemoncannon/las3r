@@ -2,23 +2,16 @@ package com.las3r.errors{
 
 	import flash.events.ErrorEvent;
 
-	public class LispError extends ErrorEvent{
+	public class LispError extends Error{
 		
-		public var cause:*;
 
-		public static const LISP_ERROR:String = "lispError";
-
-		public function LispError(message:String, cause:*){
-			super(LISP_ERROR, false, true, message);
-			this.cause = cause;
+		public function LispError(message:String){
+			super(message);
 		}
 
-		public function get message():String{
-			return text;
-		}
-
-		override public function toString():String{
-			return message + " " + (cause is Error ? "\n" + cause.getStackTrace() : String(cause));
+		override public function getStackTrace():String{
+			var st:String = super.getStackTrace();
+			return st.split("\n").reverse().join("\n");
 		}
 
 	}

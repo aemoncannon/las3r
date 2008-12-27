@@ -7,6 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (las3r.core/in-ns 'garden)
+
 (las3r.core/refer 'las3r.core)
 (las3r.core/refer 'las3r.flash)
 
@@ -19,22 +20,22 @@
 (defn stage-w [] (. *stage* stageWidth))
 (defn stage-h [] (. *stage* stageHeight))
 
-(defstruct plant :x :y :sprite)
+(defstruct plant :x :y :leaves)
 
 (defn new-random-plant
   {:tag com.las3r.runtime.PersistentStructMap}
   []
   (let [x (rand-int (stage-w))
 	y (rand-int (stage-w))
-	s (new Sprite)
-	p (struct plant x y s)]
-    (set-pos! s x y)
+	leaves '()
+	p (struct plant x y leaves)]
     p
     ))
 
 (defn add-drop-shadow! [s]
   (let [d (new DropShadowFilter 4, 0, 0x000000, 0.3, 3, 3, 1, 1, false, false, false)]
     (set! (. s filters) (to-array [d]))))
+
 
 (defn new-random-leaf 
   {:tag DisplayObject}
@@ -54,61 +55,57 @@
     s
     ))
 
-(defn update-plant [plant time]
-  (when (> (rand) 0.9)
+
+(defn update-plant [plant ground time]
+  (when (< time 50)
     (let [x (get plant :x)
 	  y (get plant :y)
-	  host-sprite (get plant :sprite)
-	  leaf-x (+ x (- (rand-int 20) (rand-int 40)))
-	  leaf-y (+ y (- (rand-int 20) (rand-int 40)))
-	  leaf-size (* (- 1 (/ time 500)) (rand-int 50))
+	  leaf-size (* (- 1 (/ time 50)) (rand-int 50))
 	  leaf (new-random-leaf leaf-size)
 	  ]
-      (. host-sprite (addChild leaf))
-      )))
+      (. ground (addChild leaf))
+      (set-pos! leaf x y)
+      ))
+  plant)
 
 
-(defn reset-plant [plant]
-  (let [s (get plant :sprite)]
-    (. (. s graphics) (clear))
-    (. (. s parent) (removeChild s))
-    (remove-all-children s)
-    ))
-
-(def *earth* (let [earth (new Object)
-		   ground (new Sprite)
-		   plants (for [i (range 50)] 
-			    (new-random-plant))
-
+(def *earth* (let [
+		   earth (new Object)
+		   
 		   update (fn [e]
-			    (set! (. earth time) (inc (. earth time)))
-			    (doseq plant plants
-			      (update-plant plant (. earth time))
-			      ))
+			    (let [ground (. earth ground)
+				  time (. earth time)
+				  plants (. earth plants)]
+			      (set! (. earth time) (inc time))
+			      (set! (. earth plants) 
+				    (map (fn [p] (update-plant p ground time)) plants))
+			      (dorun (. earth plants))))
 
 		   stop (fn []
-			  (. (. ground graphics) (clear))
-			  (doseq plant plants
-			    (reset-plant plant))
-			  (. *stage* (removeChild ground))
-			  (. *stage* (removeEventListener "enterFrame" update))
-			  )
+			  (let [ground (. earth ground)
+				plants (. earth plants)]
+			    (set! (. earth time) 0)
+			    (clear-graphics-of! ground)
+			    (remove-all-children! ground)
+			    (. *stage* (removeChild ground))
+			    (. *stage* (removeEventListener "enterFrame" update))
+			    ))
 
 		   start (fn []
-			   (let [g (. ground graphics)]
+			   (let [ground (. earth ground)
+				 g (. ground graphics)]
 			     (doto g
 			       (beginFill 0x222222 1.0)
 			       (drawRect 0 0 (stage-w) (stage-h))
-			       (endFill)))
-			   (doseq plant plants
-			     (. ground (addChild (get plant :sprite))))
-			   (. *stage* (addChildAt ground 0))
-			   (. *stage* (addEventListener "enterFrame" update))
-			   )
+			       (endFill))
+			     (. *stage* (addChildAt ground 0))
+			     (. *stage* (addEventListener "enterFrame" update))
+			     ))
 		   ]
+
 	       (set! (. earth time) 0)
-	       (set! (. earth ground) ground)
-	       (set! (. earth plants) plants)
+	       (set! (. earth ground) (new Sprite))
+	       (set! (. earth plants) (for [i (range 50)] (new-random-plant)))
 	       (set! (. earth start) start)
 	       (set! (. earth stop) stop)
 	       earth

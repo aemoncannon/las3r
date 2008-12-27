@@ -60,11 +60,6 @@ package com.las3r.repl{
 			_inputField.visible = false;
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			_rt.addEventListener(LispError.LISP_ERROR, function(e:LispError):void{
-					outputError(e);
-					e.stopPropagation();
-				});
-
 
 			try{
 				_rt.loadStdLib(function(val:*):void{

@@ -11,7 +11,6 @@
 
 package com.las3r.runtime{
 
-	import flash.utils.Dictionary;
 	import com.las3r.util.Util;
 
 	public /*abstract*/ class APersistentMap extends Obj implements IMap, IReduce{

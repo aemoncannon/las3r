@@ -279,7 +279,7 @@ package com.las3r.gen{
 		*
 		*/
 		public function throwError(msg:String):void{
-			asm.I_getlex(emitter.qname({ns: "", id:"Error"}, false))
+			asm.I_getlex(emitter.qname({ns: "com.las3r.errors", id:"LispError"}, false))
 			asm.I_pushstring( emitter.constants.stringUtf8(msg));
 			asm.I_construct(1);
 			asm.I_throw();

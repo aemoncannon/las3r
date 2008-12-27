@@ -7,7 +7,7 @@
 
 ;; Display List helpers:
 
-(defn remove-all-children
+(defn remove-all-children!
   "Remove all children from a DisplayObjectContainer."
   [#^DisplayObject s]
   (loop [] (if (> (. s numChildren) 0)
@@ -21,5 +21,12 @@
   (set! (. s x) x)
   (set! (. s y) y)
   s)
+
+
+(defn clear-graphics-of!
+  "Clear graphics of given DisplayObject."
+  [#^DisplayObject s]
+  (. (. s graphics) (clear)))
+
 
 

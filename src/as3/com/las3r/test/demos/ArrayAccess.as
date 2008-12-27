@@ -24,6 +24,10 @@ package com.las3r.test.demos{
 		public function howdy():void{
 			trace("howdy");
 		}
+
+		public static function staticHowdy():void{
+			trace("howdy");
+		}
 	}
 
 }

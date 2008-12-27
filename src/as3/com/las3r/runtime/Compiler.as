@@ -297,8 +297,8 @@ package com.las3r.runtime{
 			}
 			catch(e:*)
 			{
-				var lispError:CompilerError = new CompilerError("CompilerError at " + SOURCE.get() + ":" + int(LINE.get()), e);
-				throw lispError;
+				var msg:String = "CompilerError at " + SOURCE.get() + ":" + int(LINE.get()) + ":  " + (e is Error ? Error(e).message : String(e));
+				throw new CompilerError(msg);
 			}
 			finally
 			{

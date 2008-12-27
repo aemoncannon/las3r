@@ -14,17 +14,19 @@ package com.las3r.test.demos{
 
 	public class StaticVarAccess extends Sprite{
 
-
 		public function StaticVarAccess():void{
 			hello();
 		}
 
 
-		private function hello():void{			
+		private function hello():void{
 			trace(ArrayAccess.dude);
 			var a:ArrayAccess = new ArrayAccess();
 			a.howdy();
+			ArrayAccess.staticHowdy();
 		}
+
+
 	}
 
 }
