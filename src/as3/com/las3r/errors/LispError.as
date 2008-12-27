@@ -11,7 +11,12 @@ package com.las3r.errors{
 
 		override public function getStackTrace():String{
 			var st:String = super.getStackTrace();
-			return st.split("\n").reverse().join("\n");
+			if(st){
+				return st.split("\n").reverse().join("\n");
+			}
+			else{
+				return message;
+			}
 		}
 
 	}

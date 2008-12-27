@@ -73,12 +73,12 @@ package com.las3r.repl{
 					function(error:*):void{
 						outputError(error);
 					},
-					true
+					false/*true=from-source*/
 				);
-				_rt.evalStr("(ctep)");
+				//_rt.evalStr("(ctep)");
 			}
-			catch(e:LispError){
-				// Suppress these.. we're already listening for error events.
+			catch(e:*){
+				outputError(e);
 			}
 
 
@@ -100,8 +100,8 @@ package com.las3r.repl{
 					}
 				);
 			}
-			catch(e:LispError){
-				// Suppress these.. we're already listening for error events.
+			catch(e:*){
+				outputError(e);
 			}
 		}
 
@@ -334,22 +334,21 @@ package com.las3r.repl{
 					}
 				);
 			}
-			catch(e:LispError){
-				// Suppress these.. we're already listening for error events.
+			catch(e:*){
+				outputError(e);
 			}
-
 		}
 
 		protected function outputError(e:*):void{
 			var str:String;
-			if(e is Error){
+			if(e is Error && e.getStackTrace()){
 				str = e.getStackTrace();
 			}
 			else{
 				str = String(e);
 			}
 			setOutputTextColor(0xFF3333);
-			_outputField.appendText("\n" + str + "\n");
+			_outputField.appendText(str + "\n");
 			_outputField.scrollV = _outputField.maxScrollV;
 			setOutputTextColor(0xFFFFFF);
 		}
