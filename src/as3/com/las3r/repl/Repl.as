@@ -75,7 +75,7 @@ package com.las3r.repl{
 					},
 					false/*true=from-source*/
 				);
-				//_rt.evalStr("(ctep)");
+				_rt.evalStr("(in-ns 'las3r.core)");
 			}
 			catch(e:*){
 				outputError(e);

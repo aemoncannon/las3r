@@ -36,8 +36,9 @@ package com.las3r.runtime{
 
 		static public function createFromArray(items:Array):PersistentVector{
 			var ret:PersistentVector = empty();
-			for each(var item:* in items)
-			ret = PersistentVector(ret.cons(item));
+			var len:int = items.length;
+			for(var i:int; i < len; i++)
+			ret = PersistentVector(ret.cons(items[i]));
 			return ret;
 		}
 
