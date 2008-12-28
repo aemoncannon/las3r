@@ -1279,13 +1279,13 @@ class InvokeExpr implements Expr{
 		fexpr.emit(C.EXPRESSION, gen);
 
 		/* Invoke an AS3 function or anything that happens to implement IFn. */
-		var isFunLabel:Object = gen.asm.newLabel();
- 		gen.asm.I_coerce_a();
- 		gen.asm.I_dup();
- 		gen.asm.I_astype(gen.emitter.qname({ns: "com.las3r.runtime", id:"IFn"}, false));
-		gen.asm.I_iffalse(isFunLabel);
-		gen.asm.I_getproperty(gen.emitter.nameFromIdent("invoke" + args.count()));
-		gen.asm.I_label(isFunLabel);
+// 		var isFunLabel:Object = gen.asm.newLabel();
+//  		gen.asm.I_coerce_a();
+//  		gen.asm.I_dup();
+//  		gen.asm.I_astype(gen.emitter.qname({ns: "com.las3r.runtime", id:"IFn"}, false));
+// 		gen.asm.I_iffalse(isFunLabel);
+// 		gen.asm.I_getproperty(gen.emitter.nameFromIdent("invoke" + args.count()));
+// 		gen.asm.I_label(isFunLabel);
 
 		gen.asm.I_pushnull(); // <-- the receiver
 		for(var i:int = 0; i < args.count(); i++)
