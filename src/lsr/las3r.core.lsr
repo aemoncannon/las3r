@@ -1311,7 +1311,7 @@
   [expr]
   `(let [start# (. com.las3r.runtime.RT (sysTime))
 	 ret# ~expr]
-     (prn (str "Elapsed time: " (/ (- (. com.las3r.runtime.RT (sysTime)) start#) 1000000.0) " msecs"))
+     (prn (str "Elapsed time: " (- (. com.las3r.runtime.RT (sysTime)) start#) " msecs"))
      ret#))
 
 (defn set 
