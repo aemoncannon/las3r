@@ -1,0 +1,163 @@
+;;   Copyright (c) Aemon Cannon. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+;;   which can be found in the file CPL.TXT at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
+
+(las3r.core/in-ns 'las3r.benchmarks)
+
+(las3r.core/refer 'las3r.core)
+
+(import '(flash.utils Dictionary))
+
+(defn run []
+(do
+  (newline)
+  (println "---------------------------------")
+
+  (let [count 1000]
+
+
+    (println (str "Control: " count " iterations"))
+    (let [dummy-seq (for [key (range 0 count)] [key, (new Object)])]
+      (time 
+       (let [m (reduce (fn [m key-val] nil) nil dummy-seq)]
+	 (doseq pair dummy-seq nil))))
+
+
+    (newline)
+
+    (println "AS3 Array starting at 0 length")
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	  arr (new Array 0)
+	  ]
+      (time
+       (let [a (reduce (fn [a key-val] (set-property! a (nth key-val 0) (nth key-val 1)))
+		       arr
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get-property a (nth pair 0)))))
+      )
+
+    (newline)
+
+    (println (str "AS3 Array starting at " count " length"))
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	  arr (new Array count)
+	  ]
+      (time
+       (let [a (reduce (fn [a key-val] (set-property! a (nth key-val 0) (nth key-val 1)))
+		       arr
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get-property a (nth pair 0)))))
+      )
+
+    (newline)
+
+
+    (println "AS3 Dictionary(strong refs)")
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	  dict (new Dictionary)
+	  ]
+      (time
+       (let [m (reduce (fn [m key-val] (set-property! m (nth key-val 0) (nth key-val 1)))
+		       dict
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get-property m (nth pair 0)))))
+      )
+
+    (println (str "  with " count " string keys."))
+    (let [key-val-seq (for [i (range 0 count)] [(str "key" i), (new Object)])
+	  dict (new Dictionary)
+	  ]
+      (time
+       (let [m (reduce (fn [m key-val] (set-property! m (nth key-val 0) (nth key-val 1)))
+		       dict
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get-property m (nth pair 0)))))
+      )
+
+
+    (newline)
+
+
+    (println (str "PersistentVector"))
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])]
+      (time
+       (let [v (reduce (fn [v key-val] (assoc v (nth key-val 0) (nth key-val 1)))
+		       (vector)
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (nth v (nth pair 0)))))
+      )
+
+    (newline)
+
+
+    (println "PersistentArrayMap")
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])]
+      (time
+       (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+		       (array-map) 
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get m (nth pair 0)))))
+      )
+
+    (println (str "  with " count " string keys."))
+    (let [key-val-seq (for [i (range 0 count)] [(str "key" i), (new Object)])]
+      (time
+       (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+		       (array-map) 
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get m (nth pair 0)))))
+      )
+
+
+
+    (newline)
+
+
+
+    (println "PersistentHashMap")
+
+    (println (str "  with " count " int keys."))
+    (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])]
+      (time
+       (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+		       (hash-map) 
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get m (nth pair 0)))))
+      )
+
+    (println (str "  with " count " string keys."))
+    (let [key-val-seq (for [i (range 0 count)] [(str "key" i), (new Object)])]
+      (time
+       (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+		       (hash-map) 
+		       key-val-seq)]
+	 (doseq pair key-val-seq
+	   (get m (nth pair 0)))))
+      )
+
+    )))
+
+
+(run)
