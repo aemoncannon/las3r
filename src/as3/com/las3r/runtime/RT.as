@@ -7,9 +7,6 @@
 * By using this software in any fashion, you are agreeing to be bound by
 * the terms of this license.
 * You must not remove this notice, or any other, from this software.
-*
-* TODO: 
-* read/print syntax for regular expressions should include modifier flags.
 */
 
 
@@ -983,6 +980,11 @@ package com.las3r.runtime{
 				var end:int = reS.lastIndexOf("/");
 				w.write("#");
 				print(reS.substring(start + 1, end), w);
+				if(x.global) w.write("g");
+				if(x.ignoreCase) w.write("i");
+ 				if(x.dotall) w.write("s");
+ 				if(x.multiline) w.write("m");
+ 				if(x.extended) w.write("x");
 			}
 			else if(x is Class)
 			{

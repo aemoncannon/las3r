@@ -153,6 +153,25 @@ package com.las3r.runtime{
 			return null;
 		}
 
+		public function readCharSet(r:PushbackReader, charset:String):String{
+			var sb:String = "";
+			for(; ;)
+			{
+				var ch:int = r.readOne();
+				var chS:String = String.fromCharCode(ch);
+				if(ch == -1 || isWhitespace(ch) || isTerminatingMacro(ch))
+				{
+					unread(r, ch);
+					return sb;
+				}
+				if(charset.indexOf(chS) == -1){
+					throw new Error("Illegal character '" + chS + "', expecting one of \"" + charset + "\".");
+				}
+				sb += chS;
+			}
+			return null;
+		}
+
 		public function readNumber(r:PushbackReader, initch:int):Object{
 			var sb:String = "";
 			sb += String.fromCharCode(initch);
@@ -575,7 +594,8 @@ class RegexReader implements IReaderMacro{
 	public function invoke(reader:Object, doublequote:Object):Object{
 		var stringrdr:StringReader = new StringReader(LispReader(_reader));
 		var str:String = String(stringrdr.invoke(reader, doublequote));
-		return new RegExp(str, "");
+		var flags:String = _reader.readCharSet(PushbackReader(reader), "gismx");
+		return new RegExp(str, flags);
 	}
 
 }
