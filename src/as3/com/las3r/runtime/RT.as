@@ -785,8 +785,20 @@ package com.las3r.runtime{
 			}
 		}
 
-		public static function assoc(map:IMap, key:Object, val:Object):IMap{
-			return map.assoc(key, val);
+		public static function assoc(o:Object, key:Object, val:Object):Object{
+
+			/* TODO: This is too limited.
+			         Should accept anything that implements Associative. 
+					 (need to introduce Associative interface first)
+					 */
+
+			if(o is IMap){
+				return IMap(o).assoc(key, val);
+			}
+			else if(o is IVector){
+				return IVector(o).assocN(int(key), val);
+			}
+			else return map();
 		}
 
 		public static function dissoc(map:IMap, key:Object):IMap{
