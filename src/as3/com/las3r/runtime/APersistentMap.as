@@ -13,7 +13,7 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	public /*abstract*/ class APersistentMap extends Obj implements IMap, IReduce{
+	public /*abstract*/ class APersistentMap extends AFn implements IMap, IReduce{
 
 		private var _hash:int = -1;
 
@@ -129,6 +129,14 @@ package com.las3r.runtime{
 				ret = f(ret, s.first());
 			}
 			return ret;
+		}
+
+		override public function invoke1(arg1:Object):Object{
+			return valAt(arg1);
+		}
+
+		override public function invoke2(arg1:Object, notFound:Object):Object{
+			return valAt(arg1, notFound);
 		}
 
 	}

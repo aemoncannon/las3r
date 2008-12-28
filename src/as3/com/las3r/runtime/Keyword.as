@@ -14,7 +14,7 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	public class Keyword implements IHashable{
+	public class Keyword implements IFn, IHashable{
 
 		public var sym:Symbol;
 		private var hash:int;
@@ -69,6 +69,133 @@ package com.las3r.runtime{
 
 		public function getName():String{
 			return sym.getName();
+		}
+
+
+		public function throwArity():Object{
+			throw new Error("IllegalArgumentException: Wrong number of args passed to keyword: " + toString());
+		}
+
+		public function call():Object{
+			return invoke0();
+		}
+
+		public function invoke0():Object{
+			return throwArity();
+		}
+
+		/**
+		* Indexer implements IFn for attr access
+		*
+		* @param obj - must be IMap
+		* @return the value at the key or nil if not found
+		*/
+		public function invoke1(obj:Object) :Object{
+			return RT.get(obj, this);
+		}
+
+		public function invoke2(obj:Object, notFound:Object) :Object{
+			return RT.get(obj, this, notFound);
+		}
+
+		public function invoke3(args1:Object, args2:Object, args3:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke4(args1:Object, args2:Object, args3:Object, args4:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke5(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke6(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke7(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object)
+		:Object{
+			return throwArity();
+		}
+
+		public function invoke8(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke9(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke10(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke11(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke12(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke13(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object)
+		:Object{
+			return throwArity();
+		}
+
+		public function invoke14(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object)
+		:Object{
+			return throwArity();
+		}
+
+		public function invoke15(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke16(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object, args16:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke17(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object, args16:Object, args17:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke18(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object, args16:Object, args17:Object, args18:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke19(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object, args16:Object, args17:Object, args18:Object, args19:Object) :Object{
+			return throwArity();
+		}
+
+		public function invoke20(args1:Object, args2:Object, args3:Object, args4:Object, args5:Object, args6:Object, args7:Object,
+            args8:Object, args9:Object, args10:Object, args11:Object, args12:Object, args13:Object, args14:Object,
+            args15:Object, args16:Object, args17:Object, args18:Object, args19:Object, args20:Object)
+		:Object{
+			return throwArity();
+		}
+
+
+		public function applyTo(arglist:ISeq) :Object{
+			return AFn.applyToHelper(this, arglist);
 		}
 
 	}

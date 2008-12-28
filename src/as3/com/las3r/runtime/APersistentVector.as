@@ -14,7 +14,7 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	public /*abstract*/ class APersistentVector extends Obj implements IVector{
+	public /*abstract*/ class APersistentVector extends AFn implements IVector{
 		private var _hash:int = -1;
 
 		public function APersistentVector(meta:IMap = null){
@@ -196,6 +196,12 @@ package com.las3r.runtime{
 
 		public function subvec(start:int, end:int):IVector{
 			return new SubVector(this, start, end, meta);
+		}
+
+		override public function invoke1(arg1:Object):Object{
+			if(arg1 is int)
+			return nth(int(arg1));
+			throw new Error("IllegalArgumentException: Key must be integer");
 		}
 
 	}

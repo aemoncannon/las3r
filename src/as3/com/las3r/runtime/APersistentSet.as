@@ -14,7 +14,7 @@ package com.las3r.runtime{
 	import flash.utils.Dictionary;
 	import com.las3r.util.Util;
 
-	public /*abstract*/ class APersistentSet extends Obj implements ISet{
+	public /*abstract*/ class APersistentSet extends AFn implements ISet{
 		private var _hash:int = -1;
 		protected var impl:IMap;
 
@@ -138,6 +138,10 @@ package com.las3r.runtime{
 			var ret:ISet = this.empty();
 			each(function(ea:Object):void{ if(s.contains(ea)) ret = ret.add(ea); });
 			return ret;
+		}
+
+		override public function invoke1(arg1:Object):Object{
+			return get(arg1);
 		}
 
 
