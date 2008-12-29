@@ -725,9 +725,9 @@ class IfExpr implements Expr{
 		var falseLabel:Object = gen.asm.newLabel();
 		gen.asm.I_dup();
 		gen.asm.I_pushnull();
-		gen.asm.I_ifeq(nullLabel);
+		gen.asm.I_ifeq(nullLabel); /* This'll net null and undefined.. */
 		gen.asm.I_pushfalse();
-		gen.asm.I_ifeq(falseLabel);
+		gen.asm.I_ifstricteq(falseLabel);/* And this will get the falses. */
 
 		/* TODO: Is it necessary to coerce_a the return values of the then and else?
 		Getting a verification error without the coersion, if return types are different.
@@ -1279,13 +1279,13 @@ class InvokeExpr implements Expr{
 		fexpr.emit(C.EXPRESSION, gen);
 
 		/* Invoke an AS3 function or anything that happens to implement IFn. */
-// 		var isFunLabel:Object = gen.asm.newLabel();
-//  		gen.asm.I_coerce_a();
-//  		gen.asm.I_dup();
-//  		gen.asm.I_astype(gen.emitter.qname({ns: "com.las3r.runtime", id:"IFn"}, false));
-// 		gen.asm.I_iffalse(isFunLabel);
-// 		gen.asm.I_getproperty(gen.emitter.nameFromIdent("invoke" + args.count()));
-// 		gen.asm.I_label(isFunLabel);
+		// 		var isFunLabel:Object = gen.asm.newLabel();
+		//  		gen.asm.I_coerce_a();
+		//  		gen.asm.I_dup();
+		//  		gen.asm.I_astype(gen.emitter.qname({ns: "com.las3r.runtime", id:"IFn"}, false));
+		// 		gen.asm.I_iffalse(isFunLabel);
+		// 		gen.asm.I_getproperty(gen.emitter.nameFromIdent("invoke" + args.count()));
+		// 		gen.asm.I_label(isFunLabel);
 
 		gen.asm.I_pushnull(); // <-- the receiver
 		for(var i:int = 0; i < args.count(); i++)

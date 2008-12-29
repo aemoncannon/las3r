@@ -20,6 +20,7 @@ package com.las3r.runtime{
 	import com.las3r.runtime.Frame;
 	import com.las3r.errors.RuntimeError;
 	import com.las3r.util.StringBuffer;
+	import com.las3r.util.Benchmarks;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -151,7 +152,8 @@ package com.las3r.runtime{
 			stdout = out || new TraceStream();
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
-			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, PersistentArrayMap, PersistentStructMap, RuntimeError];
+			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, 
+				PersistentArrayMap, PersistentStructMap, RuntimeError, Benchmarks];
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
