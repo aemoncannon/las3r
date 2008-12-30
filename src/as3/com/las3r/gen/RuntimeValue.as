@@ -63,7 +63,6 @@ package com.las3r.gen{
 		public function get(gen:CodeGen):void{
 			if(gen == _gen && inTmp){
 				gen.asm.I_getlocal(tmpIndex);
-				gen.asm.I_coerce_a();
 			}
 			else if(inActivationSlot){
 				gen.asm.I_getlex(gen.emitter.qname({ns: "", id: slotName}, false));

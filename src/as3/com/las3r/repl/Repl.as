@@ -111,7 +111,6 @@ package com.las3r.repl{
 			_grabButton.visible = true;
 		}
 
-
 		protected function onMouseDown(e:Event):void{
 			startDrag();
 		}
