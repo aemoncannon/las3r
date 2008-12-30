@@ -28,7 +28,7 @@ package com.las3r.runtime{
 
 	public class Compiler{
 
-		public static var MAX_POSITIONAL_ARITY:int = 8;
+		public static var MAX_POSITIONAL_ARITY:int = 20;
 
 		private var _rt:RT;
 		public var specialParsers:IMap;
@@ -1008,14 +1008,14 @@ class FnMethod{
 
 		var i:int = 1;
 		reqParams.each(function(b:LocalBinding):void{
-				b.runtimeValue = RuntimeValue.fromTmp(methGen, i, b.runtimeName);
+				b.runtimeValue = RuntimeLocal.fromTmp(methGen, i, b.runtimeName);
 				i++;
 			});
 
 		if(restParam){
 			methGen.asm.I_getlocal(i); // get arguments object
 			methGen.restFromArguments(i - 1);
-			restParam.runtimeValue = RuntimeValue.fromTOS(methGen, restParam.runtimeName);
+			restParam.runtimeValue = RuntimeLocal.fromTOS(methGen, restParam.runtimeName);
 		}
 
 		var nameSlot:int;
@@ -1023,7 +1023,7 @@ class FnMethod{
 			methGen.asm.I_getlocal(i); // get arguments object
  			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("callee"));
 			methGen.asm.I_setlocal(i); // store current function in place of arguments
-			nameLb.runtimeValue = RuntimeValue.fromTmp(methGen, i, nameLb.runtimeName);
+			nameLb.runtimeValue = RuntimeLocal.fromTmp(methGen, i, nameLb.runtimeName);
 		}
 		
 		var loopLabel:Object = methGen.asm.I_label(undefined);
@@ -1173,14 +1173,16 @@ class FnExpr implements Expr{
 
 					methGen.asm.I_label(meth.startLabel);
 
+					var j:int = 1;
 					var i:int = argumentsObjIndex;
 					methGen.asm.I_getlocal(i);
 					meth.reqParams.each(function(ea:Object):void{
 							methGen.asm.I_dup(); // Keep a copy of the arguments object.
-							methGen.asm.I_pushint(methGen.emitter.constants.int32(i));
+							methGen.asm.I_pushint(methGen.emitter.constants.int32(j));
 							methGen.asm.I_nextvalue();
 							methGen.asm.I_setlocal(i);
 							i++;
+							j++;
 						});
 					// Now put the arguments object back into the locals, following all the params
 					methGen.asm.I_setlocal(i);
@@ -1252,7 +1254,7 @@ class LetExpr implements Expr{
 		this.bindingInits.eachWithIndex(function(sym:Symbol, b:LocalBinding, i:int){
 				if(b){
 					b.init.emit(C.EXPRESSION, gen);
-					b.runtimeValue = RuntimeValue.fromTOS(gen, b.runtimeName);
+					b.runtimeValue = RuntimeLocal.fromTOS(gen, b.runtimeName);
 				}
 			});
 		body.emit(context, gen);
@@ -1377,7 +1379,7 @@ class LocalBindingSet{
 class LocalBinding{
 	public var sym:Symbol;
 	public var runtimeName:String;
-	public var runtimeValue:RuntimeValue;
+	public var runtimeValue:RuntimeLocal;
 	public var init:Expr;
 
 	public function LocalBinding(num:int, sym:Symbol, init:Expr = null){
@@ -1953,7 +1955,7 @@ class TryExpr implements Expr{
 
 				// Store the exception in local value
 				var b:LocalBinding = clause.lb;
-				b.runtimeValue = RuntimeValue.fromTOS(gen, b.runtimeName);
+				b.runtimeValue = RuntimeLocal.fromTOS(gen, b.runtimeName);
 
 				clause.handler.emit(context, gen);
 				gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..

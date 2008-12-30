@@ -14,7 +14,7 @@ package com.las3r.gen{
 
 	import com.las3r.util.Util;
 
-	public class RuntimeValue {
+	public class RuntimeLocal {
 
 		private var tmpIndex:int = -1;
 
@@ -26,12 +26,12 @@ package com.las3r.gen{
 		private function get inTmp():Boolean { return tmpIndex > -1; }
 		private function get inActivationSlot():Boolean { return slotIndex > -1 && slotName != null; }
 		
-		public function RuntimeValue(gen:CodeGen){
+		public function RuntimeLocal(gen:CodeGen){
 			_gen = gen;
 		}
 
-		public static function fromTmp(gen:CodeGen, i:int, name:String):RuntimeValue{
-			var l:RuntimeValue = new RuntimeValue(gen);
+		public static function fromTmp(gen:CodeGen, i:int, name:String):RuntimeLocal{
+			var l:RuntimeLocal = new RuntimeLocal(gen);
 			l.tmpIndex = i;
 			if(gen.currentActivation){
 				l.slotName = name;
@@ -44,8 +44,8 @@ package com.las3r.gen{
 			return l;
 		}
 
-		public static function fromTOS(gen:CodeGen, name:String):RuntimeValue{
-			var l:RuntimeValue = new RuntimeValue(gen);
+		public static function fromTOS(gen:CodeGen, name:String):RuntimeLocal{
+			var l:RuntimeLocal = new RuntimeLocal(gen);
 			l.tmpIndex = gen.asm.getTemp();
 			if(gen.currentActivation) gen.asm.I_dup();
 			gen.asm.I_coerce_a();
