@@ -840,11 +840,6 @@ package com.las3r.runtime{
 			return Var.internNS(LispNamespace.findOrCreate(this, sym2(null, ns)), sym2(null, name));
 		}
 
-		public static function restFromArguments(a:Array, i:int):List{
-			if(i > (a.length - 1)) return null;
-			return List.createFromArray(a.slice(i));
-		}
-
 		public static function seqToArray(seq:ISeq):Array{
 			var ret:Array = [];
 			var items:ISeq = seq;

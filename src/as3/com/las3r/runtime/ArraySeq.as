@@ -19,10 +19,10 @@ package com.las3r.runtime{
 		private var array:Array;
 		private var i:int;
 
-		public static function createFromArray(array:Array):ISeq{
-			if(array == null || array.length == 0)
+		public static function createFromArray(array:Array, i:int = 0):ISeq{
+			if(array == null || array.length == 0 || i >= array.length)
 			return null;
-			return new ArraySeq(array, 0);
+			return new ArraySeq(array, i);
 		}
 
 		public function ArraySeq(array:Array, i:int, meta:IMap = null){

@@ -337,11 +337,11 @@ package com.las3r.gen{
 		* Stack:   
 		*   anArray => aList
 		*/
-		public function restFromArguments(i:int):void{
-			getRTClass();
+		public function restFromArguments(i:uint):void{
+			asm.I_getlex(emitter.qname({ns: "com.las3r.runtime", id:"ArraySeq"}, false))
 			asm.I_swap();
-			asm.I_pushint(emitter.constants.int32(i));
-			asm.I_callproperty(emitter.nameFromIdent("restFromArguments"), 2);
+			asm.I_pushuint(emitter.constants.uint32(i));
+			asm.I_callproperty(emitter.nameFromIdent("createFromArray"), 2);
 		}
 
 

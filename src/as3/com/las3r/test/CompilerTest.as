@@ -271,7 +271,7 @@ package com.las3r.test{
 			readAndLoad("(def *fun* (fn* [a & dudes] dudes))", function(rt:RT, val:*):void{
 					readAndLoad("(def *bird* (*fun* 1 2 3 4))", function(rt:RT, val:*):void{
 							var v:Var = rt.getVar("las3r.core", "*bird*");
-							assertTrue("*bird* should be bound to a List.", v.get() is List);
+							assertTrue("*bird* should be bound to a List.", v.get() is ISeq);
 							assertTrue("*bird* should be empty.", v.get().count() == 3);
 							assertTrue("*bird* should match....", Util.equal(v.get(), RT.list(2, 3, 4)));
 						}, rt);

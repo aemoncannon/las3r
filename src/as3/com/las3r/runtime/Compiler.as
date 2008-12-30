@@ -1586,12 +1586,9 @@ class RecurExpr implements Expr{
 
 class HostExpr implements Expr{
 
-	public function emit(context:C, gen:CodeGen):void{
-		
-	}
+	public function emit(context:C, gen:CodeGen):void{}
 
 	public function interpret():Object {
-
 		return null;
 	}
 
@@ -1650,210 +1647,210 @@ class HostExpr implements Expr{
 			if(sym.ns == null) //if ns-qualified can't be classname
 			{
 				if(sym.name.indexOf('.') > 0 || sym.name.charAt(0) == '['){
-						c = RT.classForName(sym.name);
-					}
-					else
-					{
-						var o:Object = compiler.currentNS().getMapping(sym);
-						if(o is Class)
-						c = Class(o);
-					}
+					c = RT.classForName(sym.name);
+				}
+				else
+				{
+					var o:Object = compiler.currentNS().getMapping(sym);
+					if(o is Class)
+					c = Class(o);
 				}
 			}
-			else if(stringOk && form is String)
-			c = RT.classForName(String(form));
-			return c;
 		}
-
-
+		else if(stringOk && form is String)
+		c = RT.classForName(String(form));
+		return c;
 	}
 
 
+}
 
-	class StaticMethodExpr extends HostExpr{
-		public var methName:String;
-		public var c:Class;
-		public var args:IVector;
-		private var _compiler:Compiler;
 
-		public function StaticMethodExpr(compiler:Compiler, c:Class, methName:String, args:IVector){
-			_compiler = compiler;
-			this.methName = methName;
-			this.c = c;
-			_compiler.registerConstant(c);
-			this.args = args;
-		}
 
-		override public function interpret():Object{
-			return c[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
-		}
+class StaticMethodExpr extends HostExpr{
+	public var methName:String;
+	public var c:Class;
+	public var args:IVector;
+	private var _compiler:Compiler;
 
-		override public function emit(context:C, gen:CodeGen):void{
-			gen.emitConstant(c);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
-			gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	public function StaticMethodExpr(compiler:Compiler, c:Class, methName:String, args:IVector){
+		_compiler = compiler;
+		this.methName = methName;
+		this.c = c;
+		_compiler.registerConstant(c);
+		this.args = args;
+	}
 
+	override public function interpret():Object{
+		return c[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		gen.emitConstant(c);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
+		gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+}
+
+
+class InstanceMethodExpr extends HostExpr{
+	public var methName:String;
+	public var target:Expr;
+	public var args:IVector;
+	private var _compiler:Compiler;
+
+	public function InstanceMethodExpr(compiler:Compiler, target:Expr, methName:String, args:IVector){
+		_compiler = compiler;
+		this.methName = methName;
+		this.target = target;
+		this.args = args;
+	}
+
+	override public function interpret():Object{
+		return (target.interpret())[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
+		gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+
+}
+
+
+
+
+class StaticFieldExpr extends HostExpr implements AssignableExpr{
+	public var fieldName:String;
+	public var c:Class;
+	private var _compiler:Compiler;
+
+	public function StaticFieldExpr(compiler:Compiler, c:Class, fieldName:String){
+		_compiler = compiler;
+		this.fieldName = fieldName;
+		this.c = c;
+		_compiler.registerConstant(c);
+	}
+
+	override public function interpret():Object{
+		return c[this.fieldName];
+	}
+
+	public function interpretAssign(val:Expr):Object{
+		return c[this.fieldName] = val.interpret();
 	}
 
 
-	class InstanceMethodExpr extends HostExpr{
-		public var methName:String;
-		public var target:Expr;
-		public var args:IVector;
-		private var _compiler:Compiler;
-
-		public function InstanceMethodExpr(compiler:Compiler, target:Expr, methName:String, args:IVector){
-			_compiler = compiler;
-			this.methName = methName;
-			this.target = target;
-			this.args = args;
-		}
-
-		override public function interpret():Object{
-			return (target.interpret())[this.methName].apply(null, args.collect(function(ea:*):*{ return ea.interpret(); }));
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); })
-			gen.asm.I_callproperty(gen.emitter.nameFromIdent(this.methName), args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
+	override public function emit(context:C, gen:CodeGen):void{
+		gen.emitConstant(c);
+		gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
 
+	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
+		gen.emitConstant(c);
+		gen.asm.I_dup();
+		val.emit(C.EXPRESSION, gen);
+		gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+}
 
 
-	class StaticFieldExpr extends HostExpr implements AssignableExpr{
-		public var fieldName:String;
-		public var c:Class;
-		private var _compiler:Compiler;
 
-		public function StaticFieldExpr(compiler:Compiler, c:Class, fieldName:String){
-			_compiler = compiler;
-			this.fieldName = fieldName;
-			this.c = c;
-			_compiler.registerConstant(c);
-		}
+class InstanceFieldExpr extends HostExpr implements AssignableExpr{
+	public var fieldName:String;
+	public var target:Expr;
+	private var _compiler:Compiler;
 
-		override public function interpret():Object{
-			return c[this.fieldName];
-		}
+	public function InstanceFieldExpr(compiler:Compiler, target:Expr, fieldName:String){
+		_compiler = compiler;
+		this.target = target;
+		this.fieldName = fieldName;
+	}
 
-		public function interpretAssign(val:Expr):Object{
-			return c[this.fieldName] = val.interpret();
-		}
+	override public function interpret():Object{
+		return this.target[this.fieldName];
+	}
 
+	public function interpretAssign(val:Expr):Object{
+		return this.target[this.fieldName] = val.interpret();
+	}
 
-		override public function emit(context:C, gen:CodeGen):void{
-			gen.emitConstant(c);
-			gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-
-		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			gen.emitConstant(c);
-			gen.asm.I_dup();
-			val.emit(C.EXPRESSION, gen);
-			gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	override public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
 	}
 
 
-
-	class InstanceFieldExpr extends HostExpr implements AssignableExpr{
-		public var fieldName:String;
-		public var target:Expr;
-		private var _compiler:Compiler;
-
-		public function InstanceFieldExpr(compiler:Compiler, target:Expr, fieldName:String){
-			_compiler = compiler;
-			this.target = target;
-			this.fieldName = fieldName;
-		}
-
-		override public function interpret():Object{
-			return this.target[this.fieldName];
-		}
-
-		public function interpretAssign(val:Expr):Object{
-			return this.target[this.fieldName] = val.interpret();
-		}
-
-		override public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			gen.asm.I_getproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+	public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
+		target.emit(C.EXPRESSION, gen);
+		gen.asm.I_dup();
+		val.emit(C.EXPRESSION, gen);
+		gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
+}
 
 
-		public function emitAssign(context:C, gen:CodeGen, val:Expr):void{
-			target.emit(C.EXPRESSION, gen);
-			gen.asm.I_dup();
-			val.emit(C.EXPRESSION, gen);
-			gen.asm.I_setproperty(gen.emitter.nameFromIdent(this.fieldName));
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
+class NewExpr implements Expr{
+	public var args:IVector;
+	public var target:Expr;
+	private var _compiler:Compiler;
+
+	public function NewExpr(compiler:Compiler, target:Expr, args:IVector){
+		this.args = args;
+		this.target = target;
+		_compiler = compiler;
 	}
 
-
-	class NewExpr implements Expr{
-		public var args:IVector;
-		public var target:Expr;
-		private var _compiler:Compiler;
-
-		public function NewExpr(compiler:Compiler, target:Expr, args:IVector){
-			this.args = args;
-			this.target = target;
-			_compiler = compiler;
-		}
-
-		public function interpret():Object{
-			throw new Error("Interpretation of NewExpr not supported.");
-		}
-
-		public function emit(context:C, gen:CodeGen):void{
-			target.emit(C.EXPRESSION, gen);
-			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); });
-			gen.asm.I_construct(args.count());
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
-		}
-
-		public static function parse(compiler:Compiler, context:C, frm:Object):Expr{
-			var form:ISeq = ISeq(frm);
-			//(new classExpr args...)
-			if(form.count() < 2)
-			throw new Error("Wrong number of arguments, expecting: (new classExpr args...)");
-			var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
-			var args:IVector = RT.vector();
-			for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
-				args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
-			}
-			return new NewExpr(compiler, target, args);
-		}
+	public function interpret():Object{
+		throw new Error("Interpretation of NewExpr not supported.");
 	}
 
+	public function emit(context:C, gen:CodeGen):void{
+		target.emit(C.EXPRESSION, gen);
+		this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); });
+		gen.asm.I_construct(args.count());
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+	}
 
-	class ThrowExpr extends UntypedExpr{
-		public var excExpr:Expr;
-
-		public function ThrowExpr(excExpr:Expr){
-			this.excExpr = excExpr;
+	public static function parse(compiler:Compiler, context:C, frm:Object):Expr{
+		var form:ISeq = ISeq(frm);
+		//(new classExpr args...)
+		if(form.count() < 2)
+		throw new Error("Wrong number of arguments, expecting: (new classExpr args...)");
+		var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
+		var args:IVector = RT.vector();
+		for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
+			args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
 		}
+		return new NewExpr(compiler, target, args);
+	}
+}
 
-		override public function interpret():Object{
-			throw new Error("Can't interpret a throw.");
-		}
 
-		override public function emit(context:C, gen:CodeGen):void{
-			// So there's a nil on the stack after the exception is thrown,
-			// required so that in the event that the try is prematurely aborted (because of
-			// this throw) there will still be something on the stack to match the catch's
+class ThrowExpr extends UntypedExpr{
+	public var excExpr:Expr;
+
+	public function ThrowExpr(excExpr:Expr){
+		this.excExpr = excExpr;
+	}
+
+	override public function interpret():Object{
+		throw new Error("Can't interpret a throw.");
+	}
+
+	override public function emit(context:C, gen:CodeGen):void{
+		// So there's a nil on the stack after the exception is thrown,
+		// required so that in the event that the try is prematurely aborted (because of
+		// this throw) there will still be something on the stack to match the catch's
 		// result.
 		gen.asm.I_pushnull();
 		// Then, reconcile with type of ensuing catch expr...
