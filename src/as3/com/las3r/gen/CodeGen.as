@@ -70,7 +70,7 @@ package com.las3r.gen{
 
 
 		public function nextActivationSlot(name:String):int{
-			if(!currentActivation){ throw new Error("IllegalStateException: No activation is current."); }
+			if(!currentActivation){ throw new Error("IllegalStateException: Function in progress has no activation."); }
 			var i:int = currentActivation.nextSlot;
 			meth.addTrait(new ABCSlotTrait(emitter.nameFromIdent(name), 0, false, i, 0, 0, 0));
 			currentActivation.nextSlot += 1;
