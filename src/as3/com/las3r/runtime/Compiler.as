@@ -35,6 +35,7 @@ package com.las3r.runtime{
 
 		public var LINE:Var;
 		public var SOURCE:Var;
+		public var CURRENT_FN:Var;
 		public var BINDING_SET_STACK:Var;
 		public var RECURING_BINDER:Var;
 		public var RECUR_ARGS:Var;
@@ -67,6 +68,7 @@ package com.las3r.runtime{
 			SOURCE = new Var(_rt, null, null, "Evaluated Source");
 			LINE = new Var(_rt, null, null, 0);
 			BINDING_SET_STACK = new Var(_rt, null, null, RT.vector());
+			CURRENT_FN = new Var(_rt, null, null, null);
 			RECURING_BINDER = new Var(_rt, null, null, null);
 			RECUR_ARGS = new Var(_rt, null, null, null);
 			RECUR_LABEL = new Var(_rt, null, null, null);
@@ -1046,6 +1048,8 @@ class PSTATE{
 }
 class FnExpr implements Expr{
 	public var line:int;
+	public var surroundingFn:FnExpr;
+	public var containsAnyFn:Boolean = false;
 	public var nameSym:Symbol;
 	public var methods:IVector;
 	public var constants:ISeq;
@@ -1062,6 +1066,12 @@ class FnExpr implements Expr{
 	public static function parse(c:Compiler, context:C, form:ISeq):Expr{
 		var f:FnExpr = new FnExpr(c);
 		f.line = int(c.LINE.get()); 
+
+		if(c.CURRENT_FN.isBound()){
+			f.surroundingFn = FnExpr(c.CURRENT_FN.get());
+			f.surroundingFn.containsAnyFn = true;
+		}
+
 		//arglist might be preceded by symbol naming this fn
 		if(RT.second(form) is Symbol)
 		{
@@ -1074,11 +1084,13 @@ class FnExpr implements Expr{
 		if(RT.second(form) is IVector){
 			form = RT.list(c.rt.FN, RT.rest(form));
 		}
-
+		
+		Var.pushBindings(c.rt, RT.map(c.CURRENT_FN, f));
 		f.methods = RT.vector();
 		for(var s:ISeq = RT.rest(form); s != null; s = RT.rest(s)){
 			f.methods = f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
 		}
+		Var.popBindings(c.rt);
 
 		var consts:IMap = IMap(c.CONSTANTS.get());
 		f.constants = RT.keys(consts);
@@ -1538,7 +1550,7 @@ class RecurExpr implements Expr{
 
 		
 		// if binding form is a function, replace the current activation with a fresh one
-		if(_compiler.RECURING_BINDER.get() is FnMethod){
+		if(_compiler.RECURING_BINDER.isBound() && _compiler.RECURING_BINDER.get() is FnMethod){
 			gen.refreshCurrentActivationScope();
 		}
 
@@ -1558,6 +1570,8 @@ class RecurExpr implements Expr{
 
 	public static function parse(c:Compiler, context:C, frm:Object):Expr{
 		var form:ISeq = ISeq(frm);
+		if(!c.RECUR_ARGS.isBound())
+		throw new Error("UnsupportedOperationException: Can only recur from within a function expression.");
 		var loopLocals:LocalBindingSet = LocalBindingSet(c.RECUR_ARGS.get());
 		if(context != C.RETURN || loopLocals == null)
 		throw new Error("UnsupportedOperationException: Can only recur from tail position. Found in context: " + context);
