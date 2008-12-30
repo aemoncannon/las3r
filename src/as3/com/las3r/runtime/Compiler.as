@@ -1003,8 +1003,6 @@ class FnMethod{
 	public function emit(context:C, methGen:CodeGen):void{
 		methGen.pushThisScope();
 		if(this.hasNestedFn) methGen.pushNewActivationScope();
-		methGen.cacheStaticsClass();
-		methGen.cacheRTInstance();
 
 		var i:int = 1;
 		reqParams.each(function(b:LocalBinding):void{
@@ -1121,6 +1119,9 @@ class FnExpr implements Expr{
 			);
  			meth.startLabel = methGen.asm.newLabel();
 
+			methGen.cacheStaticsClass();
+			methGen.cacheRTInstance();
+
  			var arity:int = meth.reqParams.count();
  			argumentsObjIndex = arity + 1;
 
@@ -1144,6 +1145,13 @@ class FnExpr implements Expr{
 		}
 		else{ // Function is variadic, we must dispatch at runtime to the correct method...
 			methGen = gen.newMethodCodeGen(formalsTypes, false, true, gen.asm.currentScopeDepth, name);
+			var maxArity:int = 0;
+			methods.each(function(meth:FnMethod):void{ maxArity = Math.max(maxArity, meth.reqParams.count());});
+			methGen.asm.useTempRange(0, maxArity + 2); /*Reserve room for: this, param1, param2, paramN, Arguments. */
+
+			methGen.cacheStaticsClass();
+			methGen.cacheRTInstance();
+
 			argumentsObjIndex = 1;
 
 			// Initialize all the methods

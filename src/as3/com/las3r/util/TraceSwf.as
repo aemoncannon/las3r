@@ -20,7 +20,7 @@ package com.las3r.util{
 	public class TraceSwf extends Sprite{
 
 
-		[Embed(source="../../../../../bin/StaticVarAccess.swf", mimeType="application/octet-stream")]
+		[Embed(source="../../../../../lib/las3r.core.swf", mimeType="application/octet-stream")]
 		private const SWF:Class;
 
 		public function TraceSwf() {
