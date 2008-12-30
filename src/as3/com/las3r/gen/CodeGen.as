@@ -69,19 +69,14 @@ package com.las3r.gen{
 		}
 
 
-		public function nextActivationSlot():int{
+		public function nextActivationSlot(name:String):int{
 			if(!currentActivation){ throw new Error("IllegalStateException: No activation is current."); }
 			var i:int = currentActivation.nextSlot;
+			meth.addTrait(new ABCSlotTrait(emitter.nameFromIdent(name), 0, false, i, 0, 0, 0));
 			currentActivation.nextSlot += 1;
 			return i;
 		}
 
-		public function createActivationSlotForLocalBinding(b:Object/*LocalBinding*/):int{
-			var activationSlot:int = nextActivationSlot();
-			b.slotIndex = activationSlot;
-			meth.addTrait(new ABCSlotTrait(emitter.nameFromIdent(b.runtimeName), 0, false, activationSlot, 0, 0, 0));
-			return activationSlot;
-		}
 
 		/*
 		* Create a new function activation, push it onto the scope stack, and keep track of it for later,

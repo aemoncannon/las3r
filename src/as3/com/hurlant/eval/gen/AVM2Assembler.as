@@ -527,10 +527,15 @@ package com.hurlant.eval.gen
         // the point where the label is created.  Typically this is
         // used to create branch targets for "break" and "continue".
 
+
+		/* Create a new label handle, virtual at first. Remember the stack and scope depth
+		   at the moment the label is created. */
         public function newLabel() {
             return { "name": nextLabel++, "address": -1, "stack": current_stack_depth, "scope": current_scope_depth };
         }
 
+		/* Emit a jump target address. If L is a concrete label, 
+		   emit a concrete offset, otherwise remember to backpatch this offset. */
         private function relativeOffset(base, L) {
             if (L.address != -1)
             code.int24(L.address - base);
@@ -540,6 +545,8 @@ package com.hurlant.eval.gen
             }
         }
 
+		/* Emit a jumping instruction. The L that we pass to relativeOffset might be concrete or
+		   virtual. */
         private function jmp(stk, name, opcode, L) {
             stack(stk);
 
@@ -557,10 +564,12 @@ package com.hurlant.eval.gen
             var here = code.length;
             var define = false;
             if (L === undefined) {
+				/* Probably a backwards branch, so we'll actually emit the label. See 'label' in AVM2 ref*/
                 define = true;
                 L = newLabel();
             }
             else {
+				/* A forward branch. Just restore the saved environment.*/
                 Util.assert( L.address == -1 );
                 current_stack_depth = L.stack;
                 current_scope_depth = L.scope;
