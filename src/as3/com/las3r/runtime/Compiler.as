@@ -35,7 +35,7 @@ package com.las3r.runtime{
 
 		public var LINE:Var;
 		public var SOURCE:Var;
-		public var CURRENT_FN:Var;
+		public var CURRENT_METHOD:Var;
 		public var BINDING_SET_STACK:Var;
 		public var RECURING_BINDER:Var;
 		public var RECUR_ARGS:Var;
@@ -68,7 +68,7 @@ package com.las3r.runtime{
 			SOURCE = new Var(_rt, null, null, "Evaluated Source");
 			LINE = new Var(_rt, null, null, 0);
 			BINDING_SET_STACK = new Var(_rt, null, null, RT.vector());
-			CURRENT_FN = new Var(_rt, null, null, null);
+			CURRENT_METHOD = new Var(_rt, null, null, null);
 			RECURING_BINDER = new Var(_rt, null, null, null);
 			RECUR_ARGS = new Var(_rt, null, null, null);
 			RECUR_LABEL = new Var(_rt, null, null, null);
@@ -912,6 +912,8 @@ class FnMethod{
 	public var body:BodyExpr;
 	public var paramBindings:LocalBindingSet;
 	public var startLabel:Object
+	public var surroundingFn:FnMethod;
+	public var hasNestedFn:Boolean = false;
 	private var _compiler:Compiler;
 	private var _func:FnExpr;
 
@@ -922,12 +924,19 @@ class FnMethod{
 
 	public static function parse(c:Compiler, context:C, form:ISeq, f:FnExpr):FnMethod{
 		var meth:FnMethod = new FnMethod(c, f);
+
+		if(c.CURRENT_METHOD.isBound()){
+			meth.surroundingFn = FnMethod(c.CURRENT_METHOD.get());
+			meth.surroundingFn.hasNestedFn = true;
+		}
+
 		meth.params = IVector(RT.first(form));
 		if(meth.params.count() > Compiler.MAX_POSITIONAL_ARITY){
 			throw new Error("Can't specify more than " + Compiler.MAX_POSITIONAL_ARITY + " params");
 		}
 		meth.reqParams = RT.vector();
 		meth.paramBindings = new LocalBindingSet();
+
 		var state:PSTATE = PSTATE.REQ;
 		for(var i:int = 0; i < meth.params.count(); i++)
 		{
@@ -976,6 +985,8 @@ class FnMethod{
 			meth.nameLb = extraBindings.registerLocal(c.rt.nextID(), f.nameSym);
 		}
 		var bodyForms:ISeq = ISeq(RT.rest(form));
+
+		Var.pushBindings(c.rt, RT.map(c.CURRENT_METHOD, meth));
 		c.pushLocalBindingSet(meth.paramBindings);
 		c.pushLocalBindingSet(extraBindings);
 		Var.pushBindings(c.rt, RT.map(c.RECUR_ARGS, meth.paramBindings));
@@ -983,48 +994,43 @@ class FnMethod{
 		Var.popBindings(c.rt);
 		c.popLocalBindingSet();
 		c.popLocalBindingSet();
+		Var.popBindings(c.rt);
+
 
 		return meth;
 	}
 
 	public function emit(context:C, methGen:CodeGen):void{
 		methGen.pushThisScope();
-		methGen.pushNewActivationScope();
+		if(this.hasNestedFn) methGen.pushNewActivationScope();
 		methGen.cacheStaticsClass();
 		methGen.cacheRTInstance();
 
 		var i:int = 1;
 		reqParams.each(function(b:LocalBinding):void{
-				b.slotIndex = methGen.nextActivationSlot(b.runtimeName);
-				methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-				methGen.asm.I_getlocal(i);
-				methGen.asm.I_setslot(b.slotIndex);
+				b.runtimeValue = RuntimeValue.fromTmp(methGen, i, b.runtimeName);
 				i++;
 			});
 
 		if(restParam){
-			restParam.slotIndex = methGen.nextActivationSlot(restParam.runtimeName);
-			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
 			methGen.asm.I_getlocal(i); // get arguments object
 			methGen.restFromArguments(i - 1);
-			methGen.asm.I_setslot(restParam.slotIndex);
+			restParam.runtimeValue = RuntimeValue.fromTOS(methGen, restParam.runtimeName);
 		}
 
 		var nameSlot:int;
 		if(nameLb){
-			nameLb.slotIndex = methGen.nextActivationSlot(nameLb.runtimeName);
 			methGen.asm.I_getlocal(i); // get arguments object
  			methGen.asm.I_getproperty(methGen.emitter.nameFromIdent("callee"));
 			methGen.asm.I_setlocal(i); // store current function in place of arguments
+			nameLb.runtimeValue = RuntimeValue.fromTmp(methGen, i, nameLb.runtimeName);
 		}
 		
 		var loopLabel:Object = methGen.asm.I_label(undefined);
 		/* Note: Any instructions after this point will be executed on every recur loop.. */
 
-		if(nameLb){/* We need to re-set name reference on each recur cycle (into fresh activation..)*/
-			methGen.asm.I_getscopeobject(methGen.currentActivation.scopeIndex);
-			methGen.asm.I_getlocal(i); // get current function object
-			methGen.asm.I_setslot(nameLb.slotIndex);
+		if(nameLb){/* We need to re-set name reference to current function on each recur cycle (into fresh activation..)*/
+			nameLb.runtimeValue.updateFromTmp(methGen, i);
 		}
 
 		Var.pushBindings(_compiler.rt, RT.map(
@@ -1048,8 +1054,6 @@ class PSTATE{
 }
 class FnExpr implements Expr{
 	public var line:int;
-	public var surroundingFn:FnExpr;
-	public var containsAnyFn:Boolean = false;
 	public var nameSym:Symbol;
 	public var methods:IVector;
 	public var constants:ISeq;
@@ -1067,11 +1071,6 @@ class FnExpr implements Expr{
 		var f:FnExpr = new FnExpr(c);
 		f.line = int(c.LINE.get()); 
 
-		if(c.CURRENT_FN.isBound()){
-			f.surroundingFn = FnExpr(c.CURRENT_FN.get());
-			f.surroundingFn.containsAnyFn = true;
-		}
-
 		//arglist might be preceded by symbol naming this fn
 		if(RT.second(form) is Symbol)
 		{
@@ -1085,12 +1084,10 @@ class FnExpr implements Expr{
 			form = RT.list(c.rt.FN, RT.rest(form));
 		}
 		
-		Var.pushBindings(c.rt, RT.map(c.CURRENT_FN, f));
 		f.methods = RT.vector();
 		for(var s:ISeq = RT.rest(form); s != null; s = RT.rest(s)){
 			f.methods = f.methods.cons(FnMethod.parse(c, context, ISeq(s.first()), f));
 		}
-		Var.popBindings(c.rt);
 
 		var consts:IMap = IMap(c.CONSTANTS.get());
 		f.constants = RT.keys(consts);
@@ -1254,10 +1251,8 @@ class LetExpr implements Expr{
 	public function emit(context:C, gen:CodeGen):void{
 		this.bindingInits.eachWithIndex(function(sym:Symbol, b:LocalBinding, i:int){
 				if(b){
-					b.slotIndex = gen.nextActivationSlot(b.runtimeName);
-					gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
 					b.init.emit(C.EXPRESSION, gen);
-					gen.asm.I_setslot(b.slotIndex);
+					b.runtimeValue = RuntimeValue.fromTOS(gen, b.runtimeName);
 				}
 			});
 		body.emit(context, gen);
@@ -1382,7 +1377,7 @@ class LocalBindingSet{
 class LocalBinding{
 	public var sym:Symbol;
 	public var runtimeName:String;
-	public var slotIndex:int;
+	public var runtimeValue:RuntimeValue;
 	public var init:Expr;
 
 	public function LocalBinding(num:int, sym:Symbol, init:Expr = null){
@@ -1407,7 +1402,7 @@ class LocalBindingExpr implements Expr{
 
 	public function emit(context:C, gen:CodeGen):void{
 		if(context != C.STATEMENT){
-			gen.asm.I_getlex(gen.emitter.qname({ns: "", id: b.runtimeName}, false));
+			b.runtimeValue.get(gen);
 		}
 	}
 }
@@ -1551,18 +1546,17 @@ class RecurExpr implements Expr{
 		
 		// if binding form is a function, replace the current activation with a fresh one
 		if(_compiler.RECURING_BINDER.isBound() && _compiler.RECURING_BINDER.get() is FnMethod){
-			gen.refreshCurrentActivationScope();
+			var m:FnMethod = FnMethod(_compiler.RECURING_BINDER.get());
+			if(m.hasNestedFn){
+				gen.refreshCurrentActivationScope();
+			}
 		}
-
 
 		/******    TODO: Need to clear locals here?   ****/
 
-
 		// then fill it up with the recur args.
 		this.loopLocals.eachReversedWithIndex(function(sym:Symbol, lb:LocalBinding, i:int){
-				gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
-				gen.asm.I_swap();
-				gen.asm.I_setslot(lb.slotIndex);
+				lb.runtimeValue.updateFromTOS(gen);
 			});
 		gen.asm.I_jump(loopLabel);
 	}
@@ -1859,74 +1853,124 @@ class HostExpr implements Expr{
 		override public function emit(context:C, gen:CodeGen):void{
 			// So there's a nil on the stack after the exception is thrown,
 			// required so that in the event that the try is prematurely aborted (because of
-				// this throw) there will still be something on the stack to match the catch's
-			// result.
-			gen.asm.I_pushnull();
-			// Then, reconcile with type of ensuing catch expr...
-			gen.asm.I_coerce_a(); 
-			excExpr.emit(context, gen);
-			gen.asm.I_throw();
-		}
-
-		public static function parse(c:Compiler, context:C, form:Object):Expr{
-			if(context == C.INTERPRET)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
-			return new ThrowExpr(c.analyze(context, RT.second(form)));
-		}
-
+			// this throw) there will still be something on the stack to match the catch's
+		// result.
+		gen.asm.I_pushnull();
+		// Then, reconcile with type of ensuing catch expr...
+		gen.asm.I_coerce_a(); 
+		excExpr.emit(context, gen);
+		gen.asm.I_throw();
 	}
 
-
-	class CatchClause{
-		//final String className;
-		public var c:Class;
-		public var className:String;
-		public var lb:LocalBinding;
-		public var handler:Expr;
-		public var label:Object;
-		public var endLabel:Object;
-
-		public function CatchClause(c:Class, className:String, lb:LocalBinding, handler:Expr){
-			this.c = c;
-			this.lb = lb;
-			this.handler = handler;
-			this.className = className;
-		}
+	public static function parse(c:Compiler, context:C, form:Object):Expr{
+		if(context == C.INTERPRET)
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
+		return new ThrowExpr(c.analyze(context, RT.second(form)));
 	}
 
-
-	class TryExpr implements Expr{
-		public var tryExpr:Expr;
-		public var catchExprs:IVector;
-		public var finallyExpr:Expr;
-		private var _compiler:Compiler;
+}
 
 
-		public function TryExpr(c:Compiler, tryExpr:Expr, catchExprs:IVector, finallyExpr:Expr){
-			_compiler = c;
-			this.tryExpr = tryExpr;
-			this.catchExprs = catchExprs;
-			this.finallyExpr = finallyExpr;
+class CatchClause{
+	//final String className;
+	public var c:Class;
+	public var className:String;
+	public var lb:LocalBinding;
+	public var handler:Expr;
+	public var label:Object;
+	public var endLabel:Object;
+
+	public function CatchClause(c:Class, className:String, lb:LocalBinding, handler:Expr){
+		this.c = c;
+		this.lb = lb;
+		this.handler = handler;
+		this.className = className;
+	}
+}
+
+
+class TryExpr implements Expr{
+	public var tryExpr:Expr;
+	public var catchExprs:IVector;
+	public var finallyExpr:Expr;
+	private var _compiler:Compiler;
+
+
+	public function TryExpr(c:Compiler, tryExpr:Expr, catchExprs:IVector, finallyExpr:Expr){
+		_compiler = c;
+		this.tryExpr = tryExpr;
+		this.catchExprs = catchExprs;
+		this.finallyExpr = finallyExpr;
+	}
+
+	public function interpret():Object{
+		throw new Error("UnsupportedOperationException: Can't eval try");
+	}
+
+	public function emit(context:C, gen:CodeGen):void{			
+		var endClauses:Object = gen.asm.newLabel();
+		var finallyLabel:Object = gen.asm.newLabel();
+		var end:Object = gen.asm.newLabel();
+		for(var i:int = 0; i < catchExprs.count(); i++)
+		{
+			var clause:CatchClause = CatchClause(catchExprs.nth(i));
+			clause.label = gen.asm.newLabel();
+			clause.endLabel = gen.asm.newLabel();
 		}
-
-		public function interpret():Object{
-			throw new Error("UnsupportedOperationException: Can't eval try");
+		var tryStart:Object = gen.asm.I_label(undefined);
+		tryExpr.emit(context, gen);
+		gen.asm.I_coerce_a(); // Reconcile with return type of catch expr..
+		var tryEnd:Object = gen.asm.I_label(undefined);
+		if(finallyExpr != null){
+			gen.asm.I_pop();
+			gen.asm.I_jump(finallyLabel);
 		}
+		else{
+			gen.asm.I_jump(end);
+		}
+		var catchStart:Object = gen.asm.I_label(undefined);
 
-		public function emit(context:C, gen:CodeGen):void{			
-			var endClauses:Object = gen.asm.newLabel();
-			var finallyLabel:Object = gen.asm.newLabel();
-			var end:Object = gen.asm.newLabel();
-			for(var i:int = 0; i < catchExprs.count(); i++)
+		if(catchExprs.count() > 0){
+			var excId:int = gen.meth.addException(new ABCException(
+					tryStart.address, 
+					tryEnd.address, 
+					catchStart.address, 
+					0, // *
+					gen.emitter.nameFromIdent("catch")
+				));
+
+			gen.asm.startCatch(); // Increment max stack by 1, for exception object
+			gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
+			gen.pushCatchScope(excId); 
+
+			
+			for(i = 0; i < catchExprs.count(); i++)
 			{
-				var clause:CatchClause = CatchClause(catchExprs.nth(i));
-				clause.label = gen.asm.newLabel();
-				clause.endLabel = gen.asm.newLabel();
+				clause = CatchClause(catchExprs.nth(i));
+				gen.asm.I_label(clause.label);
+
+				// Exception object should be on top of operand stack...
+				gen.asm.I_dup();
+				gen.asm.I_istype(gen.emitter.nameFromIdent(clause.className));
+				gen.asm.I_iffalse(clause.endLabel);
+
+				// Store the exception in local value
+				var b:LocalBinding = clause.lb;
+				b.runtimeValue = RuntimeValue.fromTOS(gen, b.runtimeName);
+
+				clause.handler.emit(context, gen);
+				gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..
+
+				gen.asm.I_jump(endClauses);
+
+				gen.asm.I_label(clause.endLabel);
 			}
-			var tryStart:Object = gen.asm.I_label(undefined);
-			tryExpr.emit(context, gen);
-			gen.asm.I_coerce_a(); // Reconcile with return type of catch expr..
-			var tryEnd:Object = gen.asm.I_label(undefined);
+			// If none of the catch clauses apply, rethrow the exception.
+			gen.asm.I_throw();
+
+			gen.asm.I_label(endClauses);
+			// Pop the catch scope..
+			gen.popScope(); 
 			if(finallyExpr != null){
 				gen.asm.I_pop();
 				gen.asm.I_jump(finallyLabel);
@@ -1934,134 +1978,81 @@ class HostExpr implements Expr{
 			else{
 				gen.asm.I_jump(end);
 			}
-			var catchStart:Object = gen.asm.I_label(undefined);
-
-			if(catchExprs.count() > 0){
-				var excId:int = gen.meth.addException(new ABCException(
-						tryStart.address, 
-						tryEnd.address, 
-						catchStart.address, 
-						0, // *
-						gen.emitter.nameFromIdent("catch")
-					));
-
-				gen.asm.startCatch(); // Increment max stack by 1, for exception object
-				gen.restoreScopeStack(); // Scope stack is wiped on exception, so we reinstate it..
-				gen.pushCatchScope(excId); 
-
-				
-				for(i = 0; i < catchExprs.count(); i++)
-				{
-					clause = CatchClause(catchExprs.nth(i));
-					gen.asm.I_label(clause.label);
-
-					// Exception object should be on top of operand stack...
-					gen.asm.I_dup();
-					gen.asm.I_istype(gen.emitter.nameFromIdent(clause.className));
-					gen.asm.I_iffalse(clause.endLabel);
-
-					// Store the exception in an activation slot..
-					var b:LocalBinding = clause.lb;
-					b.slotIndex = gen.nextActivationSlot(b.runtimeName);
-					gen.asm.I_getscopeobject(gen.currentActivation.scopeIndex);
-					gen.asm.I_swap();
-					gen.asm.I_setslot(b.slotIndex);
-
-					clause.handler.emit(context, gen);
-					gen.asm.I_coerce_a();// Reconcile with return type of preceding try expr..
-
-					gen.asm.I_jump(endClauses);
-
-					gen.asm.I_label(clause.endLabel);
-				}
-				// If none of the catch clauses apply, rethrow the exception.
-				gen.asm.I_throw();
-
-				gen.asm.I_label(endClauses);
-				// Pop the catch scope..
-				gen.popScope(); 
-				if(finallyExpr != null){
-					gen.asm.I_pop();
-					gen.asm.I_jump(finallyLabel);
-				}
-				else{
-					gen.asm.I_jump(end);
-				}
-
-			}
-			if(finallyExpr != null)
-			{
-				gen.asm.I_label(finallyLabel);
-				finallyExpr.emit(context, gen);
-				gen.asm.I_coerce_a();// Reconcile with return types of preceding try/catch exprs..
-			}
-			gen.asm.I_label(end);
-			if(context == C.STATEMENT){ gen.asm.I_pop(); }
 
 		}
-
-
-		public static function parse(c:Compiler, context:C, frm:Object):Expr{
-			var form:ISeq = ISeq(frm);
-			if(context != C.RETURN)
-			return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
-
-			//(try try-expr* catch-expr* finally-expr?)
-			//catch-expr: (catch class sym expr*)
-			//finally-expr: (finally expr*)
-
-			var body:IVector = RT.vector();
-			var catches:IVector = RT.vector();
-			var finallyExpr:Expr = null;
-			var caught:Boolean = false;
-
-			for(var fs:ISeq = form.rest(); fs != null; fs = fs.rest())
-			{
-				var f:Object = fs.first();
-				var op:Object = (f is ISeq) ? ISeq(f).first() : null;
-				if(!Util.equal(op, c.rt.CATCH) && !Util.equal(op, c.rt.FINALLY))
-				{
-					if(caught)
-					throw new Error("Only catch or finally clause can follow catch in try expression");
-					body = body.cons(f);
-				}
-				else
-				{
-					if(Util.equal(op, c.rt.CATCH))
-					{
-						var className:Symbol = Symbol(RT.second(f));
-						var klass:Class = HostExpr.maybeClass(c, className, false);
-						if(klass == null)
-						throw new Error("IllegalArgumentException: Unable to resolve classname: " + RT.second(f));
-						if(!(RT.third(f) is Symbol))
-						throw new Error("IllegalArgumentException: Bad binding form, expected symbol, got: " + RT.third(f));
-						var sym:Symbol = Symbol(RT.third(f));
-						if(sym.getNamespace() != null)
-						throw new Error("Can't bind qualified name:" + sym);
-
-						c.pushLocalBindingSet(new LocalBindingSet());
-						var lb:LocalBinding = c.registerLocal(c.rt.nextID(), sym);
-						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
-						var handler:Expr = BodyExpr.parse(c, context, RT.rest(RT.rest(RT.rest(f))));
-						Var.popBindings(c.rt);
-						c.popLocalBindingSet();
-
-						catches = catches.cons(new CatchClause(klass, className.toString(), lb, handler));
-						caught = true;
-					}
-					else //finally
-					{
-						if(fs.rest() != null)
-						throw new Error("Finally clause must be last in try expression");
-						Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
-						finallyExpr = BodyExpr.parse(c, C.STATEMENT, RT.rest(f));
-						Var.popBindings(c.rt);
-					}
-				}
-			}
-
-			return new TryExpr(c, BodyExpr.parse(c, context, RT.seq(body)), catches, finallyExpr);
+		if(finallyExpr != null)
+		{
+			gen.asm.I_label(finallyLabel);
+			finallyExpr.emit(context, gen);
+			gen.asm.I_coerce_a();// Reconcile with return types of preceding try/catch exprs..
 		}
+		gen.asm.I_label(end);
+		if(context == C.STATEMENT){ gen.asm.I_pop(); }
+
 	}
+
+
+	public static function parse(c:Compiler, context:C, frm:Object):Expr{
+		var form:ISeq = ISeq(frm);
+		if(context != C.RETURN)
+		return c.analyze(context, RT.list(RT.list(c.rt.FN, RT.vector(), form)));
+
+		//(try try-expr* catch-expr* finally-expr?)
+		//catch-expr: (catch class sym expr*)
+		//finally-expr: (finally expr*)
+
+		var body:IVector = RT.vector();
+		var catches:IVector = RT.vector();
+		var finallyExpr:Expr = null;
+		var caught:Boolean = false;
+
+		for(var fs:ISeq = form.rest(); fs != null; fs = fs.rest())
+		{
+			var f:Object = fs.first();
+			var op:Object = (f is ISeq) ? ISeq(f).first() : null;
+			if(!Util.equal(op, c.rt.CATCH) && !Util.equal(op, c.rt.FINALLY))
+			{
+				if(caught)
+				throw new Error("Only catch or finally clause can follow catch in try expression");
+				body = body.cons(f);
+			}
+			else
+			{
+				if(Util.equal(op, c.rt.CATCH))
+				{
+					var className:Symbol = Symbol(RT.second(f));
+					var klass:Class = HostExpr.maybeClass(c, className, false);
+					if(klass == null)
+					throw new Error("IllegalArgumentException: Unable to resolve classname: " + RT.second(f));
+					if(!(RT.third(f) is Symbol))
+					throw new Error("IllegalArgumentException: Bad binding form, expected symbol, got: " + RT.third(f));
+					var sym:Symbol = Symbol(RT.third(f));
+					if(sym.getNamespace() != null)
+					throw new Error("Can't bind qualified name:" + sym);
+
+					c.pushLocalBindingSet(new LocalBindingSet());
+					var lb:LocalBinding = c.registerLocal(c.rt.nextID(), sym);
+					Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
+					var handler:Expr = BodyExpr.parse(c, context, RT.rest(RT.rest(RT.rest(f))));
+					Var.popBindings(c.rt);
+					c.popLocalBindingSet();
+
+					catches = catches.cons(new CatchClause(klass, className.toString(), lb, handler));
+					caught = true;
+				}
+				else //finally
+				{
+					if(fs.rest() != null)
+					throw new Error("Finally clause must be last in try expression");
+					Var.pushBindings(c.rt, RT.map(c.IN_CATCH_FINALLY, true));
+					finallyExpr = BodyExpr.parse(c, C.STATEMENT, RT.rest(f));
+					Var.popBindings(c.rt);
+				}
+			}
+		}
+
+		return new TryExpr(c, BodyExpr.parse(c, context, RT.seq(body)), catches, finallyExpr);
+	}
+}
 
 
