@@ -59,11 +59,11 @@ package com.las3r.gen{
 
 			/* For each constant, create a slot on the class */
 			var i:int = 0;
-            _constants.each(function(obj:Object, id:int):void{
+            _constants.each(function(obj:Object, c:RuntimeConstant):void{
 					//var parts:Array = clazz.split(".");
 					//var className:String = parts.pop();
 					cls.addTrait(new ABCSlotTrait(
-							gen.emitter.nameFromIdent(CodeGen.constantName(id)), /*field name*/
+							gen.emitter.nameFromIdent(c.fieldName), /*field name*/
 							0, /*attrs*/
 							false, /*const?*/
 							i + 1, /*slot_id 0 tells AVM to auto-assign*/
@@ -93,7 +93,7 @@ package com.las3r.gen{
 			/* For each constant, populate a static field on our newly created class */
             Var.pushBindings(_rt, RT.map(_rt.PRINT_READABLY, RT.T));
 			i = 0;
-            _constants.each(function(obj:Object, id:int):void{
+            _constants.each(function(obj:Object, c:RuntimeConstant):void{
 					var cs:String = null;
 					try
 					{
@@ -198,15 +198,16 @@ package com.las3r.gen{
 			gen.provideModule(_moduleId);
 		}
 
-		public function addExpr(expr:Expr, constants:IMap):void{
+		public function addExpr(expr:Expr):void{
 			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
-			for(var s:ISeq = constants.seq(); s != null; s = s.rest()){
-				var e:MapEntry = MapEntry(s.first());
-				if(!_constants.containsKey(e.key)){
-					_constants = _constants.cons(e);
-				}
-			}
 			_exprs.push(expr);
+		}
+
+		public function addConst(o:Object):void {
+			if(_finalized) throw new Error("IllegalStateException: SWFGen already finalized.");
+			if(!_constants.containsKey(o)){
+				_constants = _constants.assoc(o, new RuntimeConstant(o, _constants.count()));
+			}
 		}
 
 		public function emit():ByteArray{

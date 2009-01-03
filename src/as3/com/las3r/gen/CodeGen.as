@@ -96,8 +96,8 @@ package com.las3r.gen{
 		}
 
 		public function emitConstant(o:Object):void{
-			var i:int = int(constants.valAt(o));
-			lookupConstantByName(constantName(i), "Object"/*RT.nameForInstanceClass(constants.nth(id))*/);
+			var rc:RuntimeConstant = RuntimeConstant(constants.valAt(o));
+			rc.get(this);
 		}
 
 
@@ -261,7 +261,7 @@ package com.las3r.gen{
 		* Stack:   
 		*   ... => const
 		*/
-		protected function lookupConstantByName(name:String, classFullName:String):void{
+		public function emitConstantByName(name:String, classFullName:String = "Object"):void{
 			getStatics();
 			asm.I_getproperty(emitter.nameFromIdent(name));
 		}
