@@ -59,9 +59,7 @@ package com.las3r.util{
 				return o ? 1 : 0;
 			}
 			else if(o is IHashable){
-				var h:int = o.hashCode();
-				if(h == -1){ throw  o + " is hashed to -1."; }
-				return h;
+				return o.hashCode();
 			}
 			else if(o is Class){
 				return stringHash(RT.nameForClass(Class(o)));

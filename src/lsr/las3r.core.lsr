@@ -2221,6 +2221,129 @@
 
   )
 
+(import '(flash.utils Dictionary))
+
+(defn run-benchmarks []
+    (let [count 1000]
+
+      (println (str "Control: just doseq with length " count ". No lazy!"))
+      (let [dummy-seq (doall (range count))]
+	(time (doseq ea dummy-seq nil)))
+
+      (newline)
+
+      (println (str "Control: " count " iterations, reduce, then pulling from a for-comprehension"))
+      (let [dummy-seq (for [key (range 0 count)] [key, (new Object)])]
+	(time 
+	 (let [m (reduce (fn [m key-val] nil) nil dummy-seq)]
+	   (doseq pair dummy-seq nil))))
+
+
+      (newline)
+
+      (println "Array starting at 0 length")
+
+      (println (str "  with " count " int keys."))
+      (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	    arr (new Array 0)
+	    ]
+	(time
+	 (let [a (reduce (fn [a key-val] (set-property! a (nth key-val 0) (nth key-val 1)))
+			 arr
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get-property a (nth pair 0)))))
+	)
+
+      (newline)
+
+      (println (str "Array starting at " count " length"))
+
+      (println (str "  with " count " int keys."))
+      (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	    arr (new Array count)
+	    ]
+	(time
+	 (let [a (reduce (fn [a key-val] (set-property! a (nth key-val 0) (nth key-val 1)))
+			 arr
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get-property a (nth pair 0)))))
+	)
+
+      (newline)
+
+
+      (println "Dictionary(strong refs)")
+
+      (println (str "  with " count " int keys."))
+      (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])
+	    dict (new Dictionary)
+	    ]
+	(time
+	 (let [m (reduce (fn [m key-val] (set-property! m (nth key-val 0) (nth key-val 1)))
+			 dict
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get-property m (nth pair 0)))))
+	)
+
+      (println (str "  with " count " string keys."))
+      (let [key-val-seq (for [i (range 0 count)] [(str "key" i), (new Object)])
+	    dict (new Dictionary)
+	    ]
+	(time
+	 (let [m (reduce (fn [m key-val] (set-property! m (nth key-val 0) (nth key-val 1)))
+			 dict
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get-property m (nth pair 0)))))
+	)
+
+
+      (newline)
+
+
+      (println (str "PersistentVector"))
+
+      (println (str "  with " count " int keys."))
+      (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])]
+	(time
+	 (let [v (reduce (fn [v key-val] (assoc v (nth key-val 0) (nth key-val 1)))
+			 (vector)
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (nth v (nth pair 0)))))
+	)
+
+      (newline)
+
+
+      (println "PersistentHashMap")
+
+      (println (str "  with " count " int keys."))
+      (let [key-val-seq (for [key (range 0 count)] [key, (new Object)])]
+	(time
+	 (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+			 (hash-map) 
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get m (nth pair 0)))))
+	)
+
+      (println (str "  with " count " string keys."))
+      (let [key-val-seq (for [i (range 0 count)] [(str "key" i), (new Object)])]
+	(time
+	 (let [m (reduce (fn [m key-val] (assoc m (nth key-val 0) (nth key-val 1))) 
+			 (hash-map) 
+			 key-val-seq)]
+	   (doseq pair key-val-seq
+	     (get m (nth pair 0)))))
+	)
+
+      ))
+
+
 ;;(run-tests)
 ;;(connect-to-eval-pipe)
 
