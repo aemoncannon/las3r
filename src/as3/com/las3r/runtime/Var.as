@@ -15,7 +15,7 @@ package com.las3r.runtime{
 	import com.las3r.util.Util;
 	import com.las3r.runtime.RT;
 
-	public class Var extends Obj{
+	public class Var extends Obj implements IFn{
 
 		public static var UNBOUND_VAL:Object = {};
 
@@ -35,7 +35,6 @@ package com.las3r.runtime{
 			this.hash = Util.stringHash(toString());
 			setMeta(RT.map());
 		}
-
 
 		public function toString():String {
 			if(ns != null){
@@ -178,14 +177,14 @@ package com.las3r.runtime{
 			return null;
 		}
 
-		public function fn():Function{
-			return get() as Function;
+		public function fn():Object{
+			return get();
 		}
 
-		public function apply(args:IVector):Object{
-			var f:Function = fn();
-			return f.apply(null, args.toArray());
+		public function call():Object{
+			return invoke0();
 		}
+
 
 		public function setMeta(m:IMap):void{
 			//ensure these basis keys
@@ -202,6 +201,130 @@ package com.las3r.runtime{
 
 		public function isPublic():Boolean{
 			return (_meta.valAt(_rt.PRIVATE_KEY) == null);
+		}
+
+		public function invoke0() :Object{
+			return fn().invoke0();
+		}
+
+		public function invoke1(arg1:Object) :Object{
+			return fn().invoke1(arg1);
+		}
+
+		public function invoke2(arg1:Object, arg2:Object) :Object{
+			return fn().invoke2(arg1, arg2);
+		}
+
+		public function invoke3(arg1:Object, arg2:Object, arg3:Object) :Object{
+			return fn().invoke3(arg1, arg2, arg3);
+		}
+
+		public function invoke4(arg1:Object, arg2:Object, arg3:Object, arg4:Object) :Object{
+			return fn().invoke4(arg1, arg2, arg3, arg4);
+		}
+
+		public function invoke5(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object) :Object{
+			return fn().invoke5(arg1, arg2, arg3, arg4, arg5);
+		}
+
+		public function invoke6(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object) :Object{
+			return fn().invoke6(arg1, arg2, arg3, arg4, arg5, arg6);
+		}
+
+		public function invoke7(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object)
+		:Object{
+			return fn().invoke7(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+		}
+
+		public function invoke8(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object) :Object{
+			return fn().invoke8(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+		}
+
+		public function invoke9(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object) :Object{
+			return fn().invoke9(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+		}
+
+		public function invoke10(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object) :Object{
+			return fn().invoke10(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+		}
+
+		public function invoke11(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object) :Object{
+			return fn().invoke11(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+		}
+
+		public function invoke12(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object) :Object{
+			return fn().invoke12(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+		}
+
+		public function invoke13(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object)
+		:Object{
+			return fn().invoke13(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+		}
+
+		public function invoke14(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object)
+		:Object{
+			return fn().invoke14(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+		}
+
+		public function invoke15(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object) :Object{
+			return fn().invoke15(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+		}
+
+		public function invoke16(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object, arg16:Object) :Object{
+			return fn().invoke16(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15,
+	            arg16);
+		}
+
+		public function invoke17(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object, arg16:Object, arg17:Object) :Object{
+			return fn().invoke17(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15,
+	            arg16, arg17);
+		}
+
+		public function invoke18(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object, arg16:Object, arg17:Object, arg18:Object) :Object{
+			return fn().invoke18(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15,
+	            arg16, arg17, arg18);
+		}
+
+		public function invoke19(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object, arg16:Object, arg17:Object, arg18:Object, arg19:Object) :Object{
+			return fn().invoke19(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15,
+	            arg16, arg17, arg18, arg19);
+		}
+
+		public function invoke20(arg1:Object, arg2:Object, arg3:Object, arg4:Object, arg5:Object, arg6:Object, arg7:Object,
+            arg8:Object, arg9:Object, arg10:Object, arg11:Object, arg12:Object, arg13:Object, arg14:Object,
+            arg15:Object, arg16:Object, arg17:Object, arg18:Object, arg19:Object, arg20:Object)
+		:Object{
+			return fn().invoke20(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15,
+	            arg16, arg17, arg18, arg19, arg20);
+		}
+
+		public function applyTo(arglist:ISeq):Object{
+			var f:Object = fn();
+			if(f is Function){
+				return f.apply(null, RT.seqToArray(arglist));
+			}
+			else if(f is IFn){
+				return AFn.applyToHelper(this, arglist);
+			}
+			throw new Error("Cannot applyTo non-function/IFn.")
+			return null;
 		}
 
 
