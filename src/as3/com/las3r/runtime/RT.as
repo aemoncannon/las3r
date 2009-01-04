@@ -807,6 +807,11 @@ package com.las3r.runtime{
 			return map.without(key);
 		}
 
+		public static function set(...init:Array):ISet{
+			if(init.length == 0){ return PersistentHashSet.empty(); }
+			return PersistentHashSet.createFromArray(init);
+		}
+
 		public static function map(...init:Array):IMap{
 			if(init.length == 0){ return PersistentHashMap.empty(); }
 			return PersistentHashMap.createFromArray(init);

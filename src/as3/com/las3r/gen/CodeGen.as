@@ -26,7 +26,10 @@ package com.las3r.gen{
 	public class CodeGen{
 
 		public static var CONST_PREFIX:String = "const__";
+
 		public var constants:IMap;
+		public var tmpCachedConstants:IMap;
+
 		public var emitter:ABCEmitter;
 		public var asm:AVM2Assembler;
 		public var scr:Script;
@@ -46,6 +49,7 @@ package com.las3r.gen{
 			this.meth = meth ? meth : scr.init;
 			this.scopeToLocalMap = RT.vector();
 			this.constants = constants || RT.map();
+			this.tmpCachedConstants = RT.map();
 		}
 
 
@@ -95,15 +99,6 @@ package com.las3r.gen{
 			scopeToLocalMap = scopeToLocalMap.cons(i);
 		}
 
-		public function emitConstant(o:Object):void{
-			var rc:RuntimeConstant = RuntimeConstant(constants.valAt(o));
-			rc.get(this);
-		}
-
-
-		public static function constantName(id:int):String{
-			return CONST_PREFIX + id;
-		}
 
 
 		/*
@@ -213,6 +208,21 @@ package com.las3r.gen{
 		}
 
 		/*
+		* Store the active instance of RT in a temp
+		*
+		* Stack:   
+		*   ... => ...
+		*/
+		public function cacheRTInstance():void{
+ 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
+			asm.I_getproperty(emitter.nameFromIdent("rt"));
+			var i:int = asm.getTemp();
+			asm.I_setlocal(i);
+			cachedRTTempIndex = i;
+		}
+
+
+		/*
 		* Get the statics class.
 		*
 		* Stack:
@@ -229,21 +239,6 @@ package com.las3r.gen{
 
 
 		/*
-		* Store the active instance of RT in a temp
-		*
-		* Stack:   
-		*   ... => ...
-		*/
-		public function cacheRTInstance():void{
- 			asm.I_getlex(emitter.qname({ns: "", id: _staticsGuid }, false));
-			asm.I_getproperty(emitter.nameFromIdent("rt"));
-			var i:int = asm.getTemp();
-			asm.I_setlocal(i);
-			cachedRTTempIndex = i;
-		}
-
-
-		/*
 		* Store the statics class in a temp
 		*
 		* Stack:   
@@ -256,6 +251,36 @@ package com.las3r.gen{
 			cachedStaticsTempIndex = i;
 		}
 
+
+		public function emitConstant(o:Object):void{
+			if(this.tmpCachedConstants.containsKey(o)){
+				var tmp:int = int(this.tmpCachedConstants.valAt(o));
+				asm.I_getlocal(tmp);
+			}
+			else{
+				var id:int = int(constants.valAt(o));
+				emitConstantByName(CodeGen.constantName(id), "Object");
+			}
+		}
+
+
+		public static function constantName(id:int):String{
+			return CONST_PREFIX + id;
+		}
+
+
+ 		/*
+ 		* Store the given constant as a local tmp
+ 		*
+ 		* Stack:   
+ 		*   ... => ....
+ 		*/
+ 		public function cacheConstant(o:Object):void{
+			var tmp:int = asm.getTemp();
+			emitConstant(o);
+			asm.I_setlocal(tmp);
+			this.tmpCachedConstants = this.tmpCachedConstants.assoc(o, tmp);
+ 		}
 
 		/*
 		* Stack:   

@@ -81,7 +81,7 @@ package com.las3r.runtime{
 		public function each(iterator:Function):void{
 			for(var s:ISeq = seq(); s != null; s = s.rest())
 			{
-				iterator(s.first);
+				iterator(s.first());
 			}
 		}
 
