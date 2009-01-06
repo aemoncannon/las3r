@@ -14,7 +14,7 @@ package com.las3r.runtime{
 
 	import com.las3r.util.Util;
 
-	public class Keyword implements IFn, IHashable{
+	public class Keyword implements IFn, IHashable, Named{
 
 		public var sym:Symbol;
 		private var hash:int;

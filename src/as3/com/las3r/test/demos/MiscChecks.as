@@ -10,7 +10,8 @@
 
 package com.las3r.test.demos{
 
-	import flash.display.Sprite;
+	import flash.display.*;
+	import com.las3r.runtime.*;
 
 	public class MiscChecks extends Sprite{
 
@@ -26,6 +27,18 @@ package com.las3r.test.demos{
 			trace("false == 0 is " + (val == 0));
 			trace("false == '' is " + (val == ""));
 			trace("false == undefined is " + (val == undefined));
+
+			trace("Sprite super of DisplayObject " + (Object(Sprite).prototype.isPrototypeOf(Object(DisplayObject).prototype)));
+			trace("Sprite super of DisplayObjectContainer " + (Object(Sprite).prototype.isPrototypeOf(Object(DisplayObjectContainer).prototype)));
+			trace("DisplayObject super of Sprite " + (Object(DisplayObject).prototype.isPrototypeOf(Object(Sprite).prototype)));
+			trace("DisplayObjectContainer super of Sprite " + (Object(DisplayObjectContainer).prototype.isPrototypeOf(Object(Sprite).prototype)));
+			trace("Named interface of Symbol " + (Object(Named).prototype.isPrototypeOf(Object(Symbol).prototype)));
+			trace("Named interface of Symbol " + (Object(Named).isPrototypeOf(Object(Symbol))));
+			trace("Symbol is Named " + (Symbol is Named));
+			
+			var iface:Class = IList;
+			trace("list instance is IList " + ((new List(1)) is iface));
+
 		}
 
 	}

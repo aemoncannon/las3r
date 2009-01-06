@@ -27,6 +27,7 @@ package com.las3r.runtime{
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
+	import flash.utils.describeType;
 	import flash.utils.getTimer;
 	import com.hurlant.eval.ByteLoader;
 	import org.pranaframework.reflection.Type;
@@ -153,7 +154,7 @@ package com.las3r.runtime{
 			stderr = err || new TraceStream();
 			stdin = inn || new InputStream();
 			var forceImport:Array = [Numbers, LazyCons, Range, StringBuffer, 
-				PersistentArrayMap, PersistentStructMap, RuntimeError, Benchmarks];
+				PersistentArrayMap, PersistentStructMap, RuntimeError, Benchmarks, MultiFn];
 
 			TAG_KEY = key1(sym1("tag"));
 			MACRO_KEY = key1(sym1("macro"));
@@ -516,6 +517,32 @@ package com.las3r.runtime{
 			return s.replace("::", ".");
 		}
 
+		public static function getSuperClass(clazz:Class):Class{
+			var desc:XML = describeType(clazz);
+			for each(var ea:String in desc.factory.extendsClass.@type){
+				return classForName(ea);
+			}
+			return null;
+		}
+
+		public static function getSuperClasses(clazz:Class):ISeq{
+			var desc:XML = describeType(clazz);
+			var l:ISeq = RT.list();
+			for each(var ea:String in desc.factory.extendsClass.@type){
+				l = l.cons(classForName(ea));
+			}
+			return l;
+		}
+
+		public static function getInterfaces(clazz:Class):ISeq{
+			var desc:XML = describeType(clazz);
+			var l:ISeq = RT.list();
+			for each(var ea:String in desc.factory.implementsInterface.@type){
+				l = l.cons(classForName(ea));
+			}
+			return l;
+		}
+
 		public function writeToStdout(str:String):void{
 			stdout.write(str);
 		}
@@ -790,9 +817,9 @@ package com.las3r.runtime{
 		public static function assoc(o:Object, key:Object, val:Object):Object{
 
 			/* TODO: This is too limited.
-			         Should accept anything that implements Associative. 
-					 (need to introduce Associative interface first)
-					 */
+			Should accept anything that implements Associative. 
+			(need to introduce Associative interface first)
+			*/
 
 			if(o is IMap){
 				return IMap(o).assoc(key, val);
@@ -846,7 +873,7 @@ package com.las3r.runtime{
 		}
 
 		public static function seqToArray(seq:ISeq):Array{
-			var ret:Array = [];
+			var ret:Array = []
 			var items:ISeq = seq;
 			for(; items != null; items = items.rest())
 			ret.push(items.first());
@@ -905,8 +932,8 @@ package com.las3r.runtime{
 			else if(x is ISeq || x is IList)
 			{
 				w.write('(');
-				printInnerSeq(seq(x), w);
-				w.write(')');
+					printInnerSeq(seq(x), w);
+					w.write(')');
 			}
 			else if(x is String)
 			{
@@ -953,39 +980,39 @@ package com.las3r.runtime{
 			else if(x is IMap)
 			{
 				w.write('{');
-				for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
-				{
-					var v:MapEntry = MapEntry(sq.first());
-					print(v.key, w);
-					w.write(' ');
-					print(v.value, w);
-					if(sq.rest() != null)
-					w.write(", ");
-				}
-				w.write('}');
+					for(var sq:ISeq = seq(x); sq != null; sq = sq.rest())
+					{
+						var v:MapEntry = MapEntry(sq.first());
+						print(v.key, w);
+						w.write(' ');
+						print(v.value, w);
+						if(sq.rest() != null)
+						w.write(", ");
+					}
+					w.write('}');
 			}
 			else if(x is IVector)
 			{
 				var a:IVector = IVector(x);
 				w.write('[');
-				for(i = 0; i < a.count(); i++)
-				{
-					print(a.nth(i), w);
-					if(i < a.count() - 1)
-					w.write(' ');
-				}
-				w.write(']');
+					for(i = 0; i < a.count(); i++)
+					{
+						print(a.nth(i), w);
+						if(i < a.count() - 1)
+						w.write(' ');
+					}
+					w.write(']');
 			}
 			else if(x is ISet)
 			{
 				w.write("#{");
-				for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
-				{
-					print(setSq.first(), w);
-					if(setSq.rest() != null)
-					w.write(" ");
-				}
-				w.write('}');
+					for(var setSq:ISeq = seq(x); setSq != null; setSq = setSq.rest())
+					{
+						print(setSq.first(), w);
+						if(setSq.rest() != null)
+						w.write(" ");
+					}
+					w.write('}');
 			}
 			else if(x is RegExp)
 			{

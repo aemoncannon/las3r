@@ -299,8 +299,9 @@ package com.las3r.runtime{
 				else
 				return new ConstantExpr(this, form);
 
+
 			}
-			catch(e:*)
+			catch(e:*) 
 			{
 				var msg:String = "CompilerError at " + SOURCE.get() + ":" + int(LINE.get()) + ":  " + (e is Error ? Error(e).message : String(e));
 				throw new CompilerError(msg);
@@ -1299,7 +1300,7 @@ class InvokeExpr implements Expr{
 	}
 
 	public function interpret():Object{
-		var fn:Function = Function(fexpr.interpret());
+		var fn:Function = fexpr.interpret() as Function;
 		var argvs:IVector = RT.vector();
 		for(var i:int = 0; i < args.count(); i++){
 			argvs = argvs.cons(Expr(args.nth(i)).interpret());

@@ -16,7 +16,7 @@ package com.las3r.runtime{
 	import com.las3r.util.StringUtil;
 	import com.las3r.runtime.RT;
 
-    public class Symbol extends Obj{
+    public class Symbol extends Obj implements Named{
 
 		//these must be interned strings!
 		public var ns:String;

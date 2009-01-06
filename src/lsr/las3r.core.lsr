@@ -583,6 +583,18 @@
 	 (recur ret (first ks) (rest ks))
 	 ret))))
 
+(defn disj
+  "disj[oin]. Returns a new set of the same (hashed/sorted) type, that
+  does not contain key(s)."
+  ([set] set)
+  ([#^com.las3r.runtime.ISet set key]
+     (. set (remove key)))
+  ([set key & ks]
+     (let [ret (disj set key)]
+       (if ks
+	 (recur ret (first ks) (rest ks))
+	 ret))))
+
 (defn find
   "Returns the map entry for key, or nil if key not present."
   [map key] (. com.las3r.runtime.RT (find map key)))
@@ -910,8 +922,20 @@
     (apply prn more)))
 
 
+(defmacro assert
+  "Evaluates expr and throws an exception if it does not evaluate to
+ logical true."
+  [x]
+  `(when-not ~x
+     (throw (new Error (str "Assert failed: " '~x)))))
+
+
 
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn not-empty 
+  "If coll is empty, returns nil, else coll"
+  [coll] (when (seq coll) coll))
   
 (defn every?
   "Returns true if (pred x) is logical true for every x in coll, else
@@ -1844,6 +1868,186 @@
   "Set an instance's property to value using the array access [] operator."
   [instance property value]
   (. *runtime* (setPropertyByName instance property value)))
+
+
+
+
+
+
+;;;;;;;;;;;;;;;; multimethods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn alter-var-root
+  "Atomically alters the root binding of var v by applying f to its
+  current value plus any args"
+  [#^com.las3r.runtime.Var v f & args] (. v (alterRoot f args)))
+
+(defn class?
+  "Returns true if x is an instance of Class"
+  [x] (instance? Class x))
+
+(defn make-hierarchy 
+  "Creates a hierarchy object for use with derive, isa? etc."
+  [] {:parents {} :descendants {} :ancestors {}})
+
+(def #^{:private true}
+     global-hierarchy (make-hierarchy))
+
+(defn bases
+  "Returns the immediate superclass and direct interfaces of c, if any"
+  [#^Class c]
+  (let [i (. com.las3r.runtime.RT (getInterfaces c))
+        s (. com.las3r.runtime.RT (getSuperClass c))]
+    (set
+     (if s (cons s i) i))))
+
+(defn supers
+  "Returns the immediate and indirect superclasses and interfaces of c, if any"
+  [#^Class c]
+  (let [i (. com.las3r.runtime.RT (getInterfaces c))
+        s (. com.las3r.runtime.RT (getSuperClasses c))]
+    (set (concat i s))))
+
+(defn conforms?
+  "Does child conform to the interface of parent?"
+  [#^Class child #^Class parent]
+  (or (= child parent)
+      (contains? (supers child) parent)))
+
+(defn isa?
+  "Returns true if (= child parent), or child is directly or indirectly derived from
+  parent, either via a Java type inheritance relationship or a
+  relationship established via derive. h must be a hierarchy obtained
+  from make-hierarchy, if not supplied defaults to the global
+  hierarchy"
+  ([child parent] (isa? global-hierarchy child parent))
+  ([h child parent]
+     (or (= child parent)
+	 (and (class? parent) (class? child) 
+	      (conforms? child parent))
+	 (contains? ((:ancestors h) child) parent)
+	 (and (class? child) (some (fn [c] (contains? ((:ancestors h) c) parent)) (supers child)))
+	 (and (vector? parent) (vector? child)
+	      (= (count parent) (count child))
+	      (loop [ret true i 0]
+		(if (or (not ret) (= i (count parent)))
+		  ret
+		  (recur (isa? h (child i) (parent i)) (inc i))))))))
+
+(defn parents
+  "Returns the immediate parents of tag, either via a Java type
+  inheritance relationship or a relationship established via derive. h
+  must be a hierarchy obtained from make-hierarchy, if not supplied
+  defaults to the global hierarchy"
+  ([tag] (parents global-hierarchy tag))
+  ([h tag] (not-empty
+            (let [tp (get (:parents h) tag)]
+              (if (class? tag)
+                (into (set (bases tag)) tp) 
+                tp)))))
+
+(defn ancestors 
+  "Returns the immediate and indirect parents of tag, either via a Java type
+  inheritance relationship or a relationship established via derive. h
+  must be a hierarchy obtained from make-hierarchy, if not supplied
+  defaults to the global hierarchy"
+  ([tag] (ancestors global-hierarchy tag))
+  ([h tag] (not-empty
+            (let [ta (get (:ancestors h) tag)]
+              (if (class? tag)
+                (into (set (supers tag)) ta) 
+                ta)))))
+
+(defn descendants
+  "Returns the immediate and indirect children of tag, through a
+  relationship established via derive. h must be a hierarchy obtained
+  from make-hierarchy, if not supplied defaults to the global
+  hierarchy. Note: does not work on Java type inheritance
+  relationships."
+  ([tag] (descendants global-hierarchy tag))
+  ([h tag] (if (class? tag)
+             (throw (new Error("UnsupportedOperationException: Can't get descendants of classes")))
+             (not-empty (get (:descendants h) tag)))))
+
+
+(defn derive
+  "Establishes a parent/child relationship between parent and
+  tag. Parent must be a namespace-qualified symbol or keyword and
+  child can be either a namespace-qualified symbol or keyword or a
+  class. h must be a hierarchy obtained from make-hierarchy, if not
+  supplied defaults to, and modifies, the global hierarchy."
+  ([tag parent]
+   (assert (namespace parent))
+   (assert (or (class? tag) (and (instance? com.las3r.runtime.Named tag) (namespace tag))))
+
+   (alter-var-root #'global-hierarchy derive tag parent) nil)
+  ([h tag parent]
+   (assert (not= tag parent))
+   (assert (or (class? tag) (instance? com.las3r.runtime.Named tag)))
+   (assert (instance? com.las3r.runtime.Named parent))
+     (let [tp (:parents h)
+	   td (:descendants h)
+	   ta (:ancestors h)
+	   tf (fn [m source sources target targets]
+		(reduce (fn [ret k]
+			  (assoc ret k 
+				 (reduce conj (get targets k #{}) (cons target (targets target)))))
+			m (cons source (sources source))))]
+       (or 
+	(when-not (contains? (tp tag) parent)
+	  (when (contains? (ta tag) parent)
+	    (throw (new Error (str tag "already has" parent "as ancestor"))))
+	  (when (contains? (ta parent) tag)
+	    (throw (new Error (str "Cyclic derivation:" parent "has" tag "as ancestor"))))
+	  {:parents (assoc (:parents h) tag (conj (get tp tag #{}) parent))     
+	   :ancestors (tf (:ancestors h) tag td parent ta)
+	   :descendants (tf (:descendants h) parent ta tag td)})
+	h))))
+
+(defn underive 
+  "Removes a parent/child relationship between parent and
+  tag. h must be a hierarchy obtained from make-hierarchy, if not
+  supplied defaults to, and modifies, the global hierarchy."
+  ([tag parent] (alter-var-root #'global-hierarchy underive tag parent) nil)
+  ([h tag parent]
+     (let [tp (:parents h)
+	   td (:descendants h)
+	   ta (:ancestors h)
+	   tf (fn [m source sources target targets]
+		(reduce
+		 (fn [ret k]
+		   (assoc ret k 
+			  (reduce disj (get targets k) (cons target (targets target)))))
+		 m (cons source (sources source))))]
+       (if (contains? (tp tag) parent)
+	 {:parent (assoc (:parents h) tag (disj (get tp tag) parent))    
+	  :ancestors (tf (:ancestors h) tag td parent ta)
+	  :descendants (tf (:descendants h) parent ta tag td)}
+	 h))))
+
+(defmacro defmulti
+  "Creates a new multimethod with the associated dispatch function. If
+  default-dispatch-val is supplied it becomes the default dispatch
+  value of the multimethod, otherwise the default dispatch value
+  is :default."
+  ([name dispatch-fn] `(defmulti ~name ~dispatch-fn :default))
+  ([name dispatch-fn default-val]
+     `(def ~(with-meta name (assoc ^name :tag 'com.las3r.runtime.MultiFn)) 
+	   (new com.las3r.runtime.MultiFn ~dispatch-fn ~default-val))))
+
+(defmacro defmethod
+  "Creates and installs a new method of multimethod associated with dispatch-value. "
+  [multifn dispatch-val & fn-tail]
+  `(. ~multifn (addMethod ~dispatch-val (fn ~@fn-tail))))
+
+(defn remove-method
+  "Removes the method of multimethod associated	with dispatch-value."
+  [multifn dispatch-val]
+  (. multifn (removeMethod dispatch-val)))
+
+(defn prefer-method
+  "Causes the multimethod to prefer matches of dispatch-val-x over dispatch-val-y when there is a conflict"
+  [multifn dispatch-val-x dispatch-val-y]
+  (. multifn (preferMethod dispatch-val-x dispatch-val-y)))
 
 ;;;;;;;;;;;;;;;; emacs integration ;;;;;;;;;;;;;;;;;;;;;;;
 
