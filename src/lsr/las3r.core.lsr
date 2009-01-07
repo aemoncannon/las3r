@@ -2440,7 +2440,7 @@
 	m (. m (addMethod :default (fn [s] -5)))]
     (assert-true (= (m (new flash.display.Shape)) -1))
     (assert-true (= (m (new flash.display.Sprite)) 0))
-    (assert-true (= (m "lkdjfdkjf") -5))
+    (assert-true (= (m "lkdjfdkjf") -5)) ;; Should use :default
     )
 
   )
@@ -2574,5 +2574,6 @@
 
       ))
 
-;;(connect-to-eval-pipe)
+;;(run-benchmarks)
+
 
