@@ -23,10 +23,10 @@ package com.las3r.runtime{
 		private var parents:Var;
 		private var hierarchy:Var;
 
-		public function MultiFn(rt:RT, dispatchFn:Function, defaultDispatchVal:Object){
-			isa = Var.internNS(rt.LAS3R_NAMESPACE, rt.sym1("isa"));
+		public function MultiFn(rt:RT, dispatchFn:Function, defaultDispatchVal:Object ){
+			isa = Var.internNS(rt.LAS3R_NAMESPACE, rt.sym1("isa?"));
 			parents = Var.internNS(rt.LAS3R_NAMESPACE, rt.sym1("parents"));
-			parents = Var.internNS(rt.LAS3R_NAMESPACE, rt.sym1("hierarchy"));
+			hierarchy = Var.internNS(rt.LAS3R_NAMESPACE, rt.sym1("global-hierarchy"));
 
 			this.dispatchFn = dispatchFn;
 			this.defaultDispatchVal = defaultDispatchVal;

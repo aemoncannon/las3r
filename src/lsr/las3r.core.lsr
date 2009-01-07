@@ -1208,6 +1208,10 @@
       (recur (conj ret (first items)) (rest items))
       ret)))
 
+(defn #^Class class
+  "Returns the Class of x"
+  [#^Object x] (if (nil? x) x (. com.las3r.runtime.RT (classForInstance x))))
+
 
 ;; (vec '(1 2 3))
 (defn vec
@@ -1249,9 +1253,6 @@
        (when m
 	 (lazy-cons (vec m) (step)))))))
 ;;(take 8 (re-matches (re "a(b)" "g") "ababababababa"))
-
-
-
 
 
 (defn macroexpand-1
@@ -1872,8 +1873,6 @@
 
 
 
-
-
 ;;;;;;;;;;;;;;;; multimethods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn alter-var-root
@@ -2032,7 +2031,7 @@
   ([name dispatch-fn] `(defmulti ~name ~dispatch-fn :default))
   ([name dispatch-fn default-val]
      `(def ~(with-meta name (assoc ^name :tag 'com.las3r.runtime.MultiFn)) 
-	   (new com.las3r.runtime.MultiFn ~dispatch-fn ~default-val))))
+	   (new com.las3r.runtime.MultiFn *runtime* ~dispatch-fn ~default-val))))
 
 (defmacro defmethod
   "Creates and installs a new method of multimethod associated with dispatch-value. "
@@ -2423,7 +2422,35 @@
 
   (assert-true (= (re-matches (re "pineapp(le)" "g") "The bear ate my apple and your apple, too.") nil))
 
+
+  ;; Test class handling necessary for multimethods
+  (assert-true (contains? (bases flash.display.Sprite) flash.display.DisplayObjectContainer))
+  (assert-true (contains? (bases flash.display.Sprite) flash.display.IBitmapDrawable))
+  (assert-true (contains? (bases flash.display.Sprite) flash.events.IEventDispatcher))
+  (assert-true (not (contains? (bases flash.display.Sprite) flash.display.DisplayObject)))
+  (assert-true (not (contains? (bases flash.display.Sprite) flash.display.DisplayObject)))
+  (assert-true (contains? (supers flash.display.Sprite) flash.display.DisplayObject))
+  (assert-true (contains? (supers flash.display.Sprite) Object))
+  (assert-true (not (contains? (supers flash.display.Sprite) flash.display.Sprite)))
+  (assert-true (= flash.display.Sprite (class (new flash.display.Sprite))))
+
+  (let [m (new com.las3r.runtime.MultiFn *runtime* class :default)
+	m (. m (addMethod flash.display.Sprite (fn [s] (. s x))))
+	m (. m (addMethod flash.display.DisplayObject (fn [s] -1)))
+	m (. m (addMethod :default (fn [s] -5)))]
+    (assert-true (= (m (new flash.display.Shape)) -1))
+    (assert-true (= (m (new flash.display.Sprite)) 0))
+    (assert-true (= (m "lkdjfdkjf") -5))
+    )
+
   )
+
+;;(run-tests)
+
+
+
+
+
 
 (import '(flash.utils Dictionary))
 
@@ -2547,7 +2574,5 @@
 
       ))
 
-
-;;(run-tests)
 ;;(connect-to-eval-pipe)
 

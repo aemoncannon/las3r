@@ -300,6 +300,7 @@ package com.las3r.runtime{
 				return new ConstantExpr(this, form);
 
 
+
 			}
 			catch(e:*) 
 			{

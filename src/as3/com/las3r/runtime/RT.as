@@ -497,10 +497,12 @@ package com.las3r.runtime{
 			}
 		}
 
-
-
 		public function currentNS():LispNamespace{
 			return LispNamespace(CURRENT_NS.get());
+		}
+
+		public static function classForInstance(o:Object):Class{
+			return Object(o).constructor;
 		}
 
 		public static function classForName(name:String):Class{

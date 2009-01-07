@@ -73,7 +73,7 @@ package com.las3r.repl{
 					function(error:*):void{
 						outputError(error);
 					},
-					true/*true=from-source*/
+					false/*true=from-source*/
 				);
 				_rt.evalStr("(in-ns 'las3r.core)");
 			}
