@@ -10,12 +10,12 @@ Features:
 
 
 
-[Quick start guide][tutorial1]
+[Quick start guide][quick-start]
 
 [Play with a Las3r repl][faq]
 
 
 [faq]: http://github.com/aemoncannon/las3r/wikis
-[tutorial1]: http://github.com/aemoncannon/las3r/wikis/tutorial1
+[quick-start]: http://github.com/aemoncannon/las3r/wikis/quick-start
 
 
