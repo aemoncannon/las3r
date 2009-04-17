@@ -66,7 +66,7 @@ file REPL_TARGET => SHARED_SOURCES + FileList["./lib/*.swf"] do
 end
 
 
-SWC_TARGET = "./bin/las3r.swc"
+SWC_TARGET = "./dist/las3r.swc"
 file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
   sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
 end
