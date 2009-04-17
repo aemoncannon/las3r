@@ -13,6 +13,7 @@
 package com.las3r.util{
 
 	import com.las3r.runtime.IHashable;
+	import com.las3r.runtime.IObj;
 	import com.las3r.runtime.RT;
 
 	public class Util{
@@ -22,7 +23,7 @@ package com.las3r.util{
 			return true;
 			if(k1 === null || k1 is Number || k1 is Boolean || k1 is String)
 			return false;
-			if(k1.equals){
+			if(k1 is IObj){
 				return k1.equals(k2);
 			}
 			return false;
