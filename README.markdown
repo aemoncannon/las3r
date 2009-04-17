@@ -16,6 +16,6 @@ Features:
 
 
 [faq]: http://github.com/aemoncannon/las3r/wikis
-[tutorial1]: http://github.com/aemoncannon/las3r/tutorial1
+[tutorial1]: http://github.com/aemoncannon/las3r/wikis/tutorial1
 
 
