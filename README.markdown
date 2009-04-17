@@ -10,12 +10,12 @@ Features:
 
 
 
-[Documentation][api]
+[Quick start guide][tutorial1]
 
-[FAQ & Demo][faq]
+[Play with a Las3r repl][faq]
 
 
 [faq]: http://github.com/aemoncannon/las3r/wikis
-[api]: http://github.com/aemoncannon/las3r/wikis/api
+[tutorial1]: http://github.com/aemoncannon/las3r/tutorial1
 
 
