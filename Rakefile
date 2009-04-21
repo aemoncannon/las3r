@@ -14,11 +14,12 @@ $debug = true
 
 MXMLC = PLATFORM == "win" ? "mxmlc.exe -target-player=10.0.0" : "mxmlc -target-player=10.0.0"
 COMPC = PLATFORM == "win" ? "compc.exe -target-player=10.0.0" : "compc -target-player=10.0.0"
-DEBUG_PROJECTOR = PLATFORM =~ /win/ ? "sa_flashplayer_10_debug.exe" : "~/bin/flashplayer_debug_projector_10"
+DEBUG_PROJECTOR = PLATFORM == "win" ? "sa_flashplayer_10_debug.exe" : "~/bin/flashplayer_debug_projector_10"
 
 SHARED_CLASS_PATH = [
-                     "src/as3",
-                     File.expand_path("~/lib/flexunit/trunk/FlexUnitLib/src")
+                     "src/as3"
+                     # ,
+                     # File.expand_path("~/lib/flexunit/trunk/FlexUnitLib/src")
                     ]
 
 COMPILE_OPTIONS = [
