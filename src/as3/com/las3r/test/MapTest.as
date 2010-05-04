@@ -14,7 +14,6 @@ package com.las3r.test{
 	import flash.utils.*;
 	import com.las3r.util.Util;
 	import com.las3r.runtime.RT;
-	import com.las3r.runtime.IMap;
 	import com.las3r.runtime.PersistentHashMap;
 	import com.las3r.runtime.IMap;
 	import com.las3r.runtime.ISeq;
