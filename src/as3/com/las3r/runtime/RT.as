@@ -570,6 +570,8 @@ package com.las3r.runtime{
 			return (IVector(o)).count();
 			else if(o is IMap)
 			return (IMap(o)).count();
+			else if(o is ISet)
+			return (ISet(o)).count();
 			else if(o is String)
 			return (String(o)).length;
 			else if(o is Array)
