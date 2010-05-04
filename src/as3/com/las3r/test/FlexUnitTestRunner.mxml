@@ -19,6 +19,7 @@
 	     suite.addTestSuite(LineNumberingPushbackReaderTest);
 	     suite.addTestSuite(ListTest);
 	     suite.addTestSuite(MapTest);
+	     suite.addTestSuite(SetTest);
 	     suite.addTestSuite(LispReaderTest);
 	     suite.addTestSuite(NamespaceTest);
 	     suite.addTestSuite(VarTest);
