@@ -6,7 +6,6 @@
     <![CDATA[
 	     
 	     import flexunit.framework.*;
-	     import flexunit.*;
 	     
 	     private function onCreationComplete():void {
 	     var suite:TestSuite = new TestSuite();

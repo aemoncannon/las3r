@@ -18,8 +18,6 @@ DEBUG_PROJECTOR = PLATFORM == "win" ? "sa_flashplayer_10_debug.exe" : "~/bin/fla
 
 SHARED_CLASS_PATH = [
                      "src/as3"
-                     # ,
-                     # File.expand_path("~/lib/flexunit/trunk/FlexUnitLib/src")
                     ]
 
 COMPILE_OPTIONS = [
@@ -49,7 +47,7 @@ TEST_DEMO_SWF_TARGETS = TEST_DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
 file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600"]
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600", "-library-path+=lib/FlexUnit.swc"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
