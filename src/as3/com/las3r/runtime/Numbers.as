@@ -22,6 +22,8 @@ package com.las3r.runtime{
 
 		static public function minus(a:Number, b:Number):Number{ return a - b; }
 
+		static public function negate(a:Number):Number{ return -a; }
+
 		static public function lt(a:Number, b:Number):Boolean{ return a < b; }
 
 		static public function lte(a:Number, b:Number):Boolean{ return a <= b; }
