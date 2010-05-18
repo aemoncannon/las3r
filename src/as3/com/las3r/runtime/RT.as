@@ -1021,8 +1021,13 @@ package com.las3r.runtime{
 				var reS:String = String(x);
 				var start:int = reS.indexOf("/");
 				var end:int = reS.lastIndexOf("/");
-				w.write("#");
-				print(reS.substring(start + 1, end), w);
+
+				w.write("#\"");
+				for(var idx:int = start + 1; idx < end; idx++) {
+					w.write(reS.charAt(idx));
+				}
+				w.write("\"");
+
 				if(x.global) w.write("g");
 				if(x.ignoreCase) w.write("i");
  				if(x.dotall) w.write("s");

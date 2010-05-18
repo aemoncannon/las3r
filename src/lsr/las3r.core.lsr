@@ -2428,6 +2428,20 @@
 
   (assert-true (= (re-matches (re "pineapp(le)" "g") "The bear ate my apple and your apple, too.") nil))
 
+  ;; Regexes - simplified syntax reader
+
+  (assert-true (= (re-match #"foo" "foo") ["foo"]))
+  (assert-true (= (re-match #"\w*" "foo!@#$") ["foo"]))
+  (assert-true (= (re-match #"\t" "\t") ["\t"]))
+  (assert-true (= (re-match #"\a" "\u0007") ["\u0007"]))
+  (assert-true (= (re-match #"\x08" "\b") ["\b"]))
+  (assert-true (= (re-match #"\x31" "1") ["1"]))
+  (assert-true (= (re-match #"\061" "1") ["1"]))
+  (assert-true (= (re-match #"\bfoo" "foo") ["foo"]))
+  (assert-true (= (re-match #"\"" "\"") ["\""]))
+  (assert-true (= (re-match #"\\" "\\") ["\\"]))
+  (assert-true (= (re-match #"\(" "(") ["("]))
+  (assert-true (= (re-match #"foo"i "fOo") ["fOo"]))
 
   ;; Test class handling necessary for multimethods
   (assert-true (contains? (bases flash.display.Sprite) flash.display.DisplayObjectContainer))

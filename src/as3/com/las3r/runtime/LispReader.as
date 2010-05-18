@@ -592,10 +592,24 @@ class RegexReader implements IReaderMacro{
 	}
 
 	public function invoke(reader:Object, doublequote:Object):Object{
-		var stringrdr:StringReader = new StringReader(LispReader(_reader));
-		var str:String = String(stringrdr.invoke(reader, doublequote));
-		var flags:String = _reader.readCharSet(PushbackReader(reader), "gismx");
-		return new RegExp(str, flags);
+		var sb:String = "";
+		var r:Reader = Reader(reader);
+		for(var ch:int = r.readOne(); ch != CharUtil.DOUBLE_QUOTE; ch = r.readOne())
+		{
+			if(ch == -1)
+			throw new Error("EOF while reading regex");
+			sb += String.fromCharCode(ch);
+			if(ch == CharUtil.BACK_SLASH) //escape
+			{
+				ch = r.readOne();
+				if(ch == -1)
+				throw new Error("EOF while reading regex");
+				sb += String.fromCharCode(ch);
+			}
+		}
+		// var flags:String = _reader.readCharSet(PushbackReader(reader), "gismx");
+		var flags:String = _reader.readCharSet(PushbackReader(r), "gismx");
+		return new RegExp(sb, flags);
 	}
 
 }
