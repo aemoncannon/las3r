@@ -1021,10 +1021,21 @@ package com.las3r.runtime{
 				var reS:String = String(x);
 				var start:int = reS.indexOf("/");
 				var end:int = reS.lastIndexOf("/");
+				var qmode:Boolean = false;
+				var ch:String;
 
 				w.write("#\"");
-				for(var idx:int = start + 1; idx < end; idx++) {
-					w.write(reS.charAt(idx));
+				for(var idx:int = start + 1; idx < end;) {
+					ch = reS.charAt(idx++);
+					if(ch == "\\") {
+						w.write(ch);
+						w.write(ch = reS.charAt(idx++));
+						qmode = qmode ? (ch != "E") : (ch == "Q");
+					} else if (ch == "\"") {
+						w.write(qmode ? "\\E\\\"\\Q" : "\\\"");
+					} else {
+					    w.write(ch);
+					}
 				}
 				w.write("\"");
 
