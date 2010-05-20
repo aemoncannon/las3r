@@ -1212,6 +1212,10 @@
   "Returns the Class of x"
   [#^Object x] (if (nil? x) x (. com.las3r.runtime.RT (classForInstance x))))
 
+(defn number?
+  "Returns true if x is a Number"
+  [x]
+  (instance? Number x))
 
 ;; (vec '(1 2 3))
 (defn vec
