@@ -785,7 +785,8 @@ package com.las3r.runtime{
 				return ISet(coll).seq();
 			}
 			else if(coll is String){
-				return new StringSeq(String(coll), 0);
+				var s:String = String(coll);
+				return s.length ? new StringSeq(s, 0) : null;
 			}
 			else if(coll is Array){
 				return PersistentVector.createFromArray(coll as Array).seq();
