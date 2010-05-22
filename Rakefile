@@ -40,6 +40,7 @@ SWC_OPTIONS = [
 
 SHARED_SOURCES = FileList["./src/as3/**/*"]
 LAS3R_STDLIB = FileList["./src/lsr/**/*"]
+LAS3R_STDLIB_SWFS = FileList["./lib/*.swf"]
 THIS_RAKEFILE = FileList["./Rakefile"]
 
 TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
@@ -59,14 +60,14 @@ end
 
 
 REPL_TARGET = "./bin/repl.swf"
-file REPL_TARGET => SHARED_SOURCES + FileList["./lib/*.swf"] do
+file REPL_TARGET => SHARED_SOURCES + LAS3R_STDLIB + LAS3R_STDLIB_SWFS do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
 end
 
 
 SWC_TARGET = "./dist/las3r.swc"
-file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB + LAS3R_STDLIB_SWFS do
   sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
 end
 
