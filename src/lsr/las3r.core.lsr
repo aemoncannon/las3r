@@ -1225,7 +1225,6 @@
       m 
       (+ m div))))
 
-;; (vec '(1 2 3))
 (defn vec
   "Creates a new vector containing the contents of coll."
   [coll]
