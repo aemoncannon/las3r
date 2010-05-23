@@ -38,5 +38,18 @@ package com.las3r.test{
 			assertTrue("val should be equivalent..", Util.equal(RT.list(sym1(rt, "a"), sym1(rt, "b"), sym1(rt, "c"), sym1(rt, "q"), sym1(rt, "r"), sym1(rt, "x")), RT.concat(l1, l2)));
 		}
 
+		public function testVectorNth():void{
+			var notFound:Object = new Object;
+			var v:PersistentVector = PersistentVector.createFromMany(0, 42);
+			assertTrue("Value at index 0 should be 0", RT.nth(v, 0, notFound) === 0);
+			assertTrue("Value at index 1 should be 42", RT.nth(v, 1, notFound) === 42);
+		}
+
+		public function testArrayNth():void{
+			var notFound:Object = new Object;
+			var a:Array = [0, 42];
+			assertTrue("Value at index 0 should be 0", RT.nth(a, 0, notFound) === 0);
+			assertTrue("Value at index 1 should be 42", RT.nth(a, 1, notFound) === 42);
+		}
 	}
 }
