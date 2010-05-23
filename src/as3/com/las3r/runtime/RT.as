@@ -665,6 +665,13 @@ package com.las3r.runtime{
 				return notFound;
 			}
 			else if(coll is Array){
+				var val:* = coll[n];
+				if(val === undefined) {
+					if(notFound !== null) {
+						return notFound;
+					}
+					throw new Error("IndexOutOfBoundsException");
+				}
 				return coll[n];
 			}
 			else if(coll is ISeq)

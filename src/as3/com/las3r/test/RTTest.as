@@ -50,7 +50,8 @@ package com.las3r.test{
 			var a:Array = [0, 42];
 			assertTrue("Value at index 0 should be 0", RT.nth(a, 0, notFound) === 0);
 			assertTrue("Value at index 1 should be 42", RT.nth(a, 1, notFound) === 42);
-			assertTrue("Value at index 2 should be notFound", RT.nth(a, 1, notFound) === notFound);
+			assertTrue("Value at (non-existent) index 2 should be notFound", RT.nth(a, 2, notFound) === notFound);
+			assertTrue("Value at (non-existent) index 2 should be 0", RT.nth(a, 2, 0) === 0);
 		}
 	}
 }
