@@ -38,51 +38,54 @@ SWC_OPTIONS = [
                "-source-path #{SHARED_CLASS_PATH.join(" ")}"
               ]
 
-SHARED_SOURCES = FileList["./src/as3/**/*"]
 LAS3R_STDLIB = FileList["./src/lsr/**/*"]
+LAS3R_STDLIB_SWFS = FileList["./lib/*.swf"]
+# stdlib lsrs and swfs are embedded in RT.as
+SHARED_SOURCES = FileList["./src/as3/**/*"] + LAS3R_STDLIB + LAS3R_STDLIB_SWFS
 THIS_RAKEFILE = FileList["./Rakefile"]
 
 TEST_DEMO_SWF_ENTRY_POINTS = FileList["src/as3/com/las3r/test/demos/*.as"]
 TEST_DEMO_SWF_TARGETS = TEST_DEMO_SWF_ENTRY_POINTS.collect{|ea| "./bin/" + File.basename(ea, ".as") + ".swf" }
 
 UNIT_TEST_RUNNER_TARGET = "./bin/unit_test_runner.swf"
-file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 1000 600", "-library-path+=lib/FlexUnit.swc"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
 DEMO_GARDEN_TARGET = "./bin/garden.swf"
-file DEMO_GARDEN_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
+file DEMO_GARDEN_TARGET => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 1000 600"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/demo/garden/Garden.as -output=#{DEMO_GARDEN_TARGET}"
 end
 
-
 REPL_TARGET = "./bin/repl.swf"
-file REPL_TARGET => SHARED_SOURCES + FileList["./lib/*.swf"] do
+file REPL_TARGET => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/App.as -output=#{REPL_TARGET}"
 end
 
-
-SWC_TARGET = "./dist/las3r.swc"
-file SWC_TARGET => SHARED_SOURCES + LAS3R_STDLIB do
-  sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
+LSR_REPL_TARGET = "./bin/lsr-repl.swf"
+file LSR_REPL_TARGET => SHARED_SOURCES do
+  options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true": "", "-default-size 635 450"]
+  sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/repl/StdlibTestingApp.as -output=#{LSR_REPL_TARGET}"
 end
 
+SWC_TARGET = "./dist/las3r.swc"
+file SWC_TARGET => SHARED_SOURCES do
+  sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
+end
 
 task :dist => [REPL_TARGET, UNIT_TEST_RUNNER_TARGET] do
   cp REPL_TARGET, "dist"
   cp UNIT_TEST_RUNNER_TARGET, "dist"
 end
 
-
 TRACE_SWF = "./bin/trace_swf.swf"
 file TRACE_SWF => SHARED_SOURCES do
   options = COMPILE_OPTIONS + [$debug ? "-compiler.debug=true" : "", "-default-size 635 450"]
   sh "#{MXMLC} #{options.join(" ")} -file-specs src/as3/com/las3r/util/TraceSwf.as -output=#{TRACE_SWF}"
 end
-
 
 TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   main, target = pair
@@ -93,13 +96,15 @@ TEST_DEMO_SWF_ENTRY_POINTS.zip(TEST_DEMO_SWF_TARGETS).each do |pair|
   end
 end
 
-
 task :swc => [SWC_TARGET] do
 end
 
-
 task :repl => [REPL_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{REPL_TARGET}"
+end
+
+task :lsr_repl => [LSR_REPL_TARGET] do
+  sh "#{DEBUG_PROJECTOR} #{LSR_REPL_TARGET}"
 end
 
 task :garden => [DEMO_GARDEN_TARGET] do
@@ -119,15 +124,4 @@ task :clean => [] do
 end
 
 task :default => [:units]
-
-
-
-
-
-
-
-
-
-
-
 
