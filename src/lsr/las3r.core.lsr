@@ -2336,6 +2336,8 @@
   (assert-true (= #{:a :b :c} (set (keys {:a 1 :b 2 :c 3}))))
   (assert-true (= #{1 2 3} (set (vals {:a 1 :b 2 :c 3}))))
 
+  (assert-true (= (with-meta (lazy-cons nil nil) {:a 1}) (lazy-cons nil nil)))
+
   ;; Test non-Obj equality
   (assert-false (= (new flash.display.Sprite) (new flash.display.Sprite)))
   (assert-true (let [s1 (new flash.display.Sprite)
