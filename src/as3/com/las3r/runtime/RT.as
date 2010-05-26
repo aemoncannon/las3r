@@ -660,7 +660,7 @@ package com.las3r.runtime{
 				return notFound;
 			}
 			else if(coll is IVector){
-				return IVector(coll).nth(n) || notFound;
+				return IVector(coll).nth(n);
 			}
 			else if(coll is String){
 				if(String(coll).length > n){
@@ -669,7 +669,14 @@ package com.las3r.runtime{
 				return notFound;
 			}
 			else if(coll is Array){
-				return coll[n] || notFound;
+				var val:* = coll[n];
+				if(val === undefined) {
+					if(notFound !== null) {
+						return notFound;
+					}
+					throw new Error("IndexOutOfBoundsException");
+				}
+				return coll[n];
 			}
 			else if(coll is ISeq)
 			{
