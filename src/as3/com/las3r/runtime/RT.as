@@ -509,6 +509,10 @@ package com.las3r.runtime{
 			return (getDefinitionByName(name) as Class);
 		}
 
+		public static function objectForName(name:String):Object{
+			return (getDefinitionByName(name));
+		}
+
 		public static function nameForClass(clazz:Class):String{
 			var s:String = getQualifiedClassName(clazz);
 			return s.replace("::", ".");
