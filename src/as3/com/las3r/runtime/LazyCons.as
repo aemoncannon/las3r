@@ -22,8 +22,8 @@ package com.las3r.runtime{
 
 		public function LazyCons(f:Function = null, first:Object = null, rest:ISeq = null){
 			this.f = f;
-			this._first = first || sentinel;
-			this._rest = rest || sentinel;
+			this._first = f !== null ? sentinel : first;
+			this._rest = f !== null ? sentinel : rest;
 		}
 
 
