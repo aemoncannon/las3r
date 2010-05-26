@@ -828,14 +828,16 @@ package com.las3r.runtime{
 			Should accept anything that implements Associative. 
 			(need to introduce Associative interface first)
 			*/
-
-			if(o is IMap){
+			if(o === null){
+				return map(key, val);
+			}
+			else if(o is IMap){
 				return IMap(o).assoc(key, val);
 			}
 			else if(o is IVector){
 				return IVector(o).assocN(int(key), val);
 			}
-			else return map();
+			else throw new Error("Objects passed to assoc must implement IMap or IVector.");
 		}
 
 		public static function dissoc(map:IMap, key:Object):IMap{

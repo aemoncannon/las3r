@@ -1212,8 +1212,19 @@
   "Returns the Class of x"
   [#^Object x] (if (nil? x) x (. com.las3r.runtime.RT (classForInstance x))))
 
+(defn number?
+  "Returns true if x is a Number"
+  [x]
+  (instance? Number x))
 
-;; (vec '(1 2 3))
+(defn mod
+  "Modulus of num and div. Truncates toward negative infinity."
+  [num div] 
+  (let [m (rem num div)] 
+    (if (or (zero? m) (= (pos? num) (pos? div))) 
+      m 
+      (+ m div))))
+
 (defn vec
   "Creates a new vector containing the contents of coll."
   [coll]
@@ -2216,6 +2227,57 @@
 	       ))
        ))))
 
+(defn get-in
+  "returns the value in a nested associative structure, where ks is a sequence of keys"
+  [m ks]
+  (reduce get m ks))
+
+(defn assoc-in
+  "Associates a value in a nested associative structure, where ks is a
+  sequence of keys and v is the new value and returns a new nested structure.
+  If any levels do not exist, hash-maps will be created."
+  [m [k & ks] v]
+  (if ks
+    (assoc m k (assoc-in (get m k) ks v))
+    (assoc m k v)))
+
+(defn update-in
+  "'Updates' a value in a nested associative structure, where ks is a
+  sequence of keys and f is a function that will take the old value
+  and any supplied args and return the new value, and returns a new
+  nested structure.  If any levels do not exist, hash-maps will be
+  created."
+  ([m [k & ks] f & args]
+   (if ks
+     (assoc m k (apply update-in (get m k) ks f args))
+     (assoc m k (apply f (get m k) args)))))
+
+(defn empty?
+  "Returns true if coll has no items - same as (not (seq coll)).
+  Please use the idiom (seq x) rather than (not (empty? x))"
+  [coll] (not (seq coll)))
+
+(defn list? [x]
+  "Returns true if x is a list."
+  (instance? com.las3r.runtime.List x))
+
+(defn set? [x]
+  "Returns true if x is a hash set."
+  (instance? com.las3r.runtime.PersistentHashSet x))
+
+(defn coll? [x]
+  "Returns true if x is a list, vector, hash map or hash set."
+  (or (list? x)
+      (vector? x)
+      (map? x)
+      (set? x)))
+
+(defn empty [coll]
+  "Returns an empty collection of the same category as coll, or nil"
+  (cond (list? coll) '()
+	(vector? coll) []
+	(map? coll) {}
+	(set? coll) #{}))
 
 ;;;;;;;;;;;;;;;;;;;; Generating Documentation ;;;;;;;;;;;;;;;;;;;;
 
