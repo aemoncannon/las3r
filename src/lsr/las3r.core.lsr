@@ -2476,6 +2476,8 @@
 		  '([1][3][5])))
 
   ;; Regexes
+  (assert-false (apply identical? (map (fn [x] #"a") [1 2]))) ;; regexes shoudn't be the same object
+
   (assert-true (= (re-match #"app(le)" "The bear ate the apple.")
 		  '["apple" "le"]
 		  ))
