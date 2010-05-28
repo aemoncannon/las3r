@@ -607,7 +607,6 @@ class RegexReader implements IReaderMacro{
 				sb += String.fromCharCode(ch);
 			}
 		}
-		// var flags:String = _reader.readCharSet(PushbackReader(reader), "gismx");
 		var flags:String = _reader.readCharSet(PushbackReader(r), "gismx");
 		return new RegExp(sb, flags);
 	}
