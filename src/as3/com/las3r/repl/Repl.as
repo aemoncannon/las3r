@@ -45,7 +45,7 @@ package com.las3r.repl{
 
 		public function get rt():RT { return _rt }
 
-		public function Repl(w:int, h:int, stage:Stage = null){
+		public function Repl(w:int, h:int, stage:Stage = null, fromSource:Boolean = false){
 			_width = w;
 			_height = h;
 			var stdout:OutputStream = new OutputStream(function(str:String):void{
@@ -73,7 +73,7 @@ package com.las3r.repl{
 					function(error:*):void{
 						outputError(error);
 					},
-					false/*true=from-source*/
+					fromSource
 				);
 				_rt.evalStr("(in-ns 'las3r.core)");
 			}

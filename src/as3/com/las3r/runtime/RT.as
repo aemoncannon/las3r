@@ -21,6 +21,7 @@ package com.las3r.runtime{
 	import com.las3r.errors.RuntimeError;
 	import com.las3r.util.StringBuffer;
 	import com.las3r.util.Benchmarks;
+	import com.las3r.util.RegExpUtil;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -509,6 +510,10 @@ package com.las3r.runtime{
 			return (getDefinitionByName(name) as Class);
 		}
 
+		public static function objectForName(name:String):Object{
+			return (getDefinitionByName(name));
+		}
+
 		public static function nameForClass(clazz:Class):String{
 			var s:String = getQualifiedClassName(clazz);
 			return s.replace("::", ".");
@@ -570,6 +575,8 @@ package com.las3r.runtime{
 			return (IVector(o)).count();
 			else if(o is IMap)
 			return (IMap(o)).count();
+			else if(o is ISet)
+			return (ISet(o)).count();
 			else if(o is String)
 			return (String(o)).length;
 			else if(o is Array)
@@ -654,7 +661,7 @@ package com.las3r.runtime{
 				return notFound;
 			}
 			else if(coll is IVector){
-				return IVector(coll).nth(n) || notFound;
+				return IVector(coll).nth(n);
 			}
 			else if(coll is String){
 				if(String(coll).length > n){
@@ -663,7 +670,14 @@ package com.las3r.runtime{
 				return notFound;
 			}
 			else if(coll is Array){
-				return coll[n] || notFound;
+				var val:* = coll[n];
+				if(val === undefined) {
+					if(notFound !== null) {
+						return notFound;
+					}
+					throw new Error("IndexOutOfBoundsException");
+				}
+				return coll[n];
 			}
 			else if(coll is ISeq)
 			{
@@ -783,7 +797,8 @@ package com.las3r.runtime{
 				return ISet(coll).seq();
 			}
 			else if(coll is String){
-				return new StringSeq(String(coll), 0);
+				var s:String = String(coll);
+				return s.length ? new StringSeq(s, 0) : null;
 			}
 			else if(coll is Array){
 				return PersistentVector.createFromArray(coll as Array).seq();
@@ -822,14 +837,16 @@ package com.las3r.runtime{
 			Should accept anything that implements Associative. 
 			(need to introduce Associative interface first)
 			*/
-
-			if(o is IMap){
+			if(o === null){
+				return map(key, val);
+			}
+			else if(o is IMap){
 				return IMap(o).assoc(key, val);
 			}
 			else if(o is IVector){
 				return IVector(o).assocN(int(key), val);
 			}
-			else return map();
+			else throw new Error("Objects passed to assoc must implement IMap or IVector.");
 		}
 
 		public static function dissoc(map:IMap, key:Object):IMap{
@@ -1039,11 +1056,7 @@ package com.las3r.runtime{
 				}
 				w.write("\"");
 
-				if(x.global) w.write("g");
-				if(x.ignoreCase) w.write("i");
- 				if(x.dotall) w.write("s");
- 				if(x.multiline) w.write("m");
- 				if(x.extended) w.write("x");
+				w.write(RegExpUtil.flags(RegExp(x)));
 			}
 			else if(x is Class)
 			{
