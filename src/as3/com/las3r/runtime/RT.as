@@ -21,6 +21,7 @@ package com.las3r.runtime{
 	import com.las3r.errors.RuntimeError;
 	import com.las3r.util.StringBuffer;
 	import com.las3r.util.Benchmarks;
+	import com.las3r.util.RegExpUtil;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -1039,11 +1040,7 @@ package com.las3r.runtime{
 				var end:int = reS.lastIndexOf("/");
 				w.write("#");
 				print(reS.substring(start + 1, end), w);
-				if(x.global) w.write("g");
-				if(x.ignoreCase) w.write("i");
- 				if(x.dotall) w.write("s");
- 				if(x.multiline) w.write("m");
- 				if(x.extended) w.write("x");
+				w.write(RegExpUtil.flags(RegExp(x)));
 			}
 			else if(x is Class)
 			{

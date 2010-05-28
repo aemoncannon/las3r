@@ -239,7 +239,6 @@ package com.las3r.runtime{
 
 		
 		public function registerConstant(o:Object):void{
-
 			if(!CURRENT_MODULE_SWF.isBound())
 			throw new Error("IllegalStateException: CURRENT_MODULE_SWF is unbound during compilation.");
 
@@ -295,6 +294,11 @@ package com.las3r.runtime{
 
 				else if(form is IMap)
 				return MapExpr.parse(this, context, IMap(form));
+
+				else if(form is RegExp) {
+					var re:RegExp = RegExp(form);
+					return NewExpr.parse(this, context, RT.list(null, RegExp, re.source, RegExpUtil.flags(re)));
+				}
 
 				else
 				return new ConstantExpr(this, form);
@@ -592,8 +596,6 @@ class ConstantExpr extends LiteralExpr{
 
 	}
 }
-
-
 
 class NilExpr extends LiteralExpr{
 
@@ -1861,7 +1863,6 @@ class HostExpr implements Expr{
 			return new NewExpr(compiler, target, args);
 		}
 	}
-
 
 	class ThrowExpr extends UntypedExpr{
 		public var excExpr:Expr;
