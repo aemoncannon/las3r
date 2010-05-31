@@ -12,6 +12,10 @@
 
 (def *compiler* (. *runtime* compiler))
 
+(def
+ #^{:arglists '([& items])
+    :doc "Flash trace."}
+ trace (. com.las3r.runtime.RT (objectForName "trace")))
 
 (def
  #^{:arglists '([& items])
