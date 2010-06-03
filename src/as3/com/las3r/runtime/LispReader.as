@@ -845,7 +845,7 @@ class DiscardReader implements IReaderMacro{
 
 	public function invoke(reader:Object, underscore:Object):Object{
 		var r:PushbackReader = PushbackReader(reader);
-		var o:Object = _reader.read(r, true, null);
+		_reader.read(r, true, null);
 		return r;
 	}
 }
