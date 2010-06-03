@@ -62,7 +62,8 @@ package com.las3r.runtime{
 				CharUtil.LBRACE, new SetReader(this),
 				CharUtil.SINGLE_QUOTE, new VarReader(this),
 				CharUtil.EQUALS, new EvalReader(this),
-				CharUtil.LESS_THAN, new UnreadableReader(this)
+				CharUtil.LESS_THAN, new UnreadableReader(this),
+				CharUtil.UNDERSCORE, new DiscardReader(this)
 			);
 
 			GENSYM_ENV = new Var(_rt, null, null, null);
@@ -834,6 +835,20 @@ class VectorReader implements IReaderMacro{
 	}
 }
 
+
+class DiscardReader implements IReaderMacro{
+	protected var _reader:LispReader;
+
+	public function DiscardReader(reader:LispReader){
+		_reader = reader;
+	}
+
+	public function invoke(reader:Object, underscore:Object):Object{
+		var r:PushbackReader = PushbackReader(reader);
+		var o:Object = _reader.read(r, true, null);
+		return r;
+	}
+}
 
 
 class WrappingReader implements IReaderMacro{
