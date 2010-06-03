@@ -143,8 +143,7 @@ package com.las3r.runtime{
 				sym1("Error"), Error,
 				sym1("RegExp"), RegExp,
 				sym1("Array"), Array,
-				sym1("XML"), XML,
-				sym1("trace"), trace
+				sym1("XML"), XML
 			);
 		}
 
