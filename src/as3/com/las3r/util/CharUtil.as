@@ -53,6 +53,7 @@ package com.las3r.util
 		public static var BACK_SLASH:int = "\\".charCodeAt(0);
 		public static var PERCENT:int = "%".charCodeAt(0);
 		public static var POUND:int = "#".charCodeAt(0);
+		public static var UNDERSCORE:int = "_".charCodeAt(0);
 		public static var T:int = "t".charCodeAt(0);
 		public static var R:int = "r".charCodeAt(0);
 		public static var N:int = "n".charCodeAt(0);
