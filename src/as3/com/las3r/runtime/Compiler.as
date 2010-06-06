@@ -104,25 +104,19 @@ package com.las3r.runtime{
 			var progress:Function = _progress || function(i:int, j:int):void{};
 
 			var EOF:Object = new Object();
-			var forms:Array = [];
 
-			try{
-				for( var form:Object = rt.lispReader.read(rdr, false, EOF); form != EOF; form = rt.lispReader.read(rdr, false, EOF)){
-					forms.unshift(form);
-				}
-			}
-			catch(e:LispError){
-				onFailure(e);
-				return;
-			}
-
-			var totalLength:int = forms.length;
 			var loadAllForms:Function = function(result:*):void{
-				if(forms.length > 0){
-					progress(totalLength - forms.length + 1, totalLength);
+				try{
+					var form:Object = rt.lispReader.read(rdr, false, EOF);
+				}
+				catch(e:LispError){
+					onFailure(e);
+					return;
+				}
+				if(form != EOF){
+					//progress(totalLength - forms.length + 1, totalLength);
 					try{
-						var f:Object = forms.pop();
-						loadForm(f, loadAllForms, onFailure);
+						loadForm(form, loadAllForms, onFailure);
 					}
 					catch(e:LispError){
 						// Suppress exceptions. We can't handle them for async code anyhow. Just pass back to the toplevel.
