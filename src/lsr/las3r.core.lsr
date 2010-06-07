@@ -1128,14 +1128,16 @@
     (when line
       (lazy-cons line (line-seq rdr)))))
 
-
 (defn eval
-  "Evaluates the form data structure (provided as a string!) and calls back with the result
-   if callback is provided."
-  ([form] (. *runtime* (evalStr form)))
-  ([form callback] (. *runtime* (evalStr form callback)))
-  ([form callback err-callback] (. *runtime* (evalStr form callback nil err-callback)))
-  ([form callback err-callback progress] (. *runtime* (evalStr form callback progress err-callback))))
+  "Evaluates the code (which should be provided as a string) and calls
+  back with the result if callback is provided. In case of an error during
+  evaluation err-callback will be called with the error object as an
+  argument. The progress callback will be invoked before the evaluation of
+  each top level form in the code."
+  ([code] (. *runtime* (evalStr code)))
+  ([code callback] (. *runtime* (evalStr code callback)))
+  ([code callback err-callback] (. *runtime* (evalStr code callback nil err-callback)))
+  ([code callback err-callback progress] (. *runtime* (evalStr code callback progress err-callback))))
 
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
