@@ -2178,7 +2178,7 @@
 	(fn [err]
 	  (binding [*out* *err*] (prn err))
 	  (. *compiler* (endAOTCompile)))
-	(fn [a b] (print "."))
+	(fn [] (print "."))
 	))
 
 (defn compile-str-and-save
@@ -2229,7 +2229,7 @@
 	       (fn [val] (prn val))
 	       (fn [err] (binding [*out* *err*]
 			   (prn err)))
-	       (fn [a b] (print "."))
+	       (fn [] (print "."))
 	       ))
        ))))
 
