@@ -101,7 +101,7 @@ package com.las3r.runtime{
 		public function load(rdr:PushbackReader, _onComplete:Function = null, _onFailure:Function = null, _progress:Function = null, sourcePath:String = null, sourceName:String = null):void{
 			var onComplete:Function = _onComplete || function(val:*):void{};
 			var onFailure:Function = _onFailure || function(error:*):void{};
-			var progress:Function = _progress || function(i:int, j:int):void{};
+			var progress:Function = _progress || function():void{};
 
 			var EOF:Object = new Object();
 
@@ -114,7 +114,7 @@ package com.las3r.runtime{
 					return;
 				}
 				if(form != EOF){
-					//progress(totalLength - forms.length + 1, totalLength);
+					progress();
 					try{
 						loadForm(form, loadAllForms, onFailure);
 					}

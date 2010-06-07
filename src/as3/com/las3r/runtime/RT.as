@@ -358,7 +358,7 @@ package com.las3r.runtime{
 		*/		
 		public function evalStr(src:String, onComplete:Function = null, progress:Function = null, onFailure:Function = null):void{
 			var c:Function = onComplete || function(v:*):void{};
-			var p:Function = progress || function(a:int, b:int):void{};
+			var p:Function = progress || function():void{};
 			var f:Function = onFailure || function(e:*):void{};
 			var reader:PushbackReader = new LineNumberingPushbackReader(new StringReader(src));
 			queueEvalUnit(new ReaderEvalUnit(reader, c, f, p));

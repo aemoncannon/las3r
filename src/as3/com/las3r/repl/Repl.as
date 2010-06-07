@@ -67,7 +67,7 @@ package com.las3r.repl{
 						dispatchEvent(new Event(INITED));
 						showInput();
 					},
-					function(i:int, total:int):void{
+					function():void{
 						outputText(".");
 					},
 					function(error:*):void{
