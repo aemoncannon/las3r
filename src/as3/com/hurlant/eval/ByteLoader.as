@@ -28,7 +28,10 @@ package com.hurlant.eval {
 		
 		private static var swf_end:Array =
 		// the commented out code tells the player to instance a class "test" as a Sprite.
-		[/*0x09, 0x13, 0x01, 0x00, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x00, */ 0x40, 0x00]; // Tag type=1 (ShowFrame), length=0
+		[/*0x09, 0x13, 0x01, 0x00, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x00, */ 
+			0x40, 0x00,                                             // Tag type=1 (ShowFrame), length=0
+			0x00, 0x00                                              // Tag type=0 (End), length=0 -- ignored by the player, but reuired by the spec (and swfdump).
+		];
 		
 		
 		/**
