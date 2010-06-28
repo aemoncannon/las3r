@@ -344,6 +344,14 @@ package com.hurlant.eval.gen
         public function I_pushtrue() { pushOne("pushtrue", 0x26) }
         public function I_pushundefined() { pushOne("pushundefined", 0x21) }
 
+        public function I_getscopeobject(index) {
+            stack(1);
+            list2("getscopeobject", index);
+            code.uint8(0x65);
+            code.uint8(index);
+            debug("getscopeobject");
+        }
+
         // Instructions that push one value, with an opcode byte followed by a u30 argument
         private function pushOneU30(name, opcode, v) {
             stack(1);
@@ -355,7 +363,6 @@ package com.hurlant.eval.gen
 
         public function I_getglobalslot(index) { pushOneU30("getglobalslot", 0x6E, index) }
         public function I_getlex(index) { pushOneU30("getlex", 0x60, index) }
-        public function I_getscopeobject(index) { pushOneU30("getscopeobject", 0x65, index) }
         public function I_newcatch(index) { pushOneU30("newcatch", 0x5A, index) }
         public function I_newfunction(index) { pushOneU30("newfunction", 0x40, index) }
         public function I_pushdouble(index) { pushOneU30("pushdouble", 0x2F, index) }
