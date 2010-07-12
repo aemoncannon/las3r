@@ -93,7 +93,9 @@ package com.las3r.gen{
 			asm.I_newactivation();
 			asm.I_dup();
 			asm.I_pushscope();
-			currentActivation = { scopeIndex: asm.currentLocalScopeDepth - 1, nextSlot: 1 };
+			currentActivation = { 
+				scopeIndex: asm.currentLocalScopeDepth - 1, 
+				nextSlot: currentActivation ? currentActivation.nextSlot : 1 };
 			var i:int = asm.getTemp();
 			asm.I_setlocal(i);
 			scopeToLocalMap = scopeToLocalMap.cons(i);
