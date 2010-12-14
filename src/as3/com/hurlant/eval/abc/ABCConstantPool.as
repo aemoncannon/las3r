@@ -4,6 +4,7 @@ package com.hurlant.eval.abc
 	import com.hurlant.eval.gen.AVM2Assembler;
 	import com.hurlant.eval.gen.ABCByteStream;
 	import flash.utils.Dictionary;
+	import flash.utils.ByteArray;
 	
     public class ABCConstantPool
     {
@@ -59,7 +60,12 @@ package com.hurlant.eval.abc
         }
 
         public function stringUtf8(s/*FIXME ES4: string*/)/*:uint*/ {
-            function temp_func(x) { utf8_bytes.uint30(x.length); utf8_bytes.utf8(x) }
+            function temp_func(x) {
+				var tmp:ByteArray = new ByteArray;
+				tmp.writeUTFBytes(x);
+				utf8_bytes.uint30(tmp.length); // write the string's length in utf8 encoded bytes
+				utf8_bytes.utf8(x); // write the string
+			}
             return findOrAdd( "" + s,  // FIXME need to make sure its a string
 				s,
                 utf8_pool,
