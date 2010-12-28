@@ -679,7 +679,7 @@ package com.hurlant.eval.gen
         public function I_applytype(nargs) {
             // stack in: factory, arg1, ... argN
             // stack out: result
-            stack(1-nargs);
+            stack(1-(nargs+1)); /* pop factory/args; push result */
             list2("applytype", nargs);
             code.uint8(OP_applytype);
             code.uint30(nargs);
