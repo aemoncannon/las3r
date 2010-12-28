@@ -61,7 +61,8 @@ package com.las3r.runtime{
 				_rt.ASSIGN, AssignExpr.parse,
 				_rt.TRY, TryExpr.parse,
 				_rt.THROW, ThrowExpr.parse,
-				_rt.NEW, NewExpr.parse
+				_rt.NEW, NewExpr.parse,
+				_rt.AVM_APPLYTYPE, AvmApplytypeExpr.parse
 			);
 
 			SOURCE = new Var(_rt, null, null, "Evaluated Source");
@@ -1858,6 +1859,42 @@ class HostExpr implements Expr{
 		}
 	}
 
+	class AvmApplytypeExpr implements Expr{
+		public var args:IVector;
+		public var target:Expr;
+		private var _compiler:Compiler;
+
+		public function AvmApplytypeExpr(compiler:Compiler, target:Expr, args:IVector){
+			this.args = args;
+			this.target = target;
+			_compiler = compiler;
+		}
+
+		public function interpret():Object{
+			throw new Error("Interpretation of AvmApplytypeExpr not supported.");
+		}
+
+		public function emit(context:C, gen:CodeGen):void{
+			target.emit(C.EXPRESSION, gen);
+			this.args.each(function(ea:Expr):void{ ea.emit(C.EXPRESSION, gen); });
+			gen.asm.I_applytype(args.count());
+			if(context == C.STATEMENT){ gen.asm.I_pop(); }
+		}
+
+		public static function parse(compiler:Compiler, context:C, frm:Object):Expr{
+			var form:ISeq = ISeq(frm);
+			//(avm-applytype factory classExpr)
+			if(form.count() < 3)
+			throw new Error("Wrong number of arguments, expecting: (avm-applytype factory classExprs...)");
+			var target:Expr = compiler.analyze(C.EXPRESSION, RT.second(form));
+			var args:IVector = RT.vector();
+			for(var s:ISeq = RT.rest(RT.rest(form)); s != null; s = s.rest()){
+				args = args.cons(compiler.analyze(C.EXPRESSION, s.first()));
+			}
+			return new AvmApplytypeExpr(compiler, target, args);
+		}
+	}
+
 	class ThrowExpr extends UntypedExpr{
 		public var excExpr:Expr;
 
@@ -1872,7 +1909,7 @@ class HostExpr implements Expr{
 		override public function emit(context:C, gen:CodeGen):void{
 			// So there's a nil on the stack after the exception is thrown,
 			// required so that in the event that the try is prematurely aborted (because of
-				// this throw) there will still be something on the stack to match the catch's
+			// this throw) there will still be something on the stack to match the catch's
 			// result.
 			gen.asm.I_pushnull();
 			// Then, reconcile with type of ensuing catch expr...

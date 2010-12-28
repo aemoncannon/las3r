@@ -129,6 +129,7 @@ package com.las3r.runtime{
 		public var VECTOR:Symbol;
 		public var _AMP_:Symbol;
 		public var ISEQ:Symbol;
+		public var AVM_APPLYTYPE:Symbol;
 
 
 		public function get DEFAULT_IMPORTS():IMap {
@@ -275,6 +276,7 @@ package com.las3r.runtime{
 			NEW = sym1("new");
 			_AMP_ = sym1("&");
 			ISEQ = sym1("com.las3r.runtime.ISeq");
+			AVM_APPLYTYPE = sym1("avm-applytype");
 
 			specials = RT.map(
 				DEF,T,
@@ -292,7 +294,8 @@ package com.las3r.runtime{
 				FINALLY,T, 
 				THROW,T,
 				NEW,T,
-				_AMP_,T
+				_AMP_,T,
+				AVM_APPLYTYPE,T
 			);
 
 			_compiler = new Compiler(this);
