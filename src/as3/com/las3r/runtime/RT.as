@@ -824,7 +824,7 @@ package com.las3r.runtime{
 			{
 				return (String(coll).indexOf(String(key)) != -1) ? T : F;
 			}
-			else if((coll is Array))
+			else if(coll is Array)
 			{
 				return (((coll as Array).indexOf(key)) != -1) ? T : F;
 			}
