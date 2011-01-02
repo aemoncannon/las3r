@@ -64,7 +64,7 @@ package com.las3r.test{
 			assertTrue("Value at index 1 should be 1", RT.get(v, 1, notFound) === 1);
 			assertTrue("Count should be 3", RT.count(v) === 3);
 			assertTrue("Vector should contain 1", RT.contains(v, 1));
-			assertFalse("Vector not should contain 5", RT.contains(v, 5));
+			assertFalse("Vector should not contain 5", RT.contains(v, 5));
 			assertTrue("Second object in seq should be 1", RT.second(RT.seq(v)) === 1);
 		}
 	}
