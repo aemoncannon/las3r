@@ -22,6 +22,7 @@ package com.las3r.runtime{
 	import com.las3r.util.StringBuffer;
 	import com.las3r.util.Benchmarks;
 	import com.las3r.util.RegExpUtil;
+	import com.las3r.util.Util;
 	import flash.events.*;
 	import flash.display.Stage;
 	import flash.utils.Dictionary;
@@ -581,7 +582,7 @@ package com.las3r.runtime{
 			return (ISet(o)).count();
 			else if(o is String)
 			return (String(o)).length;
-			else if(o is Array)
+			else if(o is Array || Util.isAVMVector(o))
 			return o.length;
 			throw new Error("UnsupportedOperationException: count not supported on this type.");
 		}
@@ -642,7 +643,7 @@ package com.las3r.runtime{
 				}
 				return notFound;
 			}
-			else if(key is Number && (coll is String || coll is Array || coll is IVector))
+			else if(key is Number && (coll is String || coll is Array || coll is IVector || Util.isAVMVector(coll)))
 			{
 				var n:int = int(key);
 				return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
@@ -671,16 +672,6 @@ package com.las3r.runtime{
 				}
 				return notFound;
 			}
-			else if(coll is Array){
-				var val:* = coll[n];
-				if(val === undefined) {
-					if(notFound !== null) {
-						return notFound;
-					}
-					throw new Error("IndexOutOfBoundsException");
-				}
-				return coll[n];
-			}
 			else if(coll is ISeq)
 			{
 				var seq:ISeq = ISeq(coll);
@@ -690,6 +681,16 @@ package com.las3r.runtime{
 					return seq.first();
 				}
 				return notFound;
+			}
+			else if(coll is Array || Util.isAVMVector(coll)){
+				var val:* = coll[n];
+				if(val === undefined) {
+					if(notFound !== null) {
+						return notFound;
+					}
+					throw new Error("IndexOutOfBoundsException");
+				}
+				return coll[n];
 			}
 			else
 			throw new ("UnsupportedOperationException: nth not supported on this object: " + coll);
@@ -805,6 +806,9 @@ package com.las3r.runtime{
 			else if(coll is Array){
 				return PersistentVector.createFromArray(coll as Array).seq();
 			}
+			else if(Util.isAVMVector(coll)){
+				return PersistentVector.createFromAVMVector(coll).seq();
+			}
 			else{
 				throw new Error("IllegalArgumentException: Don't know how to create ISeq from " + coll);
 			}
@@ -824,9 +828,9 @@ package com.las3r.runtime{
 			{
 				return (String(coll).indexOf(String(key)) != -1) ? T : F;
 			}
-			else if(coll is Array)
+			else if(coll is Array || Util.isAVMVector(coll))
 			{
-				return (((coll as Array).indexOf(key)) != -1) ? T : F;
+				return ((coll.indexOf(key)) != -1) ? T : F;
 			}
 			else{
 				return F;

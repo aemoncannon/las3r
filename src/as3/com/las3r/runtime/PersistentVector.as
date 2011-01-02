@@ -42,6 +42,14 @@ package com.las3r.runtime{
 			return ret;
 		}
 
+		static public function createFromAVMVector(items:Object):PersistentVector{
+			var ret:PersistentVector = empty();
+			var len:int = items.length;
+			for(var i:int; i < len; i++)
+			ret = PersistentVector(ret.cons(items[i]));
+			return ret;
+		}
+
 		public static function createFromArraySlice(items:Array, i:int):PersistentVector{
 			return createFromArray(items.slice(i));
 		}

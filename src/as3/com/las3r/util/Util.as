@@ -11,7 +11,7 @@
 
 
 package com.las3r.util{
-
+	import flash.utils.getQualifiedClassName;
 	import com.las3r.runtime.IHashable;
 	import com.las3r.runtime.IObj;
 	import com.las3r.runtime.RT;
@@ -85,5 +85,10 @@ package com.las3r.util{
 			return h;
 		}
 
+		// Returns true if x is a Vector of any type.
+		static public function isAVMVector(x:Object):Boolean{
+			var class_name:String = getQualifiedClassName(x);
+			return class_name.indexOf("__AS3__.vec::Vector.") === 0;
+		}
 	}
 }
