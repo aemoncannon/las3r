@@ -2285,6 +2285,15 @@
 	(map? coll) {}
 	(set? coll) #{}))
 
+;;;;;;;;;;;;;;;;;;;; AVM2 stuff ;;;;;;;;;;;;;;;;;;
+
+(defn avm-vector
+  "Returns a typed AS3 Vector class. (new (avm-vector #=int)) will return a new Vector.<int> object."
+  ([]
+     (avm-applytype #=__AS3__.vec.Vector nil)) ;; Vector.<*>
+  ([class]
+     (avm-applytype #=__AS3__.vec.Vector class)))
+
 ;;;;;;;;;;;;;;;;;;;; Generating Documentation ;;;;;;;;;;;;;;;;;;;;
 
 

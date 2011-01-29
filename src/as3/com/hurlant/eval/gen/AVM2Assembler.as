@@ -158,6 +158,7 @@ package com.hurlant.eval.gen
 		private const OP_callinterface:int = 0x4D
 		private const OP_callsupervoid:int = 0x4E
 		private const OP_callpropvoid:int = 0x4F
+		private const OP_applytype:int = 0x53
 		private const OP_newobject:int = 0x55
 		private const OP_newarray:int = 0x56
 		private const OP_newactivation:int = 0x57
@@ -672,6 +673,15 @@ package com.hurlant.eval.gen
             stack(nargs+1); /* pop receiver/args */
             list2("constructsuper", nargs);
             code.uint8(0x49);
+            code.uint30(nargs);
+        }
+
+        public function I_applytype(nargs) {
+            // stack in: factory, arg1, ... argN
+            // stack out: result
+            stack(1-(nargs+1)); /* pop factory/args; push result */
+            list2("applytype", nargs);
+            code.uint8(OP_applytype);
             code.uint30(nargs);
         }
 

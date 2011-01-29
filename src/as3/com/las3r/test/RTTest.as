@@ -53,5 +53,19 @@ package com.las3r.test{
 			assertTrue("Value at (non-existent) index 2 should be notFound", RT.nth(a, 2, notFound) === notFound);
 			assertTrue("Value at (non-existent) index 2 should be 0", RT.nth(a, 2, 0) === 0);
 		}
+
+		public function testAVMVector():void{
+			var notFound:Object = new Object;
+			var v:Vector.<int> = new Vector.<int>();
+			v[0] = 0;
+			v[1] = 1;
+			v[2] = 2;
+			assertTrue("Value at index 1 should be 1", RT.nth(v, 1, notFound) === 1);
+			assertTrue("Value at index 1 should be 1", RT.get(v, 1, notFound) === 1);
+			assertTrue("Count should be 3", RT.count(v) === 3);
+			assertTrue("Vector should contain 1", RT.contains(v, 1));
+			assertFalse("Vector should not contain 5", RT.contains(v, 5));
+			assertTrue("Second object in seq should be 1", RT.second(RT.seq(v)) === 1);
+		}
 	}
 }

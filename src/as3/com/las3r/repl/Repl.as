@@ -92,7 +92,7 @@ package com.las3r.repl{
 						outputText(" .\n");
 						if(callback != null){ callback(); }
 					},
-					function(i:int, total:int):void{
+					function():void{
 						outputText(" .");
 					},
 					function(error:*):void{

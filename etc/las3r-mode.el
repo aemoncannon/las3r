@@ -136,18 +136,20 @@ if that value is non-nil."
   (interactive (list (point)))
   (save-excursion
     (backward-sexp)
-    (let ((src (buffer-substring-no-properties (point) p)))
+    (let* ((src (buffer-substring-no-properties (point) p))
+	   (oldbuf (current-buffer)))
       (let* ((proc (http-post "http://localhost:9876/push" `(("src" . ,(format "%s" src))) 'iso-8859-1))
 	     (buf (process-buffer proc)))
-	(kill-buffer buf)))))
+	(switch-to-buffer oldbuf)))))
   
 (defun las3r-eval-buffer nil
   "Evaluate the code in the current buffer."
   (interactive)
-  (let ((src (buffer-string)))
+  (let* ((src (buffer-string))
+	 (oldbuf (current-buffer)))
     (let* ((proc (http-post "http://localhost:9876/push" `(("src" . ,(format "%s" src))) 'iso-8859-1))
 	   (buf (process-buffer proc)))
-      (kill-buffer buf))))
+	(switch-to-buffer oldbuf))))
 
 (defun las3r-font-lock-def-at-point (point)
   "Find the position range between the top-most def* and the
