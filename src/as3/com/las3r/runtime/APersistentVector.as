@@ -294,6 +294,13 @@ class SubVector extends APersistentVector{
 
 	public function SubVector(v:IVector, start:int, end:int, meta:IMap = null){
 		super(meta);
+		if(v is SubVector)
+		{
+			var sv:SubVector = SubVector(v);
+			start += sv.start;
+			end += sv.start;
+			v = sv.v;
+		}
 		this.v = v;
 		this.start = start;
 		this.end = end;
