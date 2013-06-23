@@ -83,7 +83,14 @@ package com.las3r.test{
 			assertFalse("l should not containsKey 4", l.containsKey(4));
 		}
 
-
+		public function testSubVectorStackUsage():void{
+			// tests if too many subvec() calls overflow the stack
+			var a:Array = [];
+			for(var i:int = 0; i < 10000; i++) a.push(i);
+			var l:Object = PersistentVector.createFromArray(a);
+			for(var cnt:int = 9000; cnt; cnt--) l = l.subvec(1, l.length());
+			assertTrue("item in 0 place should be 9000", l.nth(0) == 9000);
+		}
 
 	}
 
