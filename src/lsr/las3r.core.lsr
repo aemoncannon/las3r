@@ -1457,6 +1457,16 @@
 						       (= ns (. v ns))))
 	      (ns-map ns)))
 
+(defn intern
+  "Finds or creates a var named by the symbol name in the namespace ns (which can be a symbol or a namespace), setting its root binding to val if supplied. The namespace must exist. The var will adopt any metadata from the name symbol. Returns the var."
+  ([#^com.las3r.runtime.Namespace ns #^com.las3r.runtime.Symbol name]
+     (let [v (. com.las3r.runtime.Var (internNS ns name))]
+       (when (meta name) (. v (setMeta (meta name))))
+       v))
+  ([#^com.las3r.runtime.Namespace ns #^com.las3r.runtime.Symbol name val]
+     (let [v (. com.las3r.runtime.Var (internWithRoot ns name val))]
+       (when (meta name) (. v (setMeta (meta name))))
+       v)))
 
 (defn alias
   "Add an alias in the current namespace to another
